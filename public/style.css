@@ -466,6 +466,21 @@ tr:hover .rc-logo, .rank-cell:hover .rc-logo { filter: none; }
 
 .rc-hint { margin-top: 10px; font-size: 10px; color: var(--text-mute); }
 
+.rc-syncbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+
+.rc-sync-live { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+
 /* ---------- market rank strip ---------- */
 
 .rank-controls { display: flex; align-items: center; gap: 8px; }
@@ -972,6 +987,70 @@ td.cell-conflict {
   gap: 10px;
   padding: 14px 18px;
   border-top: 1px solid var(--border);
+}
+
+/* ---------- page transition ("PRICING SENTINEL" sweep) ---------- */
+
+.page-fx {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.page-fx.on {
+  animation: fxfade 0.5s ease-in-out forwards;
+  pointer-events: all;
+}
+
+@keyframes fxfade {
+  0% { opacity: 0; }
+  18% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.page-fx-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--mono);
+}
+
+.page-fx.on .page-fx-inner { animation: fxtrack 0.5s ease-out; }
+
+@keyframes fxtrack {
+  from { letter-spacing: 0.1em; opacity: 0.4; transform: scale(0.985); }
+  to { letter-spacing: normal; opacity: 1; transform: none; }
+}
+
+.page-fx-mark {
+  width: 13px;
+  height: 13px;
+  background: var(--accent);
+  box-shadow: 0 0 18px var(--accent);
+  animation: syncblink 0.5s ease-in-out;
+}
+
+.page-fx-text {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: 0.32em;
+  color: var(--text);
+}
+
+.page-fx-sub {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--text-mute);
+  border-left: 1px solid var(--border);
+  padding-left: 14px;
 }
 
 /* ---------- toasts ---------- */

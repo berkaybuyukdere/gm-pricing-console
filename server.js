@@ -429,6 +429,22 @@ app.get(
   })
 );
 
+// drop cached rentalcars data for one day (all durations) after an FMX write,
+// so the panel's next look at that day is guaranteed fresh
+app.post('/api/rc-invalidate', (req, res) => {
+  const { station, year, month, day } = req.body || {};
+  const prefix = `${station}:${year}-${month}-${day}:`;
+  let removed = 0;
+  for (const k of Object.keys(rcCache)) {
+    if (k.startsWith(prefix)) {
+      delete rcCache[k];
+      removed++;
+    }
+  }
+  saveRcCache();
+  res.json({ ok: true, removed });
+});
+
 // whole-month GM rank sweep, streamed day by day (6h cache per day)
 app.get(
   '/api/rc-month-stream',

@@ -912,7 +912,11 @@ applyTheme(localStorage.getItem('theme') || 'dark');
 const HUD_STEPS = [85, 100, 115, 130];
 
 function applyHud(pct) {
-  document.body.style.zoom = pct / 100;
+  const z = pct / 100;
+  document.body.style.zoom = z;
+  // zoom multiplies 100vh past the real viewport — compensate so the
+  // flex layout (and every inner scroller) still fits exactly
+  document.body.style.height = z === 1 ? '' : `calc(100vh / ${z})`;
   localStorage.setItem('hudScale', String(pct));
   $('hudBtn').textContent = `HUD ${pct}%`;
 }
@@ -1003,7 +1007,18 @@ $('logsRefresh').onclick = refreshLogs;
 
 // ---------- view router ----------
 
+function pageTransition() {
+  const fx = $('pageFx');
+  if (!fx) return;
+  fx.classList.remove('on');
+  void fx.offsetWidth; // restart the animation
+  fx.classList.add('on');
+  clearTimeout(pageTransition._t);
+  pageTransition._t = setTimeout(() => fx.classList.remove('on'), 520);
+}
+
 function showView(name) {
+  if (state.view !== name) pageTransition();
   state.view = name;
   for (const v of ['dashboard', 'grid', 'analytics', 'activity']) {
     $('view-' + v).classList.toggle('hidden', v !== name);
@@ -1339,7 +1354,16 @@ function renderRcTable() {
       </span>
     </div>`;
   } else if (r.gmPrice != null) {
-    simBar = `<div class="rc-hint">Click a competitor row to place Green Motion just ahead of it — the FMX rule change is computed automatically.</div>`;
+    simBar = `<div class="rc-hint">Click a competitor row — or drag the Green Motion row onto one — to take that position; the FMX rule change is computed automatically.</div>`;
+  }
+
+  const sk = syncKeyOf(rcCtx.day, rcCtx.dur);
+  const sync = rcSync.get(sk);
+  if (sync) {
+    simBar += sync.live
+      ? `<div class="rc-syncbar rc-sync-live">RENTALCARS LIVE &#10003; — Green Motion is now #${sync.liveRank} at the applied price.</div>`
+      : `<div class="rc-syncbar">FMX APPLIED &#10003; (target ${sync.target.toFixed(2)}) — rentalcars still serves its cached quote; auto-recheck at 2/5/10 min.
+         <button class="btn btn-ghost btn-xs" onclick="checkRcSyncManual('${sk}')">${sync.checking ? 'CHECKING…' : 'CHECK NOW'}</button></div>`;
   }
 
   $('rcBody').innerHTML = `<table class="rc-table">
@@ -1434,9 +1458,17 @@ async function confirmGmSim() {
     refreshCell(rcCtx.day, rcCtx.dur);
     toast(
       `FMX updated: ${String(rcCtx.day).padStart(2, '0')}.${state.month} · ${rcCtx.dur}D → ${sim.newPct}%` +
-      (result.verified === false ? ' (verification mismatch!)' : ' ✓ verified') +
-      '. rentalcars will show it after their next cache refresh.'
-    , result.verified === false ? 'warn' : undefined);
+      (result.verified === false ? ' (verification mismatch!)' : ' ✓ verified'),
+      result.verified === false ? 'warn' : undefined
+    );
+    // our cached rentalcars data for this day is now stale — drop it and
+    // start the live-sync watcher that rechecks until rentalcars serves it
+    fetch('/api/rc-invalidate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ station: state.station, year: state.year, month: state.month, day: rcCtx.day }),
+    }).catch(() => {});
+    startRcSync(rcCtx.day, rcCtx.dur, sim.target);
     rcCtx.placed = null;
     renderRcTable();
     refreshLogs();
@@ -1452,6 +1484,58 @@ $('rcClose').onclick = () => $('rcModal').classList.add('hidden');
 $('rcModal').addEventListener('click', (e) => {
   if (e.target === $('rcModal')) $('rcModal').classList.add('hidden');
 });
+
+// ---------- rentalcars live-sync: verify an applied price is actually served ----------
+
+const rcSync = new Map(); // "station:y:m:day:dur" -> {day,dur,target,live,liveRank,tries,checking}
+
+const syncKeyOf = (day, dur) => `${state.station}:${state.year}:${state.month}:${day}:${dur}`;
+
+function startRcSync(day, dur, target) {
+  const k = syncKeyOf(day, dur);
+  rcSync.set(k, { day, dur, target, live: false, tries: 0, checking: false });
+  // rentalcars refreshes its quote cache on its own schedule — recheck at 2/5/10 min
+  for (const delay of [2, 5, 10]) setTimeout(() => checkRcSync(k, false), delay * 60 * 1000);
+}
+
+async function checkRcSync(k, manual) {
+  const s = rcSync.get(k);
+  if (!s || s.live || s.checking) return;
+  s.checking = true;
+  if (manual) renderRcTableIfOpen(s);
+  try {
+    const r = await api(
+      `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${s.day}&duration=${s.dur}&hh=19&mm=00&fresh=1`
+    );
+    s.tries++;
+    if (r.gmPrice != null && Math.abs(r.gmPrice - s.target) / s.target < 0.025) {
+      s.live = true;
+      s.liveRank = r.gmRank;
+      toast(`rentalcars LIVE ✓ ${String(s.day).padStart(2, '0')}.${state.month} · ${s.dur}D now #${r.gmRank} (${r.gmPrice.toFixed(2)} ${r.currency})`);
+      if (rcMonth.dur === s.dur) {
+        rcMonth.days.set(s.day, {
+          day: s.day, rank: r.gmRank, price: r.gmPrice, total: r.total,
+          currency: r.currency, top1: r.top[0] ? { supplier: r.top[0].supplier, price: r.top[0].price, logo: r.top[0].logo } : null,
+        });
+        renderRankStrip();
+        renderDashTiles();
+      }
+      if (rcCtx && rcCtx.day === s.day && rcCtx.dur === s.dur) rcCtx.data = r;
+    } else if (manual) {
+      toast(`rentalcars still serves the old quote (GM ${r.gmPrice != null ? r.gmPrice.toFixed(2) : '—'}, target ${s.target.toFixed(2)}) — their cache refreshes within minutes.`, 'warn');
+    }
+  } catch {}
+  s.checking = false;
+  renderRcTableIfOpen(s);
+}
+
+function renderRcTableIfOpen(s) {
+  if (rcCtx && rcCtx.day === s.day && rcCtx.dur === s.dur && !$('rcModal').classList.contains('hidden')) {
+    renderRcTable();
+  }
+}
+
+window.checkRcSyncManual = (k) => checkRcSync(k, true);
 
 // ---------- dashboard market-rank sweep (whole month, streamed & cached) ----------
 
@@ -1759,6 +1843,16 @@ $('sweepApplyBtn').onclick = async () => {
   $('sweepApplyBtn').classList.add('hidden');
   $('sweepMeta').textContent = `DONE · ${ok} applied · ${fail} failed — rentalcars will reflect after their next cache refresh.`;
   toast(`Top-10 sweep finished: ${ok} ok, ${fail} failed.`, fail ? 'warn' : undefined);
+  // drop our stale rentalcars cache for every touched day so the next
+  // rank-strip refresh / modal open re-queries live data
+  const touchedDays = [...new Set(sweep.plan.filter((p) => p.status.startsWith('OK')).map((p) => p.day))];
+  for (const day of touchedDays) {
+    fetch('/api/rc-invalidate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ station: state.station, year: state.year, month: state.month, day }),
+    }).catch(() => {});
+  }
   refreshLogs();
 };
 
