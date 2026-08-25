@@ -6,3 +6,4 @@ node_modules/
 .backups/
 .secrets.json
 .rc-watch.json
+.firebase/
