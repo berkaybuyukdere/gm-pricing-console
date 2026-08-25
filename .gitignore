@@ -1,0 +1,4 @@
+node_modules/
+.session
+.logs.json
+.cache-details.json
