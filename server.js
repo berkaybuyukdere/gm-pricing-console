@@ -81,87 +81,170 @@ app.get(
   })
 );
 
-// ---------- rentalcars top-10 (user-initiated, plain public API GET) ----------
+// ---------- rentalcars market data (user-initiated, plain public API GETs) ----------
 
 const RC_SEARCH = {
   61489: { type: 'IATA', loc: 'ZRH', name: 'Zurich Airport' },
   61551: { type: 'LATLONG', loc: '47.37798309326172,8.539767265319824', name: 'Zurich Downtown' },
 };
 
+const RC_CACHE_FILE = path.join(__dirname, '.rc-cache.json');
+let rcCache = {};
+try {
+  rcCache = JSON.parse(fs.readFileSync(RC_CACHE_FILE, 'utf8'));
+} catch {}
+let rcSaveTimer = null;
+function saveRcCache() {
+  clearTimeout(rcSaveTimer);
+  rcSaveTimer = setTimeout(
+    () => fs.writeFile(RC_CACHE_FILE, JSON.stringify(rcCache), () => {}),
+    500
+  );
+}
+
+async function rcQuery({ station, year, month, day, duration, hh, mm, ttlMs }) {
+  const cfg = RC_SEARCH[station];
+  if (!cfg) throw new FmxError('BAD_STATION', 400);
+  const cacheKey = `${station}:${year}-${month}-${day}:${duration}`;
+  const hit = rcCache[cacheKey];
+  if (hit && Date.now() - hit.ts < ttlMs) return { ...hit.data, cachedAt: hit.ts };
+
+  const pu = new Date(year, month - 1, day);
+  const dr = new Date(pu.getTime() + duration * 86400000);
+  const fmt = (d) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${hh}:${mm}:00`;
+
+  const sc = JSON.stringify({
+    driversAge: 30,
+    pickUpLocation: cfg.loc,
+    pickUpDateTime: fmt(pu),
+    pickUpLocationType: cfg.type,
+    dropOffLocation: cfg.loc,
+    dropOffLocationType: cfg.type,
+    dropOffDateTime: fmt(dr),
+    searchMetadata: '{}',
+  });
+  const fc = JSON.stringify({ sortBy: 'PRICE', sortAscending: true });
+  const url = `https://www.rentalcars.com/api/search-results?searchCriteria=${encodeURIComponent(sc)}&filterCriteria=${encodeURIComponent(fc)}`;
+
+  const r = await fetch(url, {
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
+      Accept: 'application/json',
+    },
+  });
+  if (!r.ok) throw new FmxError('RC_HTTP_' + r.status, 502);
+  const j = await r.json();
+
+  const rows = (j.matches || [])
+    .map((m) => {
+      const depot = (j.depots || {})[m.route && m.route.pickUpDepotId] || {};
+      const sup = (j.suppliers || {})[depot.supplierId] || {};
+      const price =
+        (m.vehicle && m.vehicle.driveAwayPrice && m.vehicle.driveAwayPrice.amount) ??
+        (m.vehicle && m.vehicle.price && m.vehicle.price.amount);
+      return {
+        supplier: sup.name || '?',
+        logo: sup.logoUrl ? 'https://cdn2.rcstatic.com' + sup.logoUrl : null,
+        price: Number(price),
+        currency: (m.vehicle && m.vehicle.price && m.vehicle.price.currency) || 'CHF',
+        vehicle: (m.vehicle && m.vehicle.makeAndModel) || '',
+        rating: depot.rating ? depot.rating.average : null,
+      };
+    })
+    .filter((x) => isFinite(x.price))
+    .sort((a, b) => a.price - b.price);
+
+  const gmIdx = rows.findIndex((x) => /green motion/i.test(x.supplier));
+  const data = {
+    station: cfg.name,
+    pickUp: fmt(pu),
+    dropOff: fmt(dr),
+    total: rows.length,
+    top: rows.slice(0, 12),
+    gmRank: gmIdx >= 0 ? gmIdx + 1 : null,
+    gmPrice: gmIdx >= 0 ? rows[gmIdx].price : null,
+    currency: rows[0] ? rows[0].currency : 'CHF',
+  };
+  rcCache[cacheKey] = { ts: Date.now(), data };
+  saveRcCache();
+  return data;
+}
+
 app.get(
   '/api/rc-top',
+  wrap(async (req, res) => {
+    const args = {
+      station: Number(req.query.station),
+      year: Number(req.query.year),
+      month: Number(req.query.month),
+      day: Number(req.query.day),
+      duration: Number(req.query.duration),
+      hh: String(req.query.hh || '19').padStart(2, '0'),
+      mm: String(req.query.mm || '00').padStart(2, '0'),
+      ttlMs: req.query.fresh === '1' ? 0 : 10 * 60 * 1000, // 10 min cache for repeat clicks
+    };
+    if (!args.year || !args.month || !args.day || !args.duration)
+      throw new FmxError('BAD_PARAMS', 400);
+    res.json(await rcQuery(args));
+  })
+);
+
+// whole-month GM rank sweep, streamed day by day (6h cache per day)
+app.get(
+  '/api/rc-month-stream',
   wrap(async (req, res) => {
     const station = Number(req.query.station);
     const year = Number(req.query.year);
     const month = Number(req.query.month);
-    const day = Number(req.query.day);
-    const duration = Number(req.query.duration);
-    const hh = String(req.query.hh || '19').padStart(2, '0');
-    const mm = String(req.query.mm || '00').padStart(2, '0');
-    const cfg = RC_SEARCH[station];
-    if (!cfg || !year || !month || !day || !duration)
-      throw new FmxError('BAD_PARAMS', 400);
+    const duration = Number(req.query.duration) || 3;
+    if (!RC_SEARCH[station] || !year || !month) throw new FmxError('BAD_PARAMS', 400);
 
-    const pu = new Date(year, month - 1, day);
-    const dr = new Date(pu.getTime() + duration * 86400000);
-    const fmt = (d) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${hh}:${mm}:00`;
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.flushHeaders();
+    const send = (ev, data) => res.write(`event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`);
 
-    const sc = JSON.stringify({
-      driversAge: 30,
-      pickUpLocation: cfg.loc,
-      pickUpDateTime: fmt(pu),
-      pickUpLocationType: cfg.type,
-      dropOffLocation: cfg.loc,
-      dropOffLocationType: cfg.type,
-      dropOffDateTime: fmt(dr),
-      searchMetadata: '{}',
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const now = new Date();
+    const firstDay =
+      year === now.getFullYear() && month === now.getMonth() + 1
+        ? now.getDate()
+        : new Date(year, month - 1, 1) < now
+          ? daysInMonth + 1 // month entirely in the past: nothing searchable
+          : 1;
+
+    const days = [];
+    for (let d = firstDay; d <= daysInMonth; d++) days.push(d);
+    send('meta', { days, duration });
+
+    const queue = days.slice();
+    const workers = Array.from({ length: 3 }, async () => {
+      while (queue.length) {
+        const day = queue.shift();
+        try {
+          const r = await rcQuery({
+            station, year, month, day, duration,
+            hh: '19', mm: '00', ttlMs: 6 * 60 * 60 * 1000,
+          });
+          const t1 = r.top[0] || null;
+          send('day', {
+            day,
+            rank: r.gmRank,
+            price: r.gmPrice,
+            total: r.total,
+            currency: r.currency,
+            top1: t1 ? { supplier: t1.supplier, price: t1.price, logo: t1.logo } : null,
+          });
+        } catch (e) {
+          send('day', { day, error: e.message });
+        }
+      }
     });
-    const fc = JSON.stringify({ sortBy: 'PRICE', sortAscending: true });
-    const url = `https://www.rentalcars.com/api/search-results?searchCriteria=${encodeURIComponent(sc)}&filterCriteria=${encodeURIComponent(fc)}`;
-
-    const r = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
-        Accept: 'application/json',
-      },
-    });
-    if (!r.ok) throw new FmxError('RC_HTTP_' + r.status, 502);
-    const j = await r.json();
-
-    const rows = (j.matches || [])
-      .map((m) => {
-        const depot = (j.depots || {})[m.route && m.route.pickUpDepotId] || {};
-        const sup = (j.suppliers || {})[depot.supplierId] || {};
-        const price =
-          (m.vehicle && m.vehicle.driveAwayPrice && m.vehicle.driveAwayPrice.amount) ??
-          (m.vehicle && m.vehicle.price && m.vehicle.price.amount);
-        return {
-          supplier: sup.name || '?',
-          price: Number(price),
-          currency:
-            (m.vehicle && m.vehicle.price && m.vehicle.price.currency) || 'CHF',
-          vehicle: (m.vehicle && m.vehicle.makeAndModel) || '',
-          group: (m.vehicle && m.vehicle.group) || '',
-          rating: depot.rating ? depot.rating.average : null,
-          depotType: depot.locationType || '',
-        };
-      })
-      .filter((x) => isFinite(x.price))
-      .sort((a, b) => a.price - b.price);
-
-    const gmIdx = rows.findIndex((x) => /green motion/i.test(x.supplier));
-    res.json({
-      station: cfg.name,
-      pickUp: fmt(pu),
-      dropOff: fmt(dr),
-      total: rows.length,
-      top: rows.slice(0, 10),
-      gmRank: gmIdx >= 0 ? gmIdx + 1 : null,
-      gmPrice: gmIdx >= 0 ? rows[gmIdx].price : null,
-      currency: rows[0] ? rows[0].currency : 'CHF',
-    });
+    await Promise.all(workers);
+    send('done', {});
+    res.end();
   })
 );
 

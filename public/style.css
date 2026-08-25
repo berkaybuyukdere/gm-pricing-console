@@ -327,13 +327,22 @@ body {
 /* ---------- grid day icons ---------- */
 
 .day-analyze {
-  color: var(--text-mute);
+  color: var(--text-dim);
   cursor: pointer;
-  font-size: 11px;
-  padding: 0 3px;
+  font-size: 12px;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  margin-right: 6px;
+  line-height: 1.2;
+  display: inline-block;
 }
 
-.day-analyze:hover { color: var(--accent); }
+.day-analyze:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
 
 .day-warn-ico { color: var(--warn); font-size: 9px; padding-left: 3px; }
 
@@ -400,6 +409,100 @@ body {
 .rc-meta { font-size: 10px; color: var(--text-mute); letter-spacing: 0.08em; margin-right: auto; }
 
 .rc-loading { padding: 26px; text-align: center; color: var(--text-mute); font-size: 11px; letter-spacing: 0.14em; animation: syncblink 1s infinite; }
+
+/* supplier logos — monochrome "palantir" treatment, color on hover */
+.rc-logo {
+  width: 36px;
+  height: 15px;
+  object-fit: contain;
+  vertical-align: -3px;
+  margin-right: 8px;
+  filter: grayscale(1) contrast(1.1) opacity(0.8);
+  transition: filter 0.12s;
+}
+
+tr:hover .rc-logo, .rank-cell:hover .rc-logo { filter: none; }
+
+:root:not([data-theme='light']) .rc-logo { filter: grayscale(1) invert(0.88) contrast(0.9); }
+:root:not([data-theme='light']) tr:hover .rc-logo { filter: none; }
+
+.rc-sup { white-space: nowrap; }
+
+.rc-table tr.rc-clickable { cursor: pointer; }
+.rc-table tr.rc-clickable:hover td { background: var(--surface-2); }
+
+.rc-table tr.rc-sim td {
+  background: var(--warn-dim);
+  color: var(--warn);
+  outline: 1px dashed var(--warn);
+  outline-offset: -1px;
+}
+
+.rc-sim-tag { font-size: 8px; letter-spacing: 0.14em; color: var(--warn); }
+
+.rc-simbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--warn);
+  background: var(--warn-dim);
+  font-size: 11px;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+
+.rc-simbar b { color: var(--warn); }
+.rc-simbar-btns { display: flex; gap: 8px; }
+
+.rc-hint { margin-top: 10px; font-size: 10px; color: var(--text-mute); }
+
+/* ---------- market rank strip ---------- */
+
+.rank-controls { display: flex; align-items: center; gap: 8px; }
+.rc-durs-sm .rc-dur { padding: 3px 8px; font-size: 9px; }
+
+.rank-strip { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.rank-cell {
+  width: 52px;
+  border: 1px solid var(--border-soft);
+  padding: 5px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  cursor: pointer;
+  background: var(--bg);
+}
+
+.rank-cell:hover { border-color: var(--accent); }
+
+.rank-day { font-size: 9px; color: var(--text-mute); }
+.rank-num { font-size: 14px; font-weight: 700; }
+.rank-price { font-size: 9px; color: var(--text-mute); }
+
+.rank-good .rank-num { color: var(--accent); }
+.rank-good { border-color: var(--accent); background: var(--accent-dim); }
+.rank-mid .rank-num { color: var(--warn); }
+.rank-bad .rank-num { color: var(--error); }
+.rank-none .rank-num { color: var(--text-mute); }
+.rank-pending { opacity: 0.55; }
+.rank-pending .rank-num { animation: syncblink 0.9s infinite; color: var(--text-mute); }
+
+.rank-legend { margin-top: 10px; font-size: 9px; color: var(--text-mute); letter-spacing: 0.08em; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+.rank-pill { padding: 1px 7px; border: 1px solid var(--border); font-size: 9px; }
+.rank-pill.rank-good { color: var(--accent); border-color: var(--accent); }
+.rank-pill.rank-mid { color: var(--warn); border-color: var(--warn); }
+.rank-pill.rank-bad { color: var(--error); border-color: var(--error); }
+
+/* ---------- chart extras ---------- */
+
+.chart-dot { stroke: var(--surface); stroke-width: 2; }
+.chart-today { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.7; }
+.chart-today-label { fill: var(--accent); font-size: 7px; letter-spacing: 0.1em; }
 
 /* ---------- chart ---------- */
 

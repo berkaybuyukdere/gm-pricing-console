@@ -308,19 +308,30 @@ function renderChart() {
   vMax = Math.ceil((vMax + 2) / 5) * 5;
   if (vMax === vMin) vMax += 5;
 
-  const W = 268, H = 150, L = 28, R = 26, T = 6, B = 16;
+  const W = 320, H = 200, L = 34, R = 30, T = 12, B = 22;
   const x = (d) => L + ((d - 1) * (W - L - R)) / Math.max(days - 1, 1);
   const y = (v) => T + ((vMax - v) * (H - T - B)) / (vMax - vMin || 1);
 
   let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Price change per day and rental duration">`;
-  const gridSteps = 4;
+  const gridSteps = 5;
   for (let i = 0; i <= gridSteps; i++) {
     const v = vMax - ((vMax - vMin) * i) / gridSteps;
     svg += `<line class="chart-grid-line" x1="${L}" y1="${y(v)}" x2="${W - R}" y2="${y(v)}"/>`;
-    svg += `<text class="chart-axis-label" x="${L - 3}" y="${y(v) + 2.5}" text-anchor="end">${Math.round(v)}</text>`;
+    svg += `<text class="chart-axis-label" x="${L - 4}" y="${y(v) + 2.5}" text-anchor="end">${Math.round(v)}</text>`;
   }
-  for (let d = 1; d <= days; d += days > 20 ? 5 : 2) {
-    svg += `<text class="chart-axis-label" x="${x(d)}" y="${H - 4}" text-anchor="middle">${d}</text>`;
+  svg += `<text class="chart-axis-label" x="${L - 4}" y="${T - 4}" text-anchor="end">%</text>`;
+  const xticks = [];
+  for (let d = 1; d <= days; d += 5) xticks.push(d);
+  if (!xticks.includes(days)) xticks.push(days);
+  for (const d of xticks) {
+    svg += `<text class="chart-axis-label" x="${x(d)}" y="${H - 6}" text-anchor="middle">${d}</text>`;
+  }
+  // today marker
+  const now = new Date();
+  if (state.year === now.getFullYear() && state.month === now.getMonth() + 1) {
+    const tx = x(now.getDate());
+    svg += `<line class="chart-today" x1="${tx}" y1="${T}" x2="${tx}" y2="${H - B}"/>`;
+    svg += `<text class="chart-axis-label chart-today-label" x="${tx}" y="${T - 4}" text-anchor="middle">TODAY</text>`;
   }
 
   const labelYs = [];
@@ -346,6 +357,9 @@ function renderChart() {
     }
   }
   svg += `<line class="chart-cross" id="chartCross" x1="0" y1="${T}" x2="0" y2="${H - B}" style="display:none"/>`;
+  for (const s of series) {
+    svg += `<circle class="chart-dot" id="chartDot-${s.dur}" r="3.2" fill="var(--s${s.dur})" style="display:none"/>`;
+  }
   svg += '</svg>';
 
   wrap.innerHTML = svg + '<div class="chart-tip" id="chartTip"></div>';
@@ -381,6 +395,18 @@ function renderChart() {
     cross.style.display = '';
     cross.setAttribute('x1', x(d));
     cross.setAttribute('x2', x(d));
+    for (const s of series) {
+      const dot = wrap.querySelector(`#chartDot-${s.dur}`);
+      const v = s.pts[d - 1];
+      if (dot) {
+        if (v == null) dot.style.display = 'none';
+        else {
+          dot.style.display = '';
+          dot.setAttribute('cx', x(d));
+          dot.setAttribute('cy', y(v));
+        }
+      }
+    }
     const rows = series
       .filter((s) => s.pts[d - 1] != null)
       .map((s) => `<div class="tip-row"><span class="legend-chip chip-s-${s.dur}"></span>${s.dur >= 6 ? '6+' : s.dur}D<b>${s.pts[d - 1]}%</b></div>`)
@@ -394,6 +420,10 @@ function renderChart() {
   svgEl.onmouseleave = () => {
     tip.style.display = 'none';
     cross.style.display = 'none';
+    for (const s of series) {
+      const dot = wrap.querySelector(`#chartDot-${s.dur}`);
+      if (dot) dot.style.display = 'none';
+    }
   };
 }
 
@@ -964,7 +994,7 @@ function showView(name) {
     b.classList.toggle('on', b.dataset.view === name)
   );
   if (name === 'activity') refreshLogs();
-  if (name === 'dashboard') renderDashboard();
+  if (name === 'dashboard') { renderDashboard(); startRcMonth(); }
   if (name === 'analytics') scheduleChart();
   if (location.hash !== '#' + name) location.hash = name;
 }
@@ -1148,8 +1178,8 @@ $('copyMonthBtn').onclick = async () => {
 
 let rcCtx = null;
 
-function openRcAnalysis(day) {
-  rcCtx = { day, dur: 3 };
+function openRcAnalysis(day, dur) {
+  rcCtx = { day, dur: dur || 3 };
   $('rcTitle').textContent = `RENTALCARS TOP 10 — ${String(day).padStart(2, '0')} ${MONTHS_SHORT[state.month - 1]} ${state.year} · ${stationName().toUpperCase()}`;
   $('rcModal').classList.remove('hidden');
   renderRcDurs();
@@ -1169,8 +1199,17 @@ function setRcDur(d) {
 }
 window.setRcDur = setRcDur;
 
+function logoImg(x) {
+  return x.logo
+    ? `<img class="rc-logo" src="${esc(x.logo)}" alt="" loading="lazy" onerror="this.style.display='none'">`
+    : '';
+}
+
 async function runRcAnalysis() {
   const [hh, mm] = nextRcTime();
+  rcCtx.hh = hh;
+  rcCtx.mm = mm;
+  rcCtx.placed = null;
   $('rcBody').innerHTML = '<div class="rc-loading">QUERYING RENTALCARS…</div>';
   $('rcMeta').textContent = '';
   $('rcOpen').href = rentalcarsUrl(rcCtx.day, rcCtx.dur, hh, mm) || '#';
@@ -1178,36 +1217,248 @@ async function runRcAnalysis() {
     const r = await api(
       `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${rcCtx.day}&duration=${rcCtx.dur}&hh=${hh}&mm=${mm}`
     );
-    if (!r.top.length) {
-      $('rcBody').innerHTML = '<div class="drawer-empty">No offers returned for these dates.</div>';
-      return;
-    }
-    const rows = r.top
-      .map(
-        (x, i) => `<tr class="${/green motion/i.test(x.supplier) ? 'rc-gm' : ''}">
-          <td class="rc-rank">${i + 1}</td>
-          <td>${esc(x.supplier)}</td>
-          <td>${esc(x.vehicle)}</td>
-          <td>${x.rating != null ? x.rating.toFixed(1) : '—'}</td>
-          <td class="rc-price">${x.price.toFixed(2)} ${esc(x.currency)}</td>
-        </tr>`
-      )
-      .join('');
-    $('rcBody').innerHTML = `<table class="rc-table">
-      <thead><tr><th></th><th>SUPPLIER</th><th>VEHICLE</th><th>RATING</th><th class="rc-price">TOTAL ${rcCtx.dur >= 6 ? '6+' : rcCtx.dur}D</th></tr></thead>
-      <tbody>${rows}</tbody></table>`;
-    $('rcMeta').textContent =
-      `${r.total} OFFERS · PICKUP ${hh}:${String(mm).padStart(2, '0')}` +
-      (r.gmRank ? ` · GREEN MOTION RANK #${r.gmRank} (${r.gmPrice.toFixed(2)} ${r.currency})` : ' · GREEN MOTION NOT LISTED');
+    rcCtx.data = r;
+    renderRcTable();
   } catch (e) {
     $('rcBody').innerHTML = `<div class="drawer-empty">Query failed: ${esc(e.message)} — use OPEN ON RENTALCARS instead.</div>`;
   }
 }
 
+/**
+ * Re-rank simulation: click any competitor row to place Green Motion just
+ * ahead of it. The needed FMX % is derived from the current rule:
+ *   base = gmPrice / (1 + currentPct/100);  newPct = (target/base - 1) * 100
+ */
+function renderRcTable() {
+  const r = rcCtx.data;
+  if (!r || !r.top.length) {
+    $('rcBody').innerHTML = '<div class="drawer-empty">No offers returned for these dates.</div>';
+    return;
+  }
+  const durLabel = rcCtx.dur >= 6 ? '6+' : rcCtx.dur;
+  const others = r.top.filter((x) => !/green motion/i.test(x.supplier));
+  const sim = rcCtx.placed; // {rank, target, newPct, curPct}
+
+  let displayRows;
+  if (sim) {
+    displayRows = others.slice();
+    displayRows.splice(sim.rank - 1, 0, {
+      supplier: 'Green Motion', vehicle: 'SIMULATED POSITION', rating: null,
+      price: sim.target, currency: r.currency, gm: true, simulated: true,
+      logo: (r.top.find((x) => /green motion/i.test(x.supplier)) || {}).logo,
+    });
+    displayRows = displayRows.slice(0, 11);
+  } else {
+    displayRows = r.top.slice(0, 10);
+  }
+
+  const rows = displayRows
+    .map((x, i) => {
+      const isGm = x.gm || /green motion/i.test(x.supplier);
+      const clickable = !isGm && r.gmPrice != null;
+      return `<tr class="${isGm ? 'rc-gm' : ''} ${x.simulated ? 'rc-sim' : ''} ${clickable ? 'rc-clickable' : ''}"
+        ${clickable ? `onclick="placeGm(${i})" title="Place Green Motion just ahead of this row"` : ''}>
+        <td class="rc-rank">${i + 1}</td>
+        <td class="rc-sup">${logoImg(x)}${esc(x.supplier)}${x.simulated ? ' <span class="rc-sim-tag">TARGET</span>' : ''}</td>
+        <td>${esc(x.vehicle)}</td>
+        <td>${x.rating != null ? x.rating.toFixed(1) : '—'}</td>
+        <td class="rc-price">${x.price.toFixed(2)} ${esc(x.currency)}</td>
+      </tr>`;
+    })
+    .join('');
+
+  const cell = state.cellMap.get(key(rcCtx.day, rcCtx.dur));
+  const curPct = cell ? cell.pct : 0;
+
+  let simBar = '';
+  if (sim) {
+    simBar = `<div class="rc-simbar">
+      <span>GM #${r.gmRank || '—'} &rarr; <b>#${sim.rank}</b> · ${r.gmPrice.toFixed(2)} &rarr; <b>${sim.target.toFixed(2)} ${r.currency}</b>
+      · FMX RULE ${durLabel}D: ${curPct}% &rarr; <b>${sim.newPct}%</b>${cell ? '' : ' (new rule)'}</span>
+      <span class="rc-simbar-btns">
+        <button class="btn btn-ghost btn-xs" onclick="resetGmSim()">RESET</button>
+        <button class="btn btn-primary btn-xs" id="rcConfirmBtn" onclick="confirmGmSim()">CONFIRM &rarr; FMX</button>
+      </span>
+    </div>`;
+  } else if (r.gmPrice != null) {
+    simBar = `<div class="rc-hint">Click a competitor row to place Green Motion just ahead of it — the FMX rule change is computed automatically.</div>`;
+  }
+
+  $('rcBody').innerHTML = `<table class="rc-table">
+    <thead><tr><th></th><th>SUPPLIER</th><th>VEHICLE</th><th>RATING</th><th class="rc-price">TOTAL ${durLabel}D</th></tr></thead>
+    <tbody>${rows}</tbody></table>${simBar}`;
+
+  $('rcMeta').textContent =
+    `${r.total} OFFERS · PICKUP ${rcCtx.hh}:${String(rcCtx.mm).padStart(2, '0')}` +
+    (r.cachedAt ? ' · CACHED' : '') +
+    (r.gmRank ? ` · GM RANK #${r.gmRank} (${r.gmPrice.toFixed(2)} ${r.currency})` : ' · GM NOT LISTED');
+}
+
+function placeGm(rowIndex) {
+  const r = rcCtx.data;
+  if (!r || r.gmPrice == null) return;
+  const others = r.top.filter((x) => !/green motion/i.test(x.supplier));
+  const targetRank = Math.min(rowIndex + 1, others.length + 1);
+  const hi = others[targetRank - 1] ? others[targetRank - 1].price : null; // row GM goes ahead of
+  const lo = others[targetRank - 2] ? others[targetRank - 2].price : 0;
+  let target;
+  if (hi == null) target = lo * 1.02; // placed last
+  else {
+    target = hi - Math.max(0.01, hi * 0.005); // just under that competitor
+    if (target <= lo) target = (lo + hi) / 2; // tight gap: midpoint
+  }
+  const cell = state.cellMap.get(key(rcCtx.day, rcCtx.dur));
+  const curPct = cell ? cell.pct : 0;
+  const base = r.gmPrice / (1 + curPct / 100);
+  let newPct = (target / base - 1) * 100;
+  newPct = Math.max(-95, Math.min(100, Math.round(newPct * 100) / 100));
+  rcCtx.placed = { rank: targetRank, target, newPct, curPct };
+  renderRcTable();
+}
+window.placeGm = placeGm;
+
+function resetGmSim() {
+  rcCtx.placed = null;
+  renderRcTable();
+}
+window.resetGmSim = resetGmSim;
+
+async function confirmGmSim() {
+  const sim = rcCtx.placed;
+  const r = rcCtx.data;
+  if (!sim || !r) return;
+  const btn = $('rcConfirmBtn');
+  btn.disabled = true;
+  btn.textContent = 'APPLYING…';
+  const cell = state.cellMap.get(key(rcCtx.day, rcCtx.dur));
+  const body = {
+    station: state.station, day: rcCtx.day, duration: rcCtx.dur,
+    month: state.month, year: state.year, pct: sim.newPct,
+    active: true, vendors: [state.vendor],
+  };
+  try {
+    let result;
+    if (cell) {
+      result = await api(`/api/rule/${cell.ruleid}`, { method: 'PUT', body: { ...body, prevPct: cell.pct } });
+      state.cellMap.set(key(rcCtx.day, rcCtx.dur), { ...cell, pct: sim.newPct });
+    } else {
+      result = await api('/api/rule', { method: 'POST', body });
+      state.cellMap.set(key(rcCtx.day, rcCtx.dur), {
+        day: rcCtx.day, dur: rcCtx.dur, ruleid: result.ruleid,
+        name: result.detail.rulename, pct: sim.newPct, active: true,
+        op: rcCtx.dur >= 6 ? '>=' : '=', opMismatch: false, vendors: [state.vendor], updated: '',
+      });
+    }
+    refreshCell(rcCtx.day, rcCtx.dur);
+    toast(
+      `FMX updated: ${String(rcCtx.day).padStart(2, '0')}.${state.month} · ${rcCtx.dur}D → ${sim.newPct}%` +
+      (result.verified === false ? ' (verification mismatch!)' : ' ✓ verified') +
+      '. rentalcars will show it after their next cache refresh.'
+    , result.verified === false ? 'warn' : undefined);
+    rcCtx.placed = null;
+    renderRcTable();
+    refreshLogs();
+  } catch (e) {
+    toast('Apply failed: ' + e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'CONFIRM → FMX';
+  }
+}
+window.confirmGmSim = confirmGmSim;
+
 $('rcClose').onclick = () => $('rcModal').classList.add('hidden');
 $('rcModal').addEventListener('click', (e) => {
   if (e.target === $('rcModal')) $('rcModal').classList.add('hidden');
 });
+
+// ---------- dashboard market-rank sweep (whole month, streamed & cached) ----------
+
+const rcMonth = { dur: 3, days: new Map(), pending: [], es: null, loadedKey: null };
+
+function rankKey() {
+  return `${state.station}:${state.year}:${state.month}:${rcMonth.dur}`;
+}
+
+function startRcMonth(force) {
+  if (!state.session) return;
+  if (!force && rcMonth.loadedKey === rankKey() && rcMonth.days.size) {
+    renderRankStrip();
+    return;
+  }
+  if (rcMonth.es) { rcMonth.es.close(); rcMonth.es = null; }
+  rcMonth.days = new Map();
+  rcMonth.pending = [];
+  rcMonth.loadedKey = rankKey();
+  $('rankMonth').textContent = `${MONTHS_SHORT[state.month - 1]} ${state.year} · ${stationName().toUpperCase()}`;
+  renderRankDurs();
+  renderRankStrip();
+
+  const es = new EventSource(
+    `/api/rc-month-stream?station=${state.station}&year=${state.year}&month=${state.month}&duration=${rcMonth.dur}`
+  );
+  rcMonth.es = es;
+  es.addEventListener('meta', (ev) => {
+    const m = JSON.parse(ev.data);
+    rcMonth.pending = m.days.slice();
+    renderRankStrip();
+  });
+  es.addEventListener('day', (ev) => {
+    const d = JSON.parse(ev.data);
+    rcMonth.pending = rcMonth.pending.filter((x) => x !== d.day);
+    rcMonth.days.set(d.day, d);
+    renderRankStrip();
+  });
+  es.addEventListener('done', () => { es.close(); if (rcMonth.es === es) rcMonth.es = null; });
+  es.onerror = () => { es.close(); if (rcMonth.es === es) rcMonth.es = null; };
+}
+
+function renderRankDurs() {
+  $('rankDurs').innerHTML = state.durations
+    .map((d) => `<button class="rc-dur ${rcMonth.dur === d ? 'on' : ''}" onclick="setRankDur(${d})">${d >= 6 ? '6+' : d}D</button>`)
+    .join('');
+}
+
+function setRankDur(d) {
+  rcMonth.dur = d;
+  startRcMonth(true);
+}
+window.setRankDur = setRankDur;
+
+function rankClass(rank) {
+  if (rank == null) return 'rank-none';
+  if (rank <= 3) return 'rank-good';
+  if (rank <= 7) return 'rank-mid';
+  return 'rank-bad';
+}
+
+function renderRankStrip() {
+  const wrap = $('rankStrip');
+  const all = [...rcMonth.pending, ...rcMonth.days.keys()];
+  if (!all.length) {
+    wrap.innerHTML = '<div class="drawer-empty">No searchable days in this month (past dates cannot be queried).</div>';
+    return;
+  }
+  const days = [...new Set(all)].sort((a, b) => a - b);
+  wrap.innerHTML = days
+    .map((day) => {
+      const d = rcMonth.days.get(day);
+      if (!d) {
+        return `<div class="rank-cell rank-pending"><span class="rank-day">${String(day).padStart(2, '0')}</span><span class="rank-num">…</span></div>`;
+      }
+      if (d.error || d.rank == null) {
+        return `<div class="rank-cell rank-none" onclick="openRcAnalysis(${day}, ${rcMonth.dur})" title="${esc(d.error || 'Green Motion not listed')}"><span class="rank-day">${String(day).padStart(2, '0')}</span><span class="rank-num">—</span></div>`;
+      }
+      return `<div class="rank-cell ${rankClass(d.rank)}" onclick="openRcAnalysis(${day}, ${rcMonth.dur})"
+        title="GM #${d.rank} of ${d.total} · ${d.price.toFixed(2)} ${d.currency}${d.top1 ? ' · #1 ' + esc(d.top1.supplier) + ' ' + d.top1.price.toFixed(2) : ''}">
+        <span class="rank-day">${String(day).padStart(2, '0')}</span>
+        <span class="rank-num">#${d.rank}</span>
+        <span class="rank-price">${Math.round(d.price)}</span>
+      </div>`;
+    })
+    .join('');
+}
+
+$('rankRefresh').onclick = () => startRcMonth(true);
 
 // ---------- boot ----------
 
@@ -1228,6 +1479,7 @@ $('rcModal').addEventListener('click', (e) => {
     loadVendors();
     await loadGrid();
     renderDashboard();
+    if (state.view === 'dashboard') startRcMonth();
   } else {
     openSessionModal('');
   }
