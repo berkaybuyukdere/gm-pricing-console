@@ -994,7 +994,7 @@ function showView(name) {
     b.classList.toggle('on', b.dataset.view === name)
   );
   if (name === 'activity') refreshLogs();
-  if (name === 'dashboard') { renderDashboard(); startRcMonth(); }
+  if (name === 'dashboard') { renderDashboard(); startRcMonth(); refreshWatchStatus(); }
   if (name === 'analytics') scheduleChart();
   if (location.hash !== '#' + name) location.hash = name;
 }
@@ -1459,6 +1459,53 @@ function renderRankStrip() {
 }
 
 $('rankRefresh').onclick = () => startRcMonth(true);
+
+// ---------- market watch (competitor price-change alerts by email) ----------
+
+async function refreshWatchStatus() {
+  try {
+    const w = await (await fetch('/api/watch-status')).json();
+    const fmtTs = (t) => (t ? new Date(t).toLocaleString('de-CH', { hour12: false }).slice(0, 17) : '—');
+    $('watchStatus').innerHTML = `
+      <div class="stat-row"><span>STATUS</span><b class="${w.enabled ? 'stat-accent' : 'stat-warn'}">${w.enabled ? 'ACTIVE' : 'MAIL NOT CONFIGURED'}</b></div>
+      <div class="stat-row"><span>SWEEP</span><b>every ${w.intervalMin} min · next ${w.daysAhead} days · ${w.duration}D</b></div>
+      <div class="stat-row"><span>TRIGGERS</span><b>&plusmn;${w.pctThreshold}% price · ${w.rankThreshold}+ rank moves · new #1</b></div>
+      <div class="stat-row"><span>BASELINE</span><b>${w.baseline} day-snapshots</b></div>
+      <div class="stat-row"><span>LAST SWEEP</span><b>${fmtTs(w.lastRun)}</b></div>
+      <div class="stat-row"><span>ALERTS SENT</span><b class="${w.alertsSent ? 'stat-warn' : ''}">${w.alertsSent}${w.lastAlert ? ' · last ' + fmtTs(w.lastAlert) : ''}</b></div>
+      <div class="stat-row"><span>MAIL TO</span><b>${esc(w.mailTo || '—')}</b></div>`;
+  } catch {}
+}
+
+$('testMailBtn').onclick = async () => {
+  $('testMailBtn').disabled = true;
+  $('testMailBtn').textContent = 'SENDING…';
+  try {
+    const r = await api('/api/test-mail', { method: 'POST', body: {} });
+    toast(`Test mail sent to ${r.accepted.join(', ')} — server said: ${r.response}`);
+    refreshLogs();
+  } catch (e) {
+    toast('Mail failed: ' + e.message, 'error');
+  } finally {
+    $('testMailBtn').disabled = false;
+    $('testMailBtn').textContent = 'TEST MAIL';
+  }
+};
+
+$('watchRunBtn').onclick = async () => {
+  $('watchRunBtn').disabled = true;
+  $('watchRunBtn').textContent = 'RUNNING…';
+  try {
+    await api('/api/watch-run', { method: 'POST', body: {} });
+    toast('Market sweep finished — baseline updated; alerts (if any) were emailed.');
+    refreshWatchStatus();
+  } catch (e) {
+    toast('Sweep failed: ' + e.message, 'error');
+  } finally {
+    $('watchRunBtn').disabled = false;
+    $('watchRunBtn').textContent = 'RUN NOW';
+  }
+};
 
 // ---------- boot ----------
 

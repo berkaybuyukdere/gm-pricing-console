@@ -6,6 +6,7 @@
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
+const nodemailer = require('nodemailer');
 const { FmxClient, FmxError } = require('./lib/fmx');
 
 const PORT = process.env.PORT || 4646;
@@ -67,6 +68,240 @@ app.post(
 
 // keep the FMX session alive while the console is running
 setInterval(() => fmx.keepAlive(), 4 * 60 * 1000);
+
+// ---------- mail (SMTP config from local .secrets.json, never committed) ----------
+
+const SECRETS_FILE = path.join(__dirname, '.secrets.json');
+let smtpCfg = null;
+let mailer = null;
+try {
+  smtpCfg = JSON.parse(fs.readFileSync(SECRETS_FILE, 'utf8')).smtp;
+  mailer = nodemailer.createTransport({
+    host: smtpCfg.host,
+    port: smtpCfg.port,
+    secure: false, // STARTTLS
+    requireTLS: true,
+    auth: { user: smtpCfg.user, pass: smtpCfg.pass },
+  });
+} catch {
+  console.log('No .secrets.json — mail alerts disabled.');
+}
+
+// Palantir-style dark HTML email (inline styles only, email-client safe)
+function alertMailHtml(title, sections) {
+  const row = (cells, header) =>
+    `<tr>${cells
+      .map(
+        (c) =>
+          `<t${header ? 'h' : 'd'} style="padding:7px 10px;border-bottom:1px solid #2e3236;font-family:Consolas,'Courier New',monospace;font-size:${header ? '9px' : '12px'};color:${header ? '#767676' : '#e8eaed'};text-align:left;letter-spacing:${header ? '2px' : '0'};${header ? '' : 'font-weight:normal;'}">${c}</t${header ? 'h' : 'd'}>`
+      )
+      .join('')}</tr>`;
+  const secHtml = sections
+    .map(
+      (s) => `
+      <div style="margin:18px 0 8px;font-family:Consolas,'Courier New',monospace;font-size:10px;letter-spacing:3px;color:#6fd9ae;">${s.title}</div>
+      <table style="border-collapse:collapse;width:100%;border:1px solid #2e3236;background:#131516;">
+        ${row(s.header, true)}
+        ${s.rows.map((r) => row(r)).join('')}
+      </table>`
+    )
+    .join('');
+  return `
+  <div style="background:#0d0f0e;padding:24px;color:#e8eaed;">
+    <div style="max-width:640px;margin:0 auto;background:#1e2124;border:1px solid #2e3236;padding:22px 26px;">
+      <div style="font-family:Consolas,'Courier New',monospace;">
+        <span style="display:inline-block;width:10px;height:10px;background:#6fd9ae;margin-right:10px;"></span>
+        <span style="font-size:14px;font-weight:bold;letter-spacing:3px;color:#ffffff;">PRICING CONSOLE</span>
+        <span style="font-size:9px;letter-spacing:2px;color:#767676;"> &nbsp;GM ZURICH // MARKET WATCH</span>
+      </div>
+      <div style="margin-top:14px;font-family:Consolas,'Courier New',monospace;font-size:12px;color:#9aa0a6;">${title}</div>
+      ${secHtml}
+      <div style="margin-top:20px;padding-top:12px;border-top:1px solid #2e3236;font-family:Consolas,'Courier New',monospace;font-size:9px;letter-spacing:2px;color:#767676;">
+        AUTOMATED ALERT · GM PRICING CONSOLE · ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC
+      </div>
+    </div>
+  </div>`;
+}
+
+async function sendMail(subject, html) {
+  if (!mailer) throw new FmxError('MAIL_NOT_CONFIGURED', 400);
+  return mailer.sendMail({
+    from: `"GM Pricing Console" <${smtpCfg.from}>`,
+    to: smtpCfg.to,
+    subject,
+    html,
+  });
+}
+
+app.post(
+  '/api/test-mail',
+  wrap(async (req, res) => {
+    const html = alertMailHtml('SMTP connectivity test — everything is wired up correctly.', [
+      {
+        title: 'TEST PAYLOAD',
+        header: ['CHECK', 'STATUS'],
+        rows: [
+          ['SMTP HOST', smtpCfg ? smtpCfg.host : '—'],
+          ['STARTTLS', 'ENABLED'],
+          ['MARKET WATCHER', WATCH.enabled ? 'ACTIVE' : 'OFF'],
+          ['THRESHOLD', WATCH.pctThreshold + '% PRICE / ' + WATCH.rankThreshold + ' RANK POSITIONS'],
+        ],
+      },
+    ]);
+    const info = await sendMail('[GM CONSOLE] Test alert — market watch is live', html);
+    addLog({
+      action: 'mail-test', station: null, stationName: 'MAIL', day: null,
+      month: null, year: null, duration: null, before: null, after: null,
+      ok: true, file: smtpCfg.to,
+    });
+    res.json({ ok: true, accepted: info.accepted, response: info.response });
+  })
+);
+
+// ---------- competitor price watcher ----------
+
+const WATCH = {
+  enabled: !!mailer,
+  intervalMin: 60,     // sweep cadence
+  daysAhead: 14,       // watch the next N pickup days
+  duration: 3,         // rental length to watch
+  pctThreshold: 5,     // alert when a top-5 supplier price moves more than this %
+  rankThreshold: 2,    // alert when GM's rank moves this many positions
+  lastRun: null,
+  lastAlert: null,
+  alertsSent: 0,
+};
+
+const WATCH_FILE = path.join(__dirname, '.rc-watch.json');
+let watchBase = {};
+try {
+  watchBase = JSON.parse(fs.readFileSync(WATCH_FILE, 'utf8'));
+} catch {}
+
+function saveWatchBase() {
+  fs.writeFile(WATCH_FILE, JSON.stringify(watchBase), () => {});
+}
+
+async function runWatcher() {
+  if (!WATCH.enabled) return;
+  WATCH.lastRun = new Date().toISOString();
+  const changes = []; // {station, dateLabel, text: [old,new,delta]}
+  const now = new Date();
+
+  for (const st of STATIONS) {
+    for (let i = 0; i < WATCH.daysAhead; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      const y = d.getFullYear(), mo = d.getMonth() + 1, day = d.getDate();
+      const wkey = `${st.id}:${y}-${mo}-${day}:${WATCH.duration}`;
+      let r;
+      try {
+        r = await rcQuery({
+          station: st.id, year: y, month: mo, day,
+          duration: WATCH.duration, hh: '19', mm: '00', ttlMs: 0,
+        });
+      } catch {
+        continue;
+      }
+      const snap = {
+        ts: Date.now(),
+        gmRank: r.gmRank,
+        gmPrice: r.gmPrice,
+        top: r.top.slice(0, 5).map((x) => ({ supplier: x.supplier, price: x.price })),
+      };
+      const old = watchBase[wkey];
+      if (old) {
+        const dateLabel = `${String(day).padStart(2, '0')}.${String(mo).padStart(2, '0')}.${y}`;
+        // per-supplier price moves in the top 5
+        for (const nowRow of snap.top) {
+          const oldRow = old.top.find((x) => x.supplier === nowRow.supplier);
+          if (!oldRow) continue;
+          const deltaPct = ((nowRow.price - oldRow.price) / oldRow.price) * 100;
+          if (Math.abs(deltaPct) >= WATCH.pctThreshold) {
+            changes.push({
+              station: st.name, dateLabel,
+              row: [nowRow.supplier, `${oldRow.price.toFixed(2)} &rarr; ${nowRow.price.toFixed(2)} ${r.currency}`, `${deltaPct > 0 ? '+' : ''}${deltaPct.toFixed(1)}%`],
+            });
+          }
+        }
+        // GM rank shifts
+        if (old.gmRank != null && snap.gmRank != null &&
+            Math.abs(snap.gmRank - old.gmRank) >= WATCH.rankThreshold) {
+          changes.push({
+            station: st.name, dateLabel,
+            row: ['GREEN MOTION RANK', `#${old.gmRank} &rarr; #${snap.gmRank}`, snap.gmRank < old.gmRank ? 'UP' : 'DOWN'],
+          });
+        }
+        // new market leader
+        if (old.top[0] && snap.top[0] && old.top[0].supplier !== snap.top[0].supplier) {
+          changes.push({
+            station: st.name, dateLabel,
+            row: ['NEW #1', `${old.top[0].supplier} &rarr; ${snap.top[0].supplier}`, `${snap.top[0].price.toFixed(2)} ${r.currency}`],
+          });
+        }
+      }
+      watchBase[wkey] = snap;
+    }
+  }
+  saveWatchBase();
+
+  if (changes.length) {
+    const byStation = {};
+    for (const c of changes) {
+      const k = `${c.station}`;
+      if (!byStation[k]) byStation[k] = [];
+      byStation[k].push([c.dateLabel, ...c.row]);
+    }
+    const sections = Object.entries(byStation).map(([station, rows]) => ({
+      title: station.toUpperCase() + ' · ' + WATCH.duration + '-DAY RENTALS',
+      header: ['DATE', 'WHAT', 'CHANGE', 'DELTA'],
+      rows,
+    }));
+    try {
+      await sendMail(
+        `[GM CONSOLE] Market shift: ${changes.length} change(s) on rentalcars`,
+        alertMailHtml(`${changes.length} significant market change(s) detected (threshold ${WATCH.pctThreshold}% / ${WATCH.rankThreshold} rank positions).`, sections)
+      );
+      WATCH.alertsSent++;
+      WATCH.lastAlert = new Date().toISOString();
+      addLog({
+        action: 'mail-alert', station: null, stationName: 'MARKET WATCH',
+        day: null, month: null, year: null, duration: null,
+        before: null, after: null, ok: true, file: `${changes.length} changes`,
+      });
+    } catch (e) {
+      console.log('Alert mail failed:', e.message);
+    }
+  }
+}
+
+app.get('/api/watch-status', (req, res) =>
+  res.json({
+    enabled: WATCH.enabled,
+    intervalMin: WATCH.intervalMin,
+    daysAhead: WATCH.daysAhead,
+    duration: WATCH.duration,
+    pctThreshold: WATCH.pctThreshold,
+    rankThreshold: WATCH.rankThreshold,
+    lastRun: WATCH.lastRun,
+    lastAlert: WATCH.lastAlert,
+    alertsSent: WATCH.alertsSent,
+    baseline: Object.keys(watchBase).length,
+    mailTo: smtpCfg ? smtpCfg.to : null,
+  })
+);
+
+app.post(
+  '/api/watch-run',
+  wrap(async (req, res) => {
+    await runWatcher();
+    res.json({ ok: true, lastRun: WATCH.lastRun, baseline: Object.keys(watchBase).length });
+  })
+);
+
+if (WATCH.enabled) {
+  setTimeout(runWatcher, 90 * 1000); // first baseline sweep shortly after boot
+  setInterval(runWatcher, WATCH.intervalMin * 60 * 1000);
+}
 
 // ---------- meta ----------
 

@@ -4,3 +4,5 @@ node_modules/
 .cache-details.json
 .rc-cache.json
 .backups/
+.secrets.json
+.rc-watch.json
