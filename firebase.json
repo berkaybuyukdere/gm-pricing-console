@@ -1,7 +1,14 @@
 {
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs20"
+  },
   "hosting": {
     "public": "landing",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      { "source": "/api/login", "function": "login" }
+    ],
     "headers": [
       {
         "source": "**",

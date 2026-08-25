@@ -61,9 +61,79 @@
     border-top: 1px solid var(--border); padding: 26px 28px; text-align: center;
     color: var(--mute); font-size: 10px; letter-spacing: .16em;
   }
+  /* ---- entry login (FMX-style gate) ---- */
+  body.locked #site { display: none; }
+  .gate {
+    position: fixed; inset: 0; background: var(--bg); z-index: 100;
+    display: none; align-items: center; justify-content: center;
+  }
+  body.locked .gate { display: flex; }
+  .gate-box { width: 400px; max-width: calc(100vw - 40px); background: var(--surface); border: 1px solid var(--border); }
+  .gate-head {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .gate-head .name { font-size: 13px; }
+  .gate-body { padding: 22px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .gate-label { font-size: 9px; letter-spacing: .18em; color: var(--mute); margin-bottom: -7px; }
+  .gate-input {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    font-family: var(--mono); font-size: 13px; padding: 11px;
+  }
+  .gate-input:focus { outline: 1px solid var(--accent); }
+  .gate-btn {
+    background: var(--accent); border: 1px solid var(--accent); color: #10130f;
+    font-family: var(--mono); font-weight: 700; letter-spacing: .14em;
+    font-size: 12px; padding: 11px; cursor: pointer; margin-top: 4px;
+  }
+  .gate-btn:hover { filter: brightness(1.1); }
+  .gate-err { color: #ef6a6a; font-size: 11px; display: none; }
+  .gate-sub { font-size: 9px; letter-spacing: .16em; color: var(--mute); text-align: center; padding: 0 20px 18px; }
+  .jump {
+    position: fixed; inset: 0; background: var(--bg); z-index: 110;
+    display: none; align-items: center; justify-content: center;
+  }
+  .jump-box { display: flex; align-items: center; gap: 16px; }
+  .jump-title { font-size: 12px; letter-spacing: .22em; color: var(--accent); }
+  .jump-url { font-size: 11px; color: var(--dim); margin-top: 7px; }
+  .jump-link { display: inline-block; margin-top: 10px; font-size: 10px; letter-spacing: .14em; color: var(--mute); }
 </style>
 </head>
-<body>
+<body class="locked">
+
+<div class="gate">
+  <div>
+    <div class="gate-box">
+      <div class="gate-head">
+        <span class="mark"></span>
+        <span class="name">PRICING&nbsp;SENTINEL</span>
+        <span class="sub">SECURE ENTRY</span>
+      </div>
+      <form class="gate-body" id="gateForm">
+        <span class="gate-label">FUSEMETRIX USERNAME</span>
+        <input class="gate-input" id="gu" autocomplete="username" spellcheck="false">
+        <span class="gate-label">FUSEMETRIX PASSWORD</span>
+        <input class="gate-input" id="gp" type="password" autocomplete="current-password">
+        <div class="gate-err" id="ge">ACCESS DENIED — check username / password.</div>
+        <button class="gate-btn" type="submit" id="gbtn">SIGN IN</button>
+      </form>
+      <div class="gate-sub">SIGN IN WITH YOUR FUSEMETRIX ACCOUNT · ALL ACCESS IS LOGGED</div>
+    </div>
+  </div>
+</div>
+
+<div class="jump" id="jump">
+  <div class="jump-box">
+    <span class="mark"></span>
+    <div>
+      <div class="jump-title">ACCESS GRANTED — OPENING CONSOLE</div>
+      <div class="jump-url" id="jumpUrl"></div>
+      <a class="jump-link" id="jumpLink" href="#">Not redirected? Open the console &nearr;</a>
+    </div>
+  </div>
+</div>
+
+<div id="site">
 
 <header class="top">
   <div class="brand">
@@ -140,6 +210,65 @@
 <footer>
   PRICING SENTINEL · INTERNAL OPERATIONS CONSOLE · ALL SYSTEMS NOMINAL
 </footer>
+
+</div><!-- /site -->
+
+<script>
+  // Entry gate — verifies credentials against the real FuseMetrix login via
+  // the /api/login Cloud Function. The function returns only ok:true|false and
+  // stores nothing. A pass sends the operator straight into the console.
+  const CONSOLE_URL = localStorage.getItem('ps-console') || 'http://localhost:4646';
+
+  function goToConsole() {
+    document.getElementById('jumpUrl').textContent = CONSOLE_URL;
+    document.getElementById('jumpLink').href = CONSOLE_URL;
+    document.getElementById('jump').style.display = 'flex';
+    setTimeout(() => { location.href = CONSOLE_URL; }, 700);
+  }
+
+  // returning operator in the same browser session -> straight to the console
+  if (sessionStorage.getItem('ps-auth') === '1' && !location.hash.includes('stay')) {
+    goToConsole();
+  }
+
+  const ge = document.getElementById('ge');
+  const gbtn = document.getElementById('gbtn');
+
+  document.getElementById('gateForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('gu').value.trim();
+    const password = document.getElementById('gp').value;
+    if (!username || !password) return;
+    ge.style.display = 'none';
+    gbtn.disabled = true;
+    gbtn.textContent = 'VERIFYING…';
+    try {
+      const r = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok && data.ok) {
+        sessionStorage.setItem('ps-auth', '1');
+        goToConsole();
+      } else {
+        ge.textContent = r.status === 502
+          ? 'FUSEMETRIX UNREACHABLE — try again shortly.'
+          : 'ACCESS DENIED — check username / password.';
+        ge.style.display = 'block';
+        document.getElementById('gp').value = '';
+        document.getElementById('gp').focus();
+      }
+    } catch {
+      ge.textContent = 'NETWORK ERROR — try again.';
+      ge.style.display = 'block';
+    } finally {
+      gbtn.disabled = false;
+      gbtn.textContent = 'SIGN IN';
+    }
+  });
+</script>
 
 </body>
 </html>
