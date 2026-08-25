@@ -20,6 +20,7 @@
   <div class="topbar-right">
     <span class="chip" id="tenantChip">TENANT MWO_GMZURICH</span>
     <span class="chip session-chip" id="sessionChip"><span class="dot dot-red"></span>NO SESSION</span>
+    <button class="btn btn-ghost" id="hudBtn" title="HUD scale">HUD 100%</button>
     <button class="btn btn-ghost" id="themeBtn">LIGHT</button>
     <button class="btn btn-ghost" id="sessionBtn">CONNECT</button>
   </div>
@@ -44,6 +45,7 @@
     <!-- ============ DASHBOARD ============ -->
     <section id="view-dashboard" class="view">
       <div class="dash">
+        <div class="dash-row" id="dashTiles"></div>
         <div class="dash-row" id="dashStations"></div>
         <div class="dash-row">
           <div class="card card-grow">
@@ -99,6 +101,7 @@
           <button class="btn btn-ghost" id="nextMonth">&#8250;</button>
           <button class="btn btn-ghost" id="reloadBtn" title="Reload grid">&#8635;</button>
           <button class="btn btn-ghost" id="copyMonthBtn" title="Copy this month's grid to another month">COPY &rarr;</button>
+          <button class="btn btn-ghost" id="sweepBtn" title="Push Green Motion into the top-10 for the whole month">TOP-10 SWEEP</button>
         </div>
         <div class="controls-right">
           <label class="vendor-wrap">VENDOR
@@ -198,6 +201,31 @@
     <div class="modal-actions">
       <span class="rc-meta" id="rcMeta"></span>
       <a class="btn btn-ghost" id="rcOpen" target="_blank" rel="noopener">OPEN ON RENTALCARS</a>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop hidden" id="sweepModal">
+  <div class="modal modal-rc">
+    <div class="modal-head"><span id="sweepTitle">TOP-10 SWEEP</span>
+      <button class="btn btn-ghost btn-xs" id="sweepClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="sweep-opts">
+        <label class="vendor-wrap">TARGET RANK
+          <input type="number" id="sweepRank" class="field-input sweep-rank" value="10" min="1" max="20">
+        </label>
+        <span class="vendor-wrap">DURATIONS
+          <span class="rc-durs rc-durs-sm" id="sweepDurs"></span>
+        </span>
+        <span class="side-hint">Max 6-day rentals — every searchable day of this month.</span>
+      </div>
+      <div id="sweepBody"><div class="drawer-empty">SCAN queries rentalcars for each day &amp; duration, then shows the planned FMX changes before anything is written.</div></div>
+    </div>
+    <div class="modal-actions">
+      <span class="rc-meta" id="sweepMeta"></span>
+      <button class="btn btn-ghost" id="sweepScanBtn">SCAN</button>
+      <button class="btn btn-primary hidden" id="sweepApplyBtn">APPLY</button>
     </div>
   </div>
 </div>

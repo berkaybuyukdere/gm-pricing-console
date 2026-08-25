@@ -418,7 +418,10 @@ app.get(
       duration: Number(req.query.duration),
       hh: String(req.query.hh || '19').padStart(2, '0'),
       mm: String(req.query.mm || '00').padStart(2, '0'),
-      ttlMs: req.query.fresh === '1' ? 0 : 10 * 60 * 1000, // 10 min cache for repeat clicks
+      ttlMs:
+        req.query.fresh === '1'
+          ? 0
+          : Math.min(Number(req.query.ttlMin) || 10, 360) * 60 * 1000,
     };
     if (!args.year || !args.month || !args.day || !args.duration)
       throw new FmxError('BAD_PARAMS', 400);

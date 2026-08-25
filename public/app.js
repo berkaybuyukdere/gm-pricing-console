@@ -907,6 +907,24 @@ $('themeBtn').onclick = () =>
 
 applyTheme(localStorage.getItem('theme') || 'dark');
 
+// ---------- HUD scale ----------
+
+const HUD_STEPS = [85, 100, 115, 130];
+
+function applyHud(pct) {
+  document.body.style.zoom = pct / 100;
+  localStorage.setItem('hudScale', String(pct));
+  $('hudBtn').textContent = `HUD ${pct}%`;
+}
+
+$('hudBtn').onclick = () => {
+  const cur = Number(localStorage.getItem('hudScale') || 100);
+  const next = HUD_STEPS[(HUD_STEPS.indexOf(cur) + 1) % HUD_STEPS.length];
+  applyHud(next);
+};
+
+applyHud(Number(localStorage.getItem('hudScale') || 100));
+
 // ---------- activity logs ----------
 
 const MONTHS_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
@@ -1010,7 +1028,37 @@ window.addEventListener('hashchange', () => {
 
 // ---------- dashboard ----------
 
+function renderDashTiles() {
+  const today = new Date();
+  const isCurMonth = state.year === today.getFullYear() && state.month === today.getMonth() + 1;
+  const todayData = isCurMonth ? rcMonth.days.get(today.getDate()) : null;
+  const w = state.watchInfo;
+  const rankCls = todayData && todayData.rank ? (todayData.rank <= 3 ? 'tile-accent' : todayData.rank <= 7 ? 'tile-warn' : 'tile-error') : '';
+  $('dashTiles').innerHTML = `
+    <div class="tile">
+      <div class="tile-label">GM RANK TODAY · ${rcMonth.dur}D</div>
+      <div class="tile-value ${rankCls}">${todayData && todayData.rank ? '#' + todayData.rank : '—'}</div>
+      <div class="tile-sub">${todayData && todayData.price ? todayData.price.toFixed(2) + ' ' + todayData.currency + ' · of ' + todayData.total + ' offers' : 'no data yet'}</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">MARKET #1 TODAY</div>
+      <div class="tile-value">${todayData && todayData.top1 ? (todayData.top1.logo ? `<img class="rc-logo" src="${esc(todayData.top1.logo)}" onerror="this.style.display='none'">` : '') + esc(todayData.top1.supplier) : '—'}</div>
+      <div class="tile-sub">${todayData && todayData.top1 ? todayData.top1.price.toFixed(2) + ' ' + todayData.currency : ''}</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">MARKET WATCH</div>
+      <div class="tile-value ${w && w.enabled ? 'tile-accent' : 'tile-warn'}">${w ? (w.enabled ? 'ACTIVE' : 'OFF') : '—'}</div>
+      <div class="tile-sub">${w ? w.alertsSent + ' alerts sent · baseline ' + w.baseline : ''}</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">RESTORE POINTS</div>
+      <div class="tile-value">${state.backupsCount != null ? state.backupsCount : '—'}</div>
+      <div class="tile-sub">${state.lastBackupTs ? 'last ' + new Date(state.lastBackupTs).toLocaleString('de-CH', { hour12: false }).slice(0, 17) : 'none yet'}</div>
+    </div>`;
+}
+
 function renderDashboard() {
+  renderDashTiles();
   // station cards from month cache (current month)
   const wrap = $('dashStations');
   wrap.innerHTML = state.stations
@@ -1020,15 +1068,21 @@ function renderDashboard() {
       if (entry && entry.cells.size) {
         const cells = [...entry.cells.values()];
         const act = cells.filter((c) => c.active);
-        const avg = act.length ? (act.reduce((a, c) => a + c.pct, 0) / act.length).toFixed(1) + '%' : '—';
+        const pcts = act.map((c) => c.pct);
+        const avg = act.length ? (pcts.reduce((a, b) => a + b, 0) / act.length).toFixed(1) + '%' : '—';
         const uncovered = countUncovered(entry);
+        const daysTotal = state.grid ? state.grid.daysInMonth : 31;
+        const coveredDays = new Set([...entry.cells.values()].map((c) => c.day)).size;
+        const covPct = Math.round((coveredDays / daysTotal) * 100);
         body = `<div class="stat-big">${avg}</div>
           <div class="stat-rows">
-            <div class="stat-row"><span>AVG CHANGE · ${MONTHS_SHORT[state.month - 1]} ${state.year}</span></div>
-            <div class="stat-row"><span>GRID CELLS</span><b>${cells.length}</b></div>
-            <div class="stat-row"><span>TOTAL RULES</span><b>${entry.totalRules}</b></div>
-            <div class="stat-row"><span>UNCOVERED DAYS</span><b class="${uncovered ? 'stat-warn' : ''}">${uncovered}</b></div>
-          </div>`;
+            <div class="stat-row"><span>AVG CHANGE · ${MONTHS_SHORT[state.month - 1]} ${state.year}</span><b>min ${act.length ? Math.min(...pcts) : '—'}% · max ${act.length ? Math.max(...pcts) : '—'}%</b></div>
+            <div class="stat-row"><span>GRID CELLS / RULES</span><b>${cells.length} / ${entry.totalRules}</b></div>
+            <div class="stat-row"><span>INACTIVE CELLS</span><b>${cells.length - act.length}</b></div>
+            <div class="stat-row"><span>UNCOVERED FUTURE DAYS</span><b class="${uncovered ? 'stat-warn' : 'stat-accent'}">${uncovered}</b></div>
+            <div class="stat-row"><span>DAY COVERAGE</span><b>${coveredDays}/${daysTotal} (${covPct}%)</b></div>
+          </div>
+          <div class="cov-bar"><div class="cov-bar-fill" style="width:${covPct}%"></div></div>`;
       } else {
         body = `<div class="stat-big">—</div><div class="stat-rows"><div class="stat-row"><span>Not loaded — click to open the grid.</span></div></div>`;
       }
@@ -1071,6 +1125,9 @@ function countUncovered(entry) {
 async function refreshBackups() {
   try {
     const { backups } = await (await fetch('/api/backups')).json();
+    state.backupsCount = backups.length;
+    state.lastBackupTs = backups[0] ? backups[0].ts : null;
+    renderDashTiles();
     $('backupList').innerHTML = backups.length
       ? backups
           .map((b) => {
@@ -1257,9 +1314,10 @@ function renderRcTable() {
       const isGm = x.gm || /green motion/i.test(x.supplier);
       const clickable = !isGm && r.gmPrice != null;
       return `<tr class="${isGm ? 'rc-gm' : ''} ${x.simulated ? 'rc-sim' : ''} ${clickable ? 'rc-clickable' : ''}"
-        ${clickable ? `onclick="placeGm(${i})" title="Place Green Motion just ahead of this row"` : ''}>
+        data-idx="${i}" data-gm="${isGm ? 1 : 0}" ${isGm && r.gmPrice != null ? 'draggable="true"' : ''}
+        ${clickable ? `onclick="placeGm(${i})" title="Click or drop Green Motion here to take this position"` : ''}>
         <td class="rc-rank">${i + 1}</td>
-        <td class="rc-sup">${logoImg(x)}${esc(x.supplier)}${x.simulated ? ' <span class="rc-sim-tag">TARGET</span>' : ''}</td>
+        <td class="rc-sup">${logoImg(x)}${esc(x.supplier)}${x.simulated ? ' <span class="rc-sim-tag">TARGET</span>' : ''}${isGm && !x.simulated ? ' <span class="rc-drag-hint">&#8597; DRAG</span>' : ''}</td>
         <td>${esc(x.vehicle)}</td>
         <td>${x.rating != null ? x.rating.toFixed(1) : '—'}</td>
         <td class="rc-price">${x.price.toFixed(2)} ${esc(x.currency)}</td>
@@ -1287,6 +1345,30 @@ function renderRcTable() {
   $('rcBody').innerHTML = `<table class="rc-table">
     <thead><tr><th></th><th>SUPPLIER</th><th>VEHICLE</th><th>RATING</th><th class="rc-price">TOTAL ${durLabel}D</th></tr></thead>
     <tbody>${rows}</tbody></table>${simBar}`;
+
+  // drag & drop: grab the Green Motion row and drop it onto any competitor row
+  const trs = [...$('rcBody').querySelectorAll('tbody tr')];
+  for (const tr of trs) {
+    if (tr.dataset.gm === '1') {
+      tr.addEventListener('dragstart', (e) => {
+        tr.classList.add('rc-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      tr.addEventListener('dragend', () => tr.classList.remove('rc-dragging'));
+    } else {
+      tr.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        tr.classList.add('rc-dropover');
+      });
+      tr.addEventListener('dragleave', () => tr.classList.remove('rc-dropover'));
+      tr.addEventListener('drop', (e) => {
+        e.preventDefault();
+        tr.classList.remove('rc-dropover');
+        placeGm(Number(tr.dataset.idx));
+      });
+    }
+  }
 
   $('rcMeta').textContent =
     `${r.total} OFFERS · PICKUP ${rcCtx.hh}:${String(rcCtx.mm).padStart(2, '0')}` +
@@ -1407,6 +1489,7 @@ function startRcMonth(force) {
     rcMonth.pending = rcMonth.pending.filter((x) => x !== d.day);
     rcMonth.days.set(d.day, d);
     renderRankStrip();
+    if (d.day === new Date().getDate()) renderDashTiles();
   });
   es.addEventListener('done', () => { es.close(); if (rcMonth.es === es) rcMonth.es = null; });
   es.onerror = () => { es.close(); if (rcMonth.es === es) rcMonth.es = null; };
@@ -1465,6 +1548,8 @@ $('rankRefresh').onclick = () => startRcMonth(true);
 async function refreshWatchStatus() {
   try {
     const w = await (await fetch('/api/watch-status')).json();
+    state.watchInfo = w;
+    renderDashTiles();
     const fmtTs = (t) => (t ? new Date(t).toLocaleString('de-CH', { hour12: false }).slice(0, 17) : '—');
     $('watchStatus').innerHTML = `
       <div class="stat-row"><span>STATUS</span><b class="${w.enabled ? 'stat-accent' : 'stat-warn'}">${w.enabled ? 'ACTIVE' : 'MAIL NOT CONFIGURED'}</b></div>
@@ -1505,6 +1590,176 @@ $('watchRunBtn').onclick = async () => {
     $('watchRunBtn').disabled = false;
     $('watchRunBtn').textContent = 'RUN NOW';
   }
+};
+
+// ---------- top-10 sweep: push GM into the top-N for the whole month, one click ----------
+
+const sweep = { durs: new Set([2, 3, 4, 5, 6]), plan: [], running: false };
+
+$('sweepBtn').onclick = () => {
+  if (!state.entry) { toast('Load the grid first.', 'warn'); return; }
+  sweep.plan = [];
+  $('sweepTitle').textContent = `TOP-10 SWEEP — ${MONTHS[state.month - 1]} ${state.year} · ${stationName().toUpperCase()}`;
+  $('sweepBody').innerHTML = '<div class="drawer-empty">SCAN queries rentalcars for each day &amp; duration, then shows the planned FMX changes before anything is written.</div>';
+  $('sweepMeta').textContent = '';
+  $('sweepApplyBtn').classList.add('hidden');
+  renderSweepDurs();
+  $('sweepModal').classList.remove('hidden');
+};
+
+function renderSweepDurs() {
+  $('sweepDurs').innerHTML = state.durations
+    .map((d) => `<button class="rc-dur ${sweep.durs.has(d) ? 'on' : ''}" onclick="toggleSweepDur(${d})">${d >= 6 ? '6+' : d}D</button>`)
+    .join('');
+}
+
+function toggleSweepDur(d) {
+  if (sweep.durs.has(d)) sweep.durs.delete(d);
+  else sweep.durs.add(d);
+  renderSweepDurs();
+}
+window.toggleSweepDur = toggleSweepDur;
+
+$('sweepClose').onclick = () => {
+  if (!sweep.running) $('sweepModal').classList.add('hidden');
+};
+
+function sweepDays() {
+  const now = new Date();
+  const first =
+    state.year === now.getFullYear() && state.month === now.getMonth() + 1
+      ? now.getDate()
+      : new Date(state.year, state.month - 1, 1) < now
+        ? state.grid.daysInMonth + 1
+        : 1;
+  const days = [];
+  for (let d = first; d <= state.grid.daysInMonth; d++) days.push(d);
+  return days;
+}
+
+$('sweepScanBtn').onclick = async () => {
+  if (sweep.running) return;
+  const targetRank = Math.max(1, Math.min(20, Number($('sweepRank').value) || 10));
+  const durs = [...sweep.durs].sort((a, b) => a - b);
+  if (!durs.length) { toast('Pick at least one duration.', 'error'); return; }
+  const days = sweepDays();
+  if (!days.length) { toast('No searchable days in this month.', 'warn'); return; }
+
+  sweep.running = true;
+  sweep.plan = [];
+  $('sweepScanBtn').disabled = true;
+  $('sweepApplyBtn').classList.add('hidden');
+  const total = days.length * durs.length;
+  let done = 0, planned = 0, already = 0, skipped = 0;
+
+  for (const day of days) {
+    for (const dur of durs) {
+      done++;
+      $('sweepMeta').textContent = `SCANNING ${done}/${total} · ${planned} planned`;
+      try {
+        const r = await api(
+          `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${day}&duration=${dur}&hh=19&mm=00&ttlMin=360`
+        );
+        const others = r.top.filter((x) => !/green motion/i.test(x.supplier));
+        if (r.gmPrice == null) { skipped++; continue; }
+        if (r.gmRank != null && r.gmRank <= targetRank) { already++; continue; }
+        const anchor = others[Math.min(targetRank, others.length) - 1];
+        if (!anchor) { skipped++; continue; }
+        const target = anchor.price * 0.99; // land just inside the target rank
+        const cell = state.cellMap.get(key(day, dur));
+        const curPct = cell ? cell.pct : 0;
+        const base = r.gmPrice / (1 + curPct / 100);
+        let newPct = Math.max(-95, Math.min(100, Math.round((target / base - 1) * 10000) / 100));
+        planned++;
+        sweep.plan.push({
+          day, dur, gmRank: r.gmRank, curPct, newPct,
+          target, currency: r.currency, ruleid: cell ? cell.ruleid : null,
+          active: cell ? cell.active : true, status: 'PLANNED',
+        });
+      } catch (e) {
+        skipped++;
+      }
+      renderSweepList();
+    }
+  }
+
+  sweep.running = false;
+  $('sweepScanBtn').disabled = false;
+  $('sweepMeta').textContent = `${total} scanned · ${planned} changes planned · ${already} already ≤ target · ${skipped} skipped (GM not listed / no data)`;
+  if (planned) {
+    $('sweepApplyBtn').textContent = `APPLY ${planned} CHANGES`;
+    $('sweepApplyBtn').classList.remove('hidden');
+  } else {
+    $('sweepBody').innerHTML += '<div class="rc-hint">Nothing to do — Green Motion is already inside the target rank everywhere it is listed.</div>';
+  }
+};
+
+function renderSweepList() {
+  if (!sweep.plan.length) return;
+  $('sweepBody').innerHTML = `<div class="sweep-list">${sweep.plan
+    .map(
+      (p) => `<div class="sweep-row ${p.status === 'OK' ? 'sw-ok' : p.status === 'ERR' ? 'sw-err' : ''}">
+        <span class="sw-day">${String(p.day).padStart(2, '0')} ${MONTHS_SHORT[state.month - 1]} · ${p.dur >= 6 ? '6+' : p.dur}D</span>
+        <span>#${p.gmRank || '—'} &rarr; top</span>
+        <span><b>${p.curPct}%</b> &rarr; <span class="sw-target">${p.newPct}%</span></span>
+        <span>${p.target.toFixed(2)} ${esc(p.currency)}</span>
+        <span class="sw-status">${p.status}</span>
+      </div>`
+    )
+    .join('')}</div>`;
+}
+
+$('sweepApplyBtn').onclick = async () => {
+  if (sweep.running || !sweep.plan.length) return;
+  if (!(await confirmBox(`Write ${sweep.plan.length} rule change(s) to FuseMetrix (${stationName()})?`))) return;
+  sweep.running = true;
+  $('sweepApplyBtn').disabled = true;
+  $('sweepScanBtn').disabled = true;
+  let ok = 0, fail = 0;
+
+  for (const p of sweep.plan) {
+    p.status = 'WRITING…';
+    renderSweepList();
+    const body = {
+      station: state.station, day: p.day, duration: p.dur,
+      month: state.month, year: state.year, pct: p.newPct,
+      active: true, vendors: [state.vendor],
+    };
+    try {
+      let result;
+      const k = key(p.day, p.dur);
+      const cell = state.cellMap.get(k);
+      if (cell) {
+        result = await api(`/api/rule/${cell.ruleid}`, { method: 'PUT', body: { ...body, prevPct: cell.pct } });
+        state.cellMap.set(k, { ...cell, pct: p.newPct, active: true });
+      } else {
+        result = await api('/api/rule', { method: 'POST', body });
+        state.cellMap.set(k, {
+          day: p.day, dur: p.dur, ruleid: result.ruleid, name: result.detail.rulename,
+          pct: p.newPct, active: true, op: p.dur >= 6 ? '>=' : '=', opMismatch: false,
+          vendors: [state.vendor], updated: '',
+        });
+      }
+      refreshCell(p.day, p.dur);
+      p.status = result.verified === false ? 'OK (unverified)' : 'OK';
+      ok++;
+    } catch (e) {
+      p.status = 'ERR';
+      p.error = e.message;
+      fail++;
+      if (String(e.message).includes('SESSION')) break;
+    }
+    renderSweepList();
+    $('sweepMeta').textContent = `APPLYING… ${ok + fail}/${sweep.plan.length} · ${ok} ok · ${fail} failed`;
+  }
+
+  sweep.running = false;
+  $('sweepApplyBtn').disabled = false;
+  $('sweepScanBtn').disabled = false;
+  $('sweepApplyBtn').classList.add('hidden');
+  $('sweepMeta').textContent = `DONE · ${ok} applied · ${fail} failed — rentalcars will reflect after their next cache refresh.`;
+  toast(`Top-10 sweep finished: ${ok} ok, ${fail} failed.`, fail ? 'warn' : undefined);
+  refreshLogs();
 };
 
 // ---------- boot ----------
