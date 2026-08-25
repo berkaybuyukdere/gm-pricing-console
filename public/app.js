@@ -18,6 +18,10 @@ const state = {
   staged: new Map(),   // "day:dur" -> { pct: number|null }  (null = delete)
   applying: false,
   session: false,
+  view: 'dashboard',
+  vendor: 'ALL',       // vendor code applied to writes
+  vendors: [],
+  pendingCopy: null,   // {targetKey, cells:[{day,dur,pct}], fromLabel}
 };
 
 const $ = (id) => document.getElementById(id);
@@ -51,10 +55,10 @@ function nextRcTime() {
   return RC_TIMES[i];
 }
 
-function rentalcarsUrl(day, dur) {
+function rentalcarsUrl(day, dur, fixedHh, fixedMm) {
   const cfg = RC_LOCATIONS[state.station];
   if (!cfg) return null;
-  const [hh, mm] = nextRcTime();
+  const [hh, mm] = fixedHh != null ? [fixedHh, fixedMm] : nextRcTime();
   const pu = new Date(state.year, state.month - 1, day, 10, 0);
   const dropoff = new Date(pu.getTime() + dur * 86400000);
   const p = new URLSearchParams();
@@ -197,7 +201,9 @@ async function doLogin() {
     $('passInput').value = '';
     setSession(true);
     toast('FMX session connected.');
+    loadVendors();
     await loadGrid();
+    renderDashboard();
   } catch (e) {
     $('loginError').classList.remove('hidden');
     $('loginError').textContent =
@@ -343,6 +349,22 @@ function renderChart() {
   svg += '</svg>';
 
   wrap.innerHTML = svg + '<div class="chart-tip" id="chartTip"></div>';
+  window.__lastChartSvg = svg;
+  if (state.view === 'dashboard') {
+    $('dashChart').innerHTML = svg;
+    $('dashChartMonth').textContent = `${MONTHS_SHORT[state.month - 1]} ${state.year}`;
+  }
+
+  // per-duration stats for the analytics page
+  const durHtml = series
+    .map((s) => {
+      const v = s.pts.filter((x) => x != null);
+      if (!v.length) return '';
+      const avg = (v.reduce((a, b) => a + b, 0) / v.length).toFixed(1);
+      return `<div class="stat-row"><span><span class="legend-chip chip-s-${s.dur}"></span> ${s.dur >= 6 ? '6+' : s.dur} DAYS</span><b>avg ${avg}% · min ${Math.min(...v)}% · max ${Math.max(...v)}%</b></div>`;
+    })
+    .join('');
+  $('durStats').innerHTML = durHtml || '<div class="drawer-empty">No data.</div>';
 
   $('chartLegend').innerHTML = state.durations
     .map((dur) => `<span class="legend-item"><span class="legend-chip chip-s-${dur}"></span>${dur >= 6 ? '6+' : dur} DAYS</span>`)
@@ -389,21 +411,27 @@ function updateChips() {
     .map((o) => `#${o.ruleid} ${o.name} (${o.from || ''} → ${o.to || ''}) ${o.note || ''}`)
     .join('\n');
 
-  // sidebar stats
-  const cells = [...e.cells.values()];
-  const activeCells = cells.filter((c) => c.active);
-  const avg = activeCells.length
-    ? (activeCells.reduce((a, c) => a + c.pct, 0) / activeCells.length).toFixed(1)
-    : null;
-  const conflictCount = [...e.conflictMap.values()].filter((v) => v.length > 1).length;
-  $('sideStats').innerHTML = `
-    <div class="stat-row"><span>TOTAL RULES</span><b>${e.totalRules}</b></div>
-    <div class="stat-row"><span>GRID CELLS</span><b>${cells.length}</b></div>
-    <div class="stat-row"><span>AVG CHANGE</span><b class="stat-accent">${avg != null ? avg + '%' : '—'}</b></div>
-    <div class="stat-row"><span>INACTIVE</span><b>${cells.length - activeCells.length}</b></div>
-    <div class="stat-row"><span>CONFLICTS</span><b class="${conflictCount ? 'stat-warn' : ''}">${conflictCount}</b></div>
-    <div class="stat-row"><span>STAGED</span><b class="${state.staged.size ? 'stat-warn' : ''}">${state.staged.size}</b></div>`;
+  updateWarnings();
   scheduleChart();
+}
+
+// warn about future days that have no pricing rules at all
+function updateWarnings() {
+  if (!state.grid || !state.entry) return;
+  const now = new Date();
+  const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const list = [];
+  for (let d = 1; d <= state.grid.daysInMonth; d++) {
+    const future = new Date(state.year, state.month - 1, d) >= t0;
+    const covered = state.durations.some((dur) => state.entry.cells.has(key(d, dur)));
+    const show = future && !covered && state.entry.complete;
+    const ico = document.getElementById(`dayWarn-${d}`);
+    if (ico) ico.classList.toggle('hidden', !show);
+    if (show) list.push(d);
+  }
+  $('warnChip').classList.toggle('hidden', !list.length);
+  $('warnChip').textContent = `${list.length} UNCOVERED`;
+  $('warnChip').title = 'Future days with no pricing rules: ' + list.join(', ');
 }
 
 function decPending(day) {
@@ -454,6 +482,22 @@ function loadGrid() {
   renderGrid();
   updateChips();
   renderApplyBar();
+
+  // month-copy landing: stage the copied cells onto this month
+  if (state.pendingCopy && state.pendingCopy.targetKey === cacheKey()) {
+    const pc = state.pendingCopy;
+    state.pendingCopy = null;
+    let n = 0;
+    for (const c of pc.cells) {
+      if (c.day <= state.grid.daysInMonth) {
+        state.staged.set(key(c.day, c.dur), { pct: c.pct });
+        refreshCell(c.day, c.dur);
+        n++;
+      }
+    }
+    renderApplyBar();
+    toast(`${n} change(s) staged from ${pc.fromLabel}. Review, then APPLY TO FMX.`);
+  }
 
   // stream fresh data; cells paint one by one as they resolve
   setSyncing(true);
@@ -531,6 +575,7 @@ function loadGrid() {
     state.pendingByDay.clear();
     renderDayDots();
     updateChips();
+    if (state.view === 'dashboard') renderDashboard();
     finish();
   });
 
@@ -577,8 +622,15 @@ function renderGrid() {
     if (dow === 0 || dow === 6) tr.className = 'weekend';
 
     const tdDay = document.createElement('td');
-    tdDay.innerHTML = `<div class="day-label" title="Click to fill entire row"><span>${String(day).padStart(2, '0')}<span class="day-dot" id="dayDot-${day}"></span></span><span class="dow">${DOW[dow]}</span></div>`;
-    tdDay.onclick = () => fillRow(day);
+    tdDay.innerHTML = `<div class="day-label" title="Click to fill entire row"><span>${String(day).padStart(2, '0')}<span class="day-dot" id="dayDot-${day}"></span><span class="day-warn-ico hidden" id="dayWarn-${day}" title="No pricing rules for this future day">!</span></span><span><span class="day-analyze" data-day="${day}" title="rentalcars top-10 competitor analysis">&#8981;</span><span class="dow">${DOW[dow]}</span></span></div>`;
+    tdDay.onclick = (e) => {
+      if (e.target.classList && e.target.classList.contains('day-analyze')) {
+        e.stopPropagation();
+        openRcAnalysis(day);
+      } else {
+        fillRow(day);
+      }
+    };
     tr.appendChild(tdDay);
 
     for (const dur of state.durations) {
@@ -770,13 +822,13 @@ $('applyBtn').onclick = async () => {
       } else if (cell) {
         result = await api(`/api/rule/${cell.ruleid}`, {
           method: 'PUT',
-          body: { station: state.station, day: ch.day, duration: ch.dur, month: state.month, year: state.year, pct: ch.pct, active: cell.active, prevPct: cell.pct },
+          body: { station: state.station, day: ch.day, duration: ch.dur, month: state.month, year: state.year, pct: ch.pct, active: cell.active, prevPct: cell.pct, vendors: [state.vendor] },
         });
         state.cellMap.set(k, { ...cell, pct: ch.pct, op: ch.dur >= 6 ? '>=' : '=', opMismatch: false, vendors: ['ALL'] });
       } else {
         result = await api('/api/rule', {
           method: 'POST',
-          body: { station: state.station, day: ch.day, duration: ch.dur, month: state.month, year: state.year, pct: ch.pct, active: true },
+          body: { station: state.station, day: ch.day, duration: ch.dur, month: state.month, year: state.year, pct: ch.pct, active: true, vendors: [state.vendor] },
         });
         state.cellMap.set(k, {
           day: ch.day, dur: ch.dur, ruleid: result.ruleid, name: result.detail.rulename,
@@ -829,45 +881,333 @@ applyTheme(localStorage.getItem('theme') || 'dark');
 
 const MONTHS_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 
+let lastLogs = [];
+
+function logEntryHtml(l, i, compact) {
+  const d = new Date(l.ts);
+  const when = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const target = l.day
+    ? `${String(l.day).padStart(2, '0')} ${MONTHS_SHORT[(l.month || 1) - 1]} ${l.year} · ${l.duration >= 6 ? l.duration + '+' : l.duration}D`
+    : l.file ? esc(l.file) : `#${l.ruleid || '—'}`;
+  const fmt = (v) => (v == null ? '—' : (v > 0 ? '+' : '') + v + '%');
+  const change = l.action === 'backup' ? '' : `<span class="log-change"><b>${fmt(l.before)}</b> &rarr; <b>${fmt(l.after)}</b></span>`;
+  const status = l.ok
+    ? `<span class="log-status-ok">OK${l.verified === false ? ' (unverified)' : ''}</span>`
+    : `<span class="log-status-err">FAILED ${esc(l.error || '')}</span>`;
+  const canRevert =
+    !compact && l.ok && ['create', 'update', 'delete'].includes(l.action) &&
+    l.day && l.station;
+  const revertBtn = canRevert
+    ? `<button class="btn btn-ghost btn-xs" onclick="revertLog(${i})" title="Undo this change in FMX">REVERT</button>`
+    : '';
+  const vendor = l.vendor && l.vendor !== 'ALL' ? ` · ${esc(l.vendor)}` : '';
+  const actionCls = l.action.startsWith('restore') ? 'update' : l.action;
+  return `<div class="log-entry">
+    <div class="log-line1"><span>${when} · ${esc(l.user || '')}</span><span>${esc(l.stationName || '')}${l.ruleid ? ' · #' + l.ruleid : ''}${vendor}</span></div>
+    <div class="log-line2"><span class="log-action ${actionCls}">${l.action.toUpperCase()}</span><span class="log-target">${target}</span>${change}${status}${revertBtn}</div>
+  </div>`;
+}
+
 async function refreshLogs() {
   try {
     const { logs } = await (await fetch('/api/logs?limit=200')).json();
+    lastLogs = logs;
     const list = $('logsList');
-    if (!logs.length) {
-      list.innerHTML = '<div class="drawer-empty">No activity yet.</div>';
-      return;
-    }
-    list.innerHTML = logs
-      .map((l) => {
-        const d = new Date(l.ts);
-        const when = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-        const target = l.day
-          ? `${String(l.day).padStart(2, '0')} ${MONTHS_SHORT[(l.month || 1) - 1]} ${l.year} · ${l.duration >= 6 ? l.duration + '+' : l.duration}D`
-          : `#${l.ruleid || '—'}`;
-        const fmt = (v) => (v == null ? '—' : (v > 0 ? '+' : '') + v + '%');
-        const change = `<b>${fmt(l.before)}</b> &rarr; <b>${fmt(l.after)}</b>`;
-        const status = l.ok
-          ? `<span class="log-status-ok">OK${l.verified === false ? ' (unverified)' : ''}</span>`
-          : `<span class="log-status-err">FAILED ${esc(l.error || '')}</span>`;
-        return `<div class="log-entry">
-          <div class="log-line1"><span>${when} · ${esc(l.user || '')}</span><span>${esc(l.stationName || '')}${l.ruleid ? ' · #' + l.ruleid : ''}</span></div>
-          <div class="log-line2"><span class="log-action ${l.action}">${l.action.toUpperCase()}</span><span class="log-target">${target}</span><span class="log-change">${change}</span>${status}</div>
-        </div>`;
-      })
-      .join('');
+    list.innerHTML = logs.length
+      ? logs.map((l, i) => logEntryHtml(l, i, false)).join('')
+      : '<div class="drawer-empty">No activity yet.</div>';
+    $('dashActivity').innerHTML = logs.length
+      ? logs.slice(0, 8).map((l, i) => logEntryHtml(l, i, true)).join('')
+      : '<div class="drawer-empty">No activity yet.</div>';
   } catch {}
 }
+
+async function revertLog(i) {
+  const l = lastLogs[i];
+  if (!l) return;
+  const fmt = (v) => (v == null ? '—' : v + '%');
+  if (!(await confirmBox(`Revert this ${l.action}? ${String(l.day).padStart(2, '0')} ${MONTHS_SHORT[(l.month || 1) - 1]} ${l.year} · ${l.duration}D will go back to ${fmt(l.before)} (${l.stationName}).`)))
+    return;
+  try {
+    const base = { station: l.station, day: l.day, duration: l.duration, month: l.month, year: l.year };
+    if (l.action === 'create') {
+      await api(`/api/rule/${l.ruleid}?station=${l.station}&day=${l.day}&duration=${l.duration}&month=${l.month}&year=${l.year}&prevPct=${l.after}`, { method: 'DELETE' });
+    } else if (l.action === 'update') {
+      await api(`/api/rule/${l.ruleid}`, { method: 'PUT', body: { ...base, pct: l.before, active: true, prevPct: l.after, vendors: l.vendor ? l.vendor.split(',') : ['ALL'] } });
+    } else if (l.action === 'delete') {
+      await api('/api/rule', { method: 'POST', body: { ...base, pct: l.before, active: true, vendors: l.vendor ? l.vendor.split(',') : ['ALL'] } });
+    }
+    toast('Reverted.');
+    state.monthCache.delete(`${l.station}:${l.year}:${l.month}`);
+    if (l.station === state.station && l.year === state.year && l.month === state.month) loadGrid();
+    refreshLogs();
+  } catch (e) {
+    toast('Revert failed: ' + e.message, 'error');
+  }
+}
+window.revertLog = revertLog;
 
 function esc(s) {
   return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
-$('logsBtn').onclick = () => {
-  $('logsDrawer').classList.toggle('open');
-  if ($('logsDrawer').classList.contains('open')) refreshLogs();
+$('logsRefresh').onclick = refreshLogs;
+
+// ---------- view router ----------
+
+function showView(name) {
+  state.view = name;
+  for (const v of ['dashboard', 'grid', 'analytics', 'activity']) {
+    $('view-' + v).classList.toggle('hidden', v !== name);
+  }
+  document.querySelectorAll('.nav-item').forEach((b) =>
+    b.classList.toggle('on', b.dataset.view === name)
+  );
+  if (name === 'activity') refreshLogs();
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'analytics') scheduleChart();
+  if (location.hash !== '#' + name) location.hash = name;
+}
+
+document.querySelectorAll('[data-view]').forEach((b) => {
+  if (b.dataset.view) b.addEventListener('click', () => showView(b.dataset.view));
+});
+
+window.addEventListener('hashchange', () => {
+  const h = location.hash.replace('#', '');
+  if (['dashboard', 'grid', 'analytics', 'activity'].includes(h) && h !== state.view) showView(h);
+});
+
+// ---------- dashboard ----------
+
+function renderDashboard() {
+  // station cards from month cache (current month)
+  const wrap = $('dashStations');
+  wrap.innerHTML = state.stations
+    .map((s) => {
+      const entry = state.monthCache.get(`${s.id}:${state.year}:${state.month}`);
+      let body;
+      if (entry && entry.cells.size) {
+        const cells = [...entry.cells.values()];
+        const act = cells.filter((c) => c.active);
+        const avg = act.length ? (act.reduce((a, c) => a + c.pct, 0) / act.length).toFixed(1) + '%' : '—';
+        const uncovered = countUncovered(entry);
+        body = `<div class="stat-big">${avg}</div>
+          <div class="stat-rows">
+            <div class="stat-row"><span>AVG CHANGE · ${MONTHS_SHORT[state.month - 1]} ${state.year}</span></div>
+            <div class="stat-row"><span>GRID CELLS</span><b>${cells.length}</b></div>
+            <div class="stat-row"><span>TOTAL RULES</span><b>${entry.totalRules}</b></div>
+            <div class="stat-row"><span>UNCOVERED DAYS</span><b class="${uncovered ? 'stat-warn' : ''}">${uncovered}</b></div>
+          </div>`;
+      } else {
+        body = `<div class="stat-big">—</div><div class="stat-rows"><div class="stat-row"><span>Not loaded — click to open the grid.</span></div></div>`;
+      }
+      return `<div class="card stat-card" onclick="openStation(${s.id})">
+        <div class="card-title">${s.name.toUpperCase()}</div>${body}</div>`;
+    })
+    .join('');
+
+  // mini chart copy
+  if (window.__lastChartSvg) {
+    $('dashChart').innerHTML = window.__lastChartSvg;
+    $('dashChartMonth').textContent = `${MONTHS_SHORT[state.month - 1]} ${state.year}`;
+  }
+  refreshBackups();
+  refreshLogs();
+}
+
+function openStation(id) {
+  state.station = id;
+  renderStations();
+  showView('grid');
+  loadGrid();
+}
+window.openStation = openStation;
+
+function countUncovered(entry) {
+  if (!state.grid) return 0;
+  const today = new Date();
+  let n = 0;
+  for (let d = 1; d <= state.grid.daysInMonth; d++) {
+    const dt = new Date(state.year, state.month - 1, d);
+    if (dt < new Date(today.getFullYear(), today.getMonth(), today.getDate())) continue;
+    if (!state.durations.some((dur) => entry.cells.has(key(d, dur)))) n++;
+  }
+  return n;
+}
+
+// ---------- restore points ----------
+
+async function refreshBackups() {
+  try {
+    const { backups } = await (await fetch('/api/backups')).json();
+    $('backupList').innerHTML = backups.length
+      ? backups
+          .map((b) => {
+            const d = new Date(b.ts);
+            const when = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+            return `<div class="backup-row"><span>${when} · ${(b.size / 1024).toFixed(0)} KB</span>
+              <button class="btn btn-ghost btn-xs" onclick="restoreFlow('${esc(b.file)}')">RESTORE</button></div>`;
+          })
+          .join('')
+      : '<div class="drawer-empty">No restore points yet.</div>';
+  } catch {}
+}
+
+$('backupBtn').onclick = async () => {
+  if (!state.session) return openSessionModal('');
+  $('backupBtn').disabled = true;
+  $('backupBtn').textContent = 'CREATING…';
+  try {
+    const r = await api('/api/backup', { method: 'POST', body: {} });
+    toast(`Restore point created: ${Object.entries(r.counts).map(([k, v]) => `${k} ${v} rules`).join(', ')}`);
+    refreshBackups();
+  } catch (e) {
+    toast('Backup failed: ' + e.message, 'error');
+  } finally {
+    $('backupBtn').disabled = false;
+    $('backupBtn').textContent = '+ CREATE';
+  }
 };
 
-$('logsClose').onclick = () => $('logsDrawer').classList.remove('open');
+async function restoreFlow(file) {
+  const stName = stationName();
+  const mLabel = `${MONTHS[state.month - 1]} ${state.year}`;
+  if (!(await confirmBox(`Restore ${stName} / ${mLabel} from ${file}? A dry-run diff will be shown first.`))) return;
+  try {
+    const dry = await api('/api/restore', { method: 'POST', body: { file, station: state.station, year: state.year, month: state.month, dryRun: true } });
+    if (!dry.actions.length) { toast('Nothing to restore — current grid already matches this restore point.'); return; }
+    const counts = { create: 0, update: 0, delete: 0 };
+    dry.actions.forEach((a) => counts[a.type]++);
+    if (!(await confirmBox(`Restore will apply ${dry.actions.length} change(s): ${counts.create} create, ${counts.update} update, ${counts.delete} delete. Proceed?`))) return;
+    toast('Restoring…');
+    const r = await api('/api/restore', { method: 'POST', body: { file, station: state.station, year: state.year, month: state.month } });
+    const fail = r.results.filter((x) => !x.ok).length;
+    toast(`Restore finished: ${r.results.length - fail} ok, ${fail} failed.`, fail ? 'warn' : undefined);
+    state.monthCache.delete(cacheKey());
+    loadGrid();
+    refreshLogs();
+  } catch (e) {
+    toast('Restore failed: ' + e.message, 'error');
+  }
+}
+window.restoreFlow = restoreFlow;
+
+// ---------- vendor selector ----------
+
+async function loadVendors() {
+  try {
+    const { vendors } = await api('/api/vendors');
+    state.vendors = vendors;
+    const sel = $('vendorSel');
+    const opts = (vendors.includes('ALL') ? vendors : ['ALL', ...vendors])
+      .map((v) => `<option ${v === 'ALL' ? 'selected' : ''}>${esc(v)}</option>`)
+      .join('');
+    sel.innerHTML = opts;
+  } catch {}
+}
+
+$('vendorSel').onchange = (e) => {
+  state.vendor = e.target.value;
+  if (state.vendor !== 'ALL')
+    toast(`Writes now target vendor ${state.vendor} (grid still shows all rules).`, 'warn');
+};
+
+// ---------- copy month ----------
+
+$('copyMonthBtn').onclick = async () => {
+  if (!state.entry || !state.entry.cells.size) {
+    toast('Nothing to copy in this month.', 'warn');
+    return;
+  }
+  let m = state.month + 1, y = state.year;
+  if (m > 12) { m = 1; y++; }
+  const raw = await inputBox(
+    `Copy ${MONTHS[state.month - 1]} ${state.year} (${state.entry.cells.size} cells) to month (MM.YYYY):`,
+    `${String(m).padStart(2, '0')}.${y}`
+  );
+  if (!raw) return;
+  const mt = /^(\d{1,2})[./-](\d{4})$/.exec(raw.trim());
+  if (!mt) { toast('Use the format MM.YYYY', 'error'); return; }
+  const tm = Number(mt[1]), ty = Number(mt[2]);
+  if (tm < 1 || tm > 12) { toast('Invalid month.', 'error'); return; }
+  if (tm === state.month && ty === state.year) { toast('Target equals source.', 'error'); return; }
+  if (state.staged.size && !(await confirmBox('Discard currently staged changes?'))) return;
+  state.staged.clear();
+  state.pendingCopy = {
+    targetKey: `${state.station}:${ty}:${tm}`,
+    cells: [...state.entry.cells.values()].map((c) => ({ day: c.day, dur: c.dur, pct: c.pct })),
+    fromLabel: `${MONTHS_SHORT[state.month - 1]} ${state.year}`,
+  };
+  state.month = tm;
+  state.year = ty;
+  loadGrid();
+};
+
+// ---------- rentalcars top-10 analysis (runs ONLY on explicit icon click) ----------
+
+let rcCtx = null;
+
+function openRcAnalysis(day) {
+  rcCtx = { day, dur: 3 };
+  $('rcTitle').textContent = `RENTALCARS TOP 10 — ${String(day).padStart(2, '0')} ${MONTHS_SHORT[state.month - 1]} ${state.year} · ${stationName().toUpperCase()}`;
+  $('rcModal').classList.remove('hidden');
+  renderRcDurs();
+  runRcAnalysis();
+}
+
+function renderRcDurs() {
+  $('rcDurs').innerHTML = state.durations
+    .map((d) => `<button class="rc-dur ${rcCtx.dur === d ? 'on' : ''}" onclick="setRcDur(${d})">${d >= 6 ? '6+' : d} DAYS</button>`)
+    .join('');
+}
+
+function setRcDur(d) {
+  rcCtx.dur = d;
+  renderRcDurs();
+  runRcAnalysis();
+}
+window.setRcDur = setRcDur;
+
+async function runRcAnalysis() {
+  const [hh, mm] = nextRcTime();
+  $('rcBody').innerHTML = '<div class="rc-loading">QUERYING RENTALCARS…</div>';
+  $('rcMeta').textContent = '';
+  $('rcOpen').href = rentalcarsUrl(rcCtx.day, rcCtx.dur, hh, mm) || '#';
+  try {
+    const r = await api(
+      `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${rcCtx.day}&duration=${rcCtx.dur}&hh=${hh}&mm=${mm}`
+    );
+    if (!r.top.length) {
+      $('rcBody').innerHTML = '<div class="drawer-empty">No offers returned for these dates.</div>';
+      return;
+    }
+    const rows = r.top
+      .map(
+        (x, i) => `<tr class="${/green motion/i.test(x.supplier) ? 'rc-gm' : ''}">
+          <td class="rc-rank">${i + 1}</td>
+          <td>${esc(x.supplier)}</td>
+          <td>${esc(x.vehicle)}</td>
+          <td>${x.rating != null ? x.rating.toFixed(1) : '—'}</td>
+          <td class="rc-price">${x.price.toFixed(2)} ${esc(x.currency)}</td>
+        </tr>`
+      )
+      .join('');
+    $('rcBody').innerHTML = `<table class="rc-table">
+      <thead><tr><th></th><th>SUPPLIER</th><th>VEHICLE</th><th>RATING</th><th class="rc-price">TOTAL ${rcCtx.dur >= 6 ? '6+' : rcCtx.dur}D</th></tr></thead>
+      <tbody>${rows}</tbody></table>`;
+    $('rcMeta').textContent =
+      `${r.total} OFFERS · PICKUP ${hh}:${String(mm).padStart(2, '0')}` +
+      (r.gmRank ? ` · GREEN MOTION RANK #${r.gmRank} (${r.gmPrice.toFixed(2)} ${r.currency})` : ' · GREEN MOTION NOT LISTED');
+  } catch (e) {
+    $('rcBody').innerHTML = `<div class="drawer-empty">Query failed: ${esc(e.message)} — use OPEN ON RENTALCARS instead.</div>`;
+  }
+}
+
+$('rcClose').onclick = () => $('rcModal').classList.add('hidden');
+$('rcModal').addEventListener('click', (e) => {
+  if (e.target === $('rcModal')) $('rcModal').classList.add('hidden');
+});
 
 // ---------- boot ----------
 
@@ -879,8 +1219,16 @@ $('logsClose').onclick = () => $('logsDrawer').classList.remove('open');
   renderStations();
   $('monthLabel').textContent = `${MONTHS[state.month - 1]} ${state.year}`;
 
+  const h = location.hash.replace('#', '');
+  showView(['dashboard', 'grid', 'analytics', 'activity'].includes(h) ? h : 'dashboard');
+
   const s = await api('/api/session?check=1').catch(() => ({ ok: false }));
   setSession(!!s.ok);
-  if (s.ok) await loadGrid();
-  else openSessionModal('');
+  if (s.ok) {
+    loadVendors();
+    await loadGrid();
+    renderDashboard();
+  } else {
+    openSessionModal('');
+  }
 })();

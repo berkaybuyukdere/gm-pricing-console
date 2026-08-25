@@ -20,7 +20,6 @@
   <div class="topbar-right">
     <span class="chip" id="tenantChip">TENANT MWO_GMZURICH</span>
     <span class="chip session-chip" id="sessionChip"><span class="dot dot-red"></span>NO SESSION</span>
-    <button class="btn btn-ghost" id="logsBtn">LOGS</button>
     <button class="btn btn-ghost" id="themeBtn">LIGHT</button>
     <button class="btn btn-ghost" id="sessionBtn">CONNECT</button>
   </div>
@@ -28,61 +27,119 @@
 
 <div class="shell">
   <aside class="sidebar">
-    <div class="side-section">
-      <div class="side-title">STATIONS</div>
-      <div class="side-stations" id="stationTabs"></div>
-    </div>
-    <div class="side-section">
-      <div class="side-title">MONTH OVERVIEW</div>
-      <div class="side-stats" id="sideStats"></div>
-    </div>
-    <div class="side-section side-grow">
-      <div class="side-title">PRICE CURVE &mdash; <span id="chartMonth">—</span></div>
-      <div class="chart-wrap" id="chartWrap"><div class="chart-empty">No data yet.</div></div>
-      <div class="chart-legend" id="chartLegend"></div>
-    </div>
-    <div class="side-section side-links">
+    <nav class="nav">
+      <button class="nav-item on" data-view="dashboard"><span class="nav-ico">&#9632;</span>DASHBOARD</button>
+      <button class="nav-item" data-view="grid"><span class="nav-ico">&#9638;</span>PRICING GRID</button>
+      <button class="nav-item" data-view="analytics"><span class="nav-ico">&#9650;</span>ANALYTICS</button>
+      <button class="nav-item" data-view="activity"><span class="nav-ico">&#9776;</span>ACTIVITY</button>
+    </nav>
+    <div class="side-bottom">
       <a class="side-link" href="https://zrh.dps.greenmotion.com/index.php" target="_blank" rel="noopener">OPEN FUSEMETRIX &nearr;</a>
-      <span class="side-hint">Right-click a grid cell to compare the same dates on rentalcars.com (lowest price first).</span>
+      <span class="side-hint">Right-click a grid cell &rarr; rentalcars compare. Click the &#8981; icon on a day &rarr; top-10 competitor analysis.</span>
     </div>
   </aside>
 
   <div class="main-col">
-    <nav class="controls">
-      <div class="month-nav">
-        <button class="btn btn-ghost" id="prevMonth">&#8249;</button>
-        <span class="month-label" id="monthLabel">—</span>
-        <button class="btn btn-ghost" id="nextMonth">&#8250;</button>
-        <button class="btn btn-ghost" id="reloadBtn" title="Reload grid">&#8635;</button>
-      </div>
-      <div class="controls-right">
-        <span class="chip chip-sync hidden" id="syncChip">SYNCING</span>
-        <span class="chip" id="ruleCountChip">— RULES</span>
-        <span class="chip chip-warn hidden" id="conflictChip">0 CONFLICTS</span>
-        <span class="chip chip-dim hidden" id="othersChip">0 OTHER RULES</span>
-      </div>
-    </nav>
 
-    <main class="grid-wrap">
-      <div class="grid-scroller">
-        <table class="grid" id="gridTable">
-          <thead><tr id="gridHead"></tr></thead>
-          <tbody id="gridBody"></tbody>
-        </table>
+    <!-- ============ DASHBOARD ============ -->
+    <section id="view-dashboard" class="view">
+      <div class="dash">
+        <div class="dash-row" id="dashStations"></div>
+        <div class="dash-row">
+          <div class="card card-grow">
+            <div class="card-title">PRICE CURVE &mdash; <span id="dashChartMonth">—</span></div>
+            <div id="dashChart" class="dash-chart"><div class="chart-empty">Open the grid to load data.</div></div>
+          </div>
+          <div class="card card-grow">
+            <div class="card-title">RESTORE POINTS
+              <button class="btn btn-ghost btn-xs" id="backupBtn">+ CREATE</button>
+            </div>
+            <div id="backupList" class="backup-list"><div class="drawer-empty">No restore points yet.</div></div>
+          </div>
+        </div>
+        <div class="dash-row">
+          <div class="card card-grow">
+            <div class="card-title">RECENT ACTIVITY
+              <button class="btn btn-ghost btn-xs" data-view="activity">VIEW ALL</button>
+            </div>
+            <div id="dashActivity" class="dash-activity"><div class="drawer-empty">No activity yet.</div></div>
+          </div>
+        </div>
       </div>
-      <div class="grid-empty" id="gridEmpty">
-        <div class="empty-code">[ NO SESSION ]</div>
-        <div class="empty-text">Connect your FuseMetrix session to load the pricing grid.</div>
-      </div>
-    </main>
+    </section>
 
-    <footer class="applybar hidden" id="applyBar">
-      <span class="staged-label"><span class="staged-count" id="stagedCount">0</span> STAGED CHANGES</span>
-      <div class="applybar-actions">
-        <button class="btn btn-ghost" id="discardBtn">DISCARD</button>
-        <button class="btn btn-primary" id="applyBtn">APPLY TO FMX</button>
+    <!-- ============ GRID ============ -->
+    <section id="view-grid" class="view hidden">
+      <nav class="controls">
+        <div class="station-tabs" id="stationTabs"></div>
+        <div class="month-nav">
+          <button class="btn btn-ghost" id="prevMonth">&#8249;</button>
+          <span class="month-label" id="monthLabel">—</span>
+          <button class="btn btn-ghost" id="nextMonth">&#8250;</button>
+          <button class="btn btn-ghost" id="reloadBtn" title="Reload grid">&#8635;</button>
+          <button class="btn btn-ghost" id="copyMonthBtn" title="Copy this month's grid to another month">COPY &rarr;</button>
+        </div>
+        <div class="controls-right">
+          <label class="vendor-wrap">VENDOR
+            <select id="vendorSel" class="vendor-sel"><option value="ALL">ALL</option></select>
+          </label>
+          <span class="chip chip-sync hidden" id="syncChip">SYNCING</span>
+          <span class="chip chip-warn hidden" id="warnChip">0 UNCOVERED</span>
+          <span class="chip" id="ruleCountChip">— RULES</span>
+          <span class="chip chip-warn hidden" id="conflictChip">0 CONFLICTS</span>
+          <span class="chip chip-dim hidden" id="othersChip">0 OTHER RULES</span>
+        </div>
+      </nav>
+
+      <main class="grid-wrap">
+        <div class="grid-scroller">
+          <table class="grid" id="gridTable">
+            <thead><tr id="gridHead"></tr></thead>
+            <tbody id="gridBody"></tbody>
+          </table>
+        </div>
+        <div class="grid-empty" id="gridEmpty">
+          <div class="empty-code">[ NO SESSION ]</div>
+          <div class="empty-text">Connect your FuseMetrix session to load the pricing grid.</div>
+        </div>
+      </main>
+
+      <footer class="applybar hidden" id="applyBar">
+        <span class="staged-label"><span class="staged-count" id="stagedCount">0</span> STAGED CHANGES</span>
+        <div class="applybar-actions">
+          <button class="btn btn-ghost" id="discardBtn">DISCARD</button>
+          <button class="btn btn-primary" id="applyBtn">APPLY TO FMX</button>
+        </div>
+      </footer>
+    </section>
+
+    <!-- ============ ANALYTICS ============ -->
+    <section id="view-analytics" class="view hidden">
+      <div class="dash">
+        <div class="card">
+          <div class="card-title">PRICE CURVE &mdash; <span id="chartMonth">—</span></div>
+          <div class="chart-wrap chart-lg" id="chartWrap"><div class="chart-empty">Open the grid to load data.</div></div>
+          <div class="chart-legend" id="chartLegend"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">DURATION AVERAGES</div>
+          <div id="durStats" class="dash-activity"><div class="drawer-empty">No data.</div></div>
+        </div>
       </div>
-    </footer>
+    </section>
+
+    <!-- ============ ACTIVITY ============ -->
+    <section id="view-activity" class="view hidden">
+      <div class="dash">
+        <div class="card card-grow">
+          <div class="card-title">ACTIVITY LOG
+            <button class="btn btn-ghost btn-xs" id="logsRefresh">&#8635; REFRESH</button>
+          </div>
+          <div class="drawer-list" id="logsList"><div class="drawer-empty">No activity yet.</div></div>
+        </div>
+      </div>
+    </section>
+
   </div>
 </div>
 
@@ -108,15 +165,21 @@
   </div>
 </div>
 
-<aside class="drawer" id="logsDrawer">
-  <div class="drawer-head">
-    <span>RECENT ACTIVITY</span>
-    <button class="btn btn-ghost" id="logsClose">&times;</button>
+<div class="modal-backdrop hidden" id="rcModal">
+  <div class="modal modal-rc">
+    <div class="modal-head"><span id="rcTitle">RENTALCARS TOP 10</span>
+      <button class="btn btn-ghost btn-xs" id="rcClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="rc-durs" id="rcDurs"></div>
+      <div id="rcBody"><div class="drawer-empty">Pick a duration.</div></div>
+    </div>
+    <div class="modal-actions">
+      <span class="rc-meta" id="rcMeta"></span>
+      <a class="btn btn-ghost" id="rcOpen" target="_blank" rel="noopener">OPEN ON RENTALCARS</a>
+    </div>
   </div>
-  <div class="drawer-list" id="logsList">
-    <div class="drawer-empty">No activity yet.</div>
-  </div>
-</aside>
+</div>
 
 <div class="toasts" id="toasts"></div>
 

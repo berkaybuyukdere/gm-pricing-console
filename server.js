@@ -74,6 +74,254 @@ app.get('/api/stations', (req, res) =>
   res.json({ stations: STATIONS, durations: DURATIONS })
 );
 
+app.get(
+  '/api/vendors',
+  wrap(async (req, res) => {
+    res.json({ vendors: await fmx.getVendors() });
+  })
+);
+
+// ---------- rentalcars top-10 (user-initiated, plain public API GET) ----------
+
+const RC_SEARCH = {
+  61489: { type: 'IATA', loc: 'ZRH', name: 'Zurich Airport' },
+  61551: { type: 'LATLONG', loc: '47.37798309326172,8.539767265319824', name: 'Zurich Downtown' },
+};
+
+app.get(
+  '/api/rc-top',
+  wrap(async (req, res) => {
+    const station = Number(req.query.station);
+    const year = Number(req.query.year);
+    const month = Number(req.query.month);
+    const day = Number(req.query.day);
+    const duration = Number(req.query.duration);
+    const hh = String(req.query.hh || '19').padStart(2, '0');
+    const mm = String(req.query.mm || '00').padStart(2, '0');
+    const cfg = RC_SEARCH[station];
+    if (!cfg || !year || !month || !day || !duration)
+      throw new FmxError('BAD_PARAMS', 400);
+
+    const pu = new Date(year, month - 1, day);
+    const dr = new Date(pu.getTime() + duration * 86400000);
+    const fmt = (d) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${hh}:${mm}:00`;
+
+    const sc = JSON.stringify({
+      driversAge: 30,
+      pickUpLocation: cfg.loc,
+      pickUpDateTime: fmt(pu),
+      pickUpLocationType: cfg.type,
+      dropOffLocation: cfg.loc,
+      dropOffLocationType: cfg.type,
+      dropOffDateTime: fmt(dr),
+      searchMetadata: '{}',
+    });
+    const fc = JSON.stringify({ sortBy: 'PRICE', sortAscending: true });
+    const url = `https://www.rentalcars.com/api/search-results?searchCriteria=${encodeURIComponent(sc)}&filterCriteria=${encodeURIComponent(fc)}`;
+
+    const r = await fetch(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
+        Accept: 'application/json',
+      },
+    });
+    if (!r.ok) throw new FmxError('RC_HTTP_' + r.status, 502);
+    const j = await r.json();
+
+    const rows = (j.matches || [])
+      .map((m) => {
+        const depot = (j.depots || {})[m.route && m.route.pickUpDepotId] || {};
+        const sup = (j.suppliers || {})[depot.supplierId] || {};
+        const price =
+          (m.vehicle && m.vehicle.driveAwayPrice && m.vehicle.driveAwayPrice.amount) ??
+          (m.vehicle && m.vehicle.price && m.vehicle.price.amount);
+        return {
+          supplier: sup.name || '?',
+          price: Number(price),
+          currency:
+            (m.vehicle && m.vehicle.price && m.vehicle.price.currency) || 'CHF',
+          vehicle: (m.vehicle && m.vehicle.makeAndModel) || '',
+          group: (m.vehicle && m.vehicle.group) || '',
+          rating: depot.rating ? depot.rating.average : null,
+          depotType: depot.locationType || '',
+        };
+      })
+      .filter((x) => isFinite(x.price))
+      .sort((a, b) => a.price - b.price);
+
+    const gmIdx = rows.findIndex((x) => /green motion/i.test(x.supplier));
+    res.json({
+      station: cfg.name,
+      pickUp: fmt(pu),
+      dropOff: fmt(dr),
+      total: rows.length,
+      top: rows.slice(0, 10),
+      gmRank: gmIdx >= 0 ? gmIdx + 1 : null,
+      gmPrice: gmIdx >= 0 ? rows[gmIdx].price : null,
+      currency: rows[0] ? rows[0].currency : 'CHF',
+    });
+  })
+);
+
+// ---------- restore points (backups) ----------
+
+const BACKUP_DIR = path.join(__dirname, '.backups');
+
+const parseRuleDate = (s) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2}) /.exec(s || '');
+  return m ? { y: +m[1], mo: +m[2], d: +m[3] } : null;
+};
+
+// map a station's rules+details to grid cells for one month
+function shapeCells(rules, getDetail, year, month) {
+  const cells = new Map(); // "day:dur" -> {day, dur, pct, active, ruleid, vendors}
+  for (const r of rules) {
+    const f = parseRuleDate(r.from);
+    const t = parseRuleDate(r.to);
+    if (!f || !t || f.y !== t.y || f.mo !== t.mo || f.d !== t.d) continue;
+    if (f.y !== year || f.mo !== month) continue;
+    const d = getDetail(r.ruleid);
+    if (!d) continue;
+    const dur = Number(d.numDays);
+    const gridable =
+      d.chkNumDays && DURATIONS.includes(dur) && d.priceType === 'percent' &&
+      !d.chkWeekdays && !d.chkWeekdays2 && !d.chkPickupTime && !d.chkDropoffTime;
+    if (!gridable) continue;
+    const k = `${f.d}:${dur}`;
+    if (!cells.has(k))
+      cells.set(k, {
+        day: f.d, dur, pct: Number(d.priceChange), active: d.active,
+        ruleid: r.ruleid, vendors: d.vendors || ['ALL'],
+      });
+  }
+  return cells;
+}
+
+async function fetchDetails(rules) {
+  const details = {};
+  const q = rules.slice();
+  await Promise.all(
+    Array.from({ length: 10 }, async () => {
+      while (q.length) {
+        const r = q.shift();
+        try {
+          details[r.ruleid] = await fmx.getDetail(r.ruleid, r.updated);
+        } catch (e) {
+          if (e.code === 401) throw e;
+        }
+      }
+    })
+  );
+  return details;
+}
+
+app.post(
+  '/api/backup',
+  wrap(async (req, res) => {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    const snap = { ts: new Date().toISOString(), stations: {} };
+    for (const s of STATIONS) {
+      const rules = await fmx.getRules(s.id);
+      const details = await fetchDetails(rules);
+      snap.stations[s.id] = { name: s.name, rules, details };
+    }
+    const file = 'backup-' + snap.ts.replace(/[:.]/g, '-') + '.json';
+    fs.writeFileSync(path.join(BACKUP_DIR, file), JSON.stringify(snap));
+    addLog({
+      action: 'backup', station: null, stationName: 'ALL STATIONS',
+      day: null, month: null, year: null, duration: null,
+      before: null, after: null, ok: true, file,
+    });
+    res.json({
+      ok: true, file,
+      counts: Object.fromEntries(STATIONS.map((s) => [s.name, snap.stations[s.id].rules.length])),
+    });
+  })
+);
+
+app.get('/api/backups', (req, res) => {
+  let files = [];
+  try {
+    files = fs.readdirSync(BACKUP_DIR).filter((f) => f.endsWith('.json')).sort().reverse();
+  } catch {}
+  res.json({
+    backups: files.map((f) => {
+      try {
+        const st = fs.statSync(path.join(BACKUP_DIR, f));
+        return { file: f, size: st.size, ts: st.mtime.toISOString() };
+      } catch {
+        return { file: f };
+      }
+    }),
+  });
+});
+
+app.post(
+  '/api/restore',
+  wrap(async (req, res) => {
+    const { file, station, year, month, dryRun } = req.body;
+    const snapPath = path.join(BACKUP_DIR, path.basename(String(file)));
+    if (!fs.existsSync(snapPath)) throw new FmxError('BACKUP_NOT_FOUND', 404);
+    if (!STATIONS.some((s) => s.id === Number(station)))
+      throw new FmxError('BAD_STATION', 400);
+    const snap = JSON.parse(fs.readFileSync(snapPath, 'utf8'));
+    const snapSt = snap.stations[station];
+    if (!snapSt) throw new FmxError('STATION_NOT_IN_BACKUP', 400);
+
+    const snapCells = shapeCells(snapSt.rules, (id) => snapSt.details[id], Number(year), Number(month));
+    const curRules = await fmx.getRules(Number(station));
+    const curDetails = await fetchDetails(curRules);
+    const curCells = shapeCells(curRules, (id) => curDetails[id], Number(year), Number(month));
+
+    const actions = [];
+    for (const [k, s] of snapCells) {
+      const c = curCells.get(k);
+      if (!c) actions.push({ type: 'create', ...s, before: null });
+      else if (c.pct !== s.pct || c.active !== s.active)
+        actions.push({ type: 'update', ...s, ruleid: c.ruleid, before: c.pct });
+    }
+    for (const [k, c] of curCells) {
+      if (!snapCells.has(k))
+        actions.push({ type: 'delete', day: c.day, dur: c.dur, ruleid: c.ruleid, before: c.pct, pct: null });
+    }
+
+    if (dryRun) return res.json({ dryRun: true, actions });
+
+    const results = [];
+    for (const a of actions) {
+      const args = {
+        day: a.day, month: Number(month), year: Number(year),
+        duration: a.dur, pct: a.pct, active: a.active !== false, vendors: a.vendors,
+      };
+      const base = {
+        action: 'restore-' + a.type, station: Number(station),
+        stationName: stationName(station), day: a.day, month: Number(month),
+        year: Number(year), duration: a.dur, before: a.before ?? null,
+        after: a.type === 'delete' ? null : a.pct,
+      };
+      try {
+        if (a.type === 'create') {
+          const r = await fmx.createRule(Number(station), args);
+          addLog({ ...base, ruleid: r.ruleid, ok: true, verified: r.verified });
+        } else if (a.type === 'update') {
+          const r = await fmx.updateRule(Number(station), a.ruleid, args);
+          addLog({ ...base, ruleid: a.ruleid, ok: true, verified: r.verified });
+        } else {
+          await fmx.deleteRule(Number(station), a.ruleid);
+          addLog({ ...base, ruleid: a.ruleid, ok: true });
+        }
+        results.push({ ...a, ok: true });
+      } catch (e) {
+        addLog({ ...base, ruleid: a.ruleid, ok: false, error: e.message });
+        results.push({ ...a, ok: false, error: e.message });
+      }
+    }
+    res.json({ done: true, results });
+  })
+);
+
 // ---------- activity log ----------
 
 let activityLog = [];
@@ -222,6 +470,10 @@ const ruleArgs = (body) => ({
   duration: Number(body.duration),
   pct: Number(body.pct),
   active: body.active !== false,
+  vendors:
+    Array.isArray(body.vendors) && body.vendors.length
+      ? body.vendors.map(String)
+      : ['ALL'],
 });
 
 app.post(
@@ -236,6 +488,7 @@ app.post(
       action: 'create', station, stationName: stationName(station),
       day: args.day, month: args.month, year: args.year,
       duration: args.duration, before: null, after: args.pct,
+      vendor: args.vendors.join(','),
     };
     try {
       const result = await fmx.createRule(station, args);
@@ -260,6 +513,7 @@ app.put(
       action: 'update', station, stationName: stationName(station),
       day: args.day, month: args.month, year: args.year,
       duration: args.duration, before, after: args.pct, ruleid,
+      vendor: args.vendors.join(','),
     };
     try {
       const result = await fmx.updateRule(station, ruleid, args);
