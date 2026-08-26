@@ -5,13 +5,13 @@
  */
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const express = require('express');
 const nodemailer = require('nodemailer');
 const { FmxClient, FmxError } = require('./lib/fmx');
+const store = require('./lib/store');
 
 const PORT = process.env.PORT || 4646;
-const SESSION_FILE = path.join(__dirname, '.session');
-const LOGS_FILE = path.join(__dirname, '.logs.json');
 
 const STATIONS = [
   { id: 61489, name: 'Zurich Airport' },
@@ -20,11 +20,6 @@ const STATIONS = [
 const DURATIONS = [2, 3, 4, 5, 6];
 
 const fmx = new FmxClient();
-if (fs.existsSync(SESSION_FILE)) {
-  try {
-    fmx.setCookie(fs.readFileSync(SESSION_FILE, 'utf8'));
-  } catch {}
-}
 
 const app = express();
 app.use(express.json());
@@ -36,21 +31,79 @@ const wrap = (fn) => (req, res) =>
     res.status(code).json({ error: e.message });
   });
 
+// ---------- operator auth ----------
+// The console controls live pricing, so on a public deployment every API call
+// must carry proof that this browser passed the FuseMetrix login. The proof is
+// a stateless HMAC-signed cookie (no server-side session table needed).
+
+const AUTH_SECRET =
+  process.env.AUTH_SECRET || crypto.randomBytes(32).toString('hex');
+const AUTH_TTL_MS = 12 * 60 * 60 * 1000;
+// Firebase Hosting forwards exactly one cookie to a rewritten function —
+// it must be called __session, so that is the operator cookie's name.
+const COOKIE = '__session';
+
+const b64u = (buf) =>
+  Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+function signToken(username) {
+  const payload = b64u(JSON.stringify({ u: username, exp: Date.now() + AUTH_TTL_MS }));
+  const sig = b64u(crypto.createHmac('sha256', AUTH_SECRET).update(payload).digest());
+  return `${payload}.${sig}`;
+}
+
+function verifyToken(token) {
+  if (!token || typeof token !== 'string' || !token.includes('.')) return null;
+  const [payload, sig] = token.split('.');
+  const expected = b64u(crypto.createHmac('sha256', AUTH_SECRET).update(payload).digest());
+  const a = Buffer.from(sig || '');
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  try {
+    const data = JSON.parse(Buffer.from(payload.replace(/-/g, '+').replace(/_/g, '/'), 'base64'));
+    if (!data.exp || data.exp < Date.now()) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function readCookie(req, name) {
+  const raw = req.headers.cookie || '';
+  for (const part of raw.split(';')) {
+    const i = part.indexOf('=');
+    if (i > 0 && part.slice(0, i).trim() === name) return decodeURIComponent(part.slice(i + 1));
+  }
+  return null;
+}
+
+const operatorOf = (req) => verifyToken(readCookie(req, COOKIE));
+
+// every /api route except the login handshake requires a valid operator cookie
+app.use('/api', (req, res, next) => {
+  // never let a CDN cache live pricing data or an auth handshake
+  res.set('Cache-Control', 'no-store, max-age=0');
+  if (req.path === '/login' || req.path === '/session') return next();
+  if (operatorOf(req)) return next();
+  res.status(401).json({ error: 'NOT_SIGNED_IN' });
+});
+
 // ---------- session ----------
 
 app.get(
   '/api/session',
   wrap(async (req, res) => {
-    if (!fmx.hasCookie()) return res.json({ ok: false });
+    const op = operatorOf(req);
+    if (!op || !fmx.hasCookie()) return res.json({ ok: false });
     if (req.query.check === '1') {
       try {
         await fmx.getRules(STATIONS[0].id);
-        return res.json({ ok: true });
+        return res.json({ ok: true, user: op.u });
       } catch (e) {
         return res.json({ ok: false, error: e.message });
       }
     }
-    res.json({ ok: true, unchecked: true });
+    res.json({ ok: true, unchecked: true, user: op.u });
   })
 );
 
@@ -61,10 +114,47 @@ app.post(
     const password = String(req.body.password || '');
     if (!username || !password) throw new FmxError('MISSING_CREDENTIALS', 400);
     await fmx.login(username, password); // throws LOGIN_FAILED / validates session
-    fs.writeFileSync(SESSION_FILE, fmx.cookie, 'utf8'); // cookie only, never the password
+    store.set('session', fmx.cookie, { immediate: true }); // cookie only, never the password
+    res.cookie(COOKIE, signToken(username), {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: store.IS_CLOUD,
+      maxAge: AUTH_TTL_MS,
+      path: '/',
+    });
     res.json({ ok: true });
   })
 );
+
+// runtime diagnostics — confirms which persistence backend is actually live
+app.get(
+  '/api/diag',
+  wrap(async (req, res) => {
+    let durable = 'unknown';
+    try {
+      watchBase.__probe = new Date().toISOString();
+      await store.setNow('watch', watchBase);
+      delete watchBase.__probe;
+      durable = 'ok';
+    } catch (e) {
+      durable = 'FAILED: ' + e.message;
+    }
+    res.json({
+      cloud: store.IS_CLOUD,
+      runtime: process.env.RUNTIME || null,
+      kService: process.env.K_SERVICE || null,
+      durableWrite: durable,
+      fmxSession: fmx.hasCookie(),
+      logs: activityLog.length,
+      mail: !!mailer,
+    });
+  })
+);
+
+app.post('/api/logout', (req, res) => {
+  res.clearCookie(COOKIE, { path: '/' });
+  res.json({ ok: true });
+});
 
 // keep the FMX session alive while the console is running
 setInterval(() => fmx.keepAlive(), 4 * 60 * 1000);
@@ -75,7 +165,19 @@ const SECRETS_FILE = path.join(__dirname, '.secrets.json');
 let smtpCfg = null;
 let mailer = null;
 try {
-  smtpCfg = JSON.parse(fs.readFileSync(SECRETS_FILE, 'utf8')).smtp;
+  // cloud: SMTP_* env vars — local: .secrets.json (never committed)
+  if (process.env.SMTP_HOST) {
+    smtpCfg = {
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT || 587),
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: process.env.SMTP_TO || process.env.SMTP_USER,
+    };
+  } else {
+    smtpCfg = JSON.parse(fs.readFileSync(SECRETS_FILE, 'utf8')).smtp;
+  }
   mailer = nodemailer.createTransport({
     host: smtpCfg.host,
     port: smtpCfg.port,
@@ -172,14 +274,10 @@ const WATCH = {
   alertsSent: 0,
 };
 
-const WATCH_FILE = path.join(__dirname, '.rc-watch.json');
 let watchBase = {};
-try {
-  watchBase = JSON.parse(fs.readFileSync(WATCH_FILE, 'utf8'));
-} catch {}
 
 function saveWatchBase() {
-  fs.writeFile(WATCH_FILE, JSON.stringify(watchBase), () => {});
+  store.set('watch', watchBase);
 }
 
 async function runWatcher() {
@@ -323,18 +421,9 @@ const RC_SEARCH = {
   61551: { type: 'LATLONG', loc: '47.37798309326172,8.539767265319824', name: 'Zurich Downtown' },
 };
 
-const RC_CACHE_FILE = path.join(__dirname, '.rc-cache.json');
 let rcCache = {};
-try {
-  rcCache = JSON.parse(fs.readFileSync(RC_CACHE_FILE, 'utf8'));
-} catch {}
-let rcSaveTimer = null;
 function saveRcCache() {
-  clearTimeout(rcSaveTimer);
-  rcSaveTimer = setTimeout(
-    () => fs.writeFile(RC_CACHE_FILE, JSON.stringify(rcCache), () => {}),
-    500
-  );
+  store.set('rc', rcCache, { debounceMs: 500 });
 }
 
 async function rcQuery({ station, year, month, day, duration, hh, mm, ttlMs }) {
@@ -504,8 +593,6 @@ app.get(
 
 // ---------- restore points (backups) ----------
 
-const BACKUP_DIR = path.join(__dirname, '.backups');
-
 const parseRuleDate = (s) => {
   const m = /^(\d{4})-(\d{2})-(\d{2}) /.exec(s || '');
   return m ? { y: +m[1], mo: +m[2], d: +m[3] } : null;
@@ -557,7 +644,6 @@ async function fetchDetails(rules) {
 app.post(
   '/api/backup',
   wrap(async (req, res) => {
-    fs.mkdirSync(BACKUP_DIR, { recursive: true });
     const snap = { ts: new Date().toISOString(), stations: {} };
     for (const s of STATIONS) {
       const rules = await fmx.getRules(s.id);
@@ -565,7 +651,7 @@ app.post(
       snap.stations[s.id] = { name: s.name, rules, details };
     }
     const file = 'backup-' + snap.ts.replace(/[:.]/g, '-') + '.json';
-    fs.writeFileSync(path.join(BACKUP_DIR, file), JSON.stringify(snap));
+    await store.backupPut(file, snap);
     addLog({
       action: 'backup', station: null, stationName: 'ALL STATIONS',
       day: null, month: null, year: null, duration: null,
@@ -578,32 +664,21 @@ app.post(
   })
 );
 
-app.get('/api/backups', (req, res) => {
-  let files = [];
-  try {
-    files = fs.readdirSync(BACKUP_DIR).filter((f) => f.endsWith('.json')).sort().reverse();
-  } catch {}
-  res.json({
-    backups: files.map((f) => {
-      try {
-        const st = fs.statSync(path.join(BACKUP_DIR, f));
-        return { file: f, size: st.size, ts: st.mtime.toISOString() };
-      } catch {
-        return { file: f };
-      }
-    }),
-  });
-});
+app.get(
+  '/api/backups',
+  wrap(async (req, res) => {
+    res.json({ backups: await store.backupList() });
+  })
+);
 
 app.post(
   '/api/restore',
   wrap(async (req, res) => {
     const { file, station, year, month, dryRun } = req.body;
-    const snapPath = path.join(BACKUP_DIR, path.basename(String(file)));
-    if (!fs.existsSync(snapPath)) throw new FmxError('BACKUP_NOT_FOUND', 404);
     if (!STATIONS.some((s) => s.id === Number(station)))
       throw new FmxError('BAD_STATION', 400);
-    const snap = JSON.parse(fs.readFileSync(snapPath, 'utf8'));
+    const snap = await store.backupGet(file);
+    if (!snap) throw new FmxError('BACKUP_NOT_FOUND', 404);
     const snapSt = snap.stations[station];
     if (!snapSt) throw new FmxError('STATION_NOT_IN_BACKUP', 400);
 
@@ -662,9 +737,6 @@ app.post(
 // ---------- activity log ----------
 
 let activityLog = [];
-try {
-  activityLog = JSON.parse(fs.readFileSync(LOGS_FILE, 'utf8'));
-} catch {}
 
 function addLog(entry) {
   activityLog.unshift({
@@ -673,7 +745,7 @@ function addLog(entry) {
     ...entry,
   });
   if (activityLog.length > 1000) activityLog.length = 1000;
-  fs.writeFile(LOGS_FILE, JSON.stringify(activityLog), () => {});
+  store.set('logs', activityLog, { debounceMs: 250 });
 }
 
 const stationName = (id) => {
@@ -886,6 +958,30 @@ app.delete(
   })
 );
 
-app.listen(PORT, () => {
-  console.log(`GM Pricing Console -> http://localhost:${PORT}`);
+// SPA entry: any non-API, non-file path serves the console shell
+app.get(/^\/(?!api\/).*/, (req, res, next) => {
+  if (path.extname(req.path)) return next();
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+/** Load persisted state, then hand back the ready Express app. */
+const booted = store.ready().then(() => {
+  const cookie = store.get('session');
+  if (cookie) fmx.setCookie(cookie);
+  activityLog = store.get('logs', []);
+  watchBase = store.get('watch', {});
+  rcCache = store.get('rc', {});
+  fmx.loadDetailCache(store.get('details', {}), (data) => store.set('details', data));
+  return app;
+});
+
+// local run: start listening. cloud: index.js awaits `booted` and exports it.
+if (require.main === module) {
+  booted.then(() => {
+    app.listen(PORT, () => {
+      console.log(`GM Pricing Console -> http://localhost:${PORT}`);
+    });
+  });
+}
+
+module.exports = { app, booted, store };

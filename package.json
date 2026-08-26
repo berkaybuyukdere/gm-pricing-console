@@ -2,13 +2,18 @@
   "name": "gm-pricing-console",
   "version": "1.0.0",
   "description": "Green Motion Zurich pricing console - fast weekly-rule grid for FuseMetrix DPS",
-  "main": "server.js",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "@google-cloud/firestore": "^7.10.0",
     "cheerio": "^1.0.0",
     "express": "^4.19.2",
+    "firebase-functions": "^6.6.0",
     "nodemailer": "^9.0.5"
   }
 }

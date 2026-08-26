@@ -64,6 +64,33 @@ Rule details are cached in `.cache-details.json` keyed by
 `ruleid + Date Updated`, so a rule is only ever re-fetched after it actually
 changed in FMX (including edits made directly in the FMX UI).
 
+
+## Production
+
+Live: **https://sentinelpricing.web.app** — the marketing page is the public
+entry, `/console` is the operator console.
+
+| Piece | Where it runs |
+|---|---|
+| Landing + entry gate | Firebase Hosting (`landing/`) |
+| Console (UI + API) | Cloud Functions v2 / Cloud Run, `europe-west6`, exported from `index.js` |
+| Durable state (activity log, restore points, watch baseline, FMX session) | Firestore (`state/*`, `backups/*`) |
+| Caches (rule details, rentalcars responses) | `/tmp` on the instance, rebuilt after a cold start |
+| Secrets (`AUTH_SECRET`, `SMTP_*`) | `.env` at deploy time → function env vars (never committed, never bundled) |
+
+Auth: every `/api/*` call requires an operator cookie that is only issued after a
+real FuseMetrix login. The cookie is an HMAC-signed token named `__session` —
+Firebase Hosting forwards no other cookie to a rewritten function.
+
+Deploy:
+
+```bash
+firebase deploy --only "functions:console,hosting" --project sentinelpricing
+```
+
+Local development still works unchanged (`npm start` → http://localhost:4646);
+without the cloud env vars the same code falls back to JSON files in the repo.
+
 ## Setup
 
 ```bash

@@ -1,18 +1,77 @@
 {
-  "functions": {
-    "source": "functions",
-    "runtime": "nodejs20"
-  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "gate",
+      "runtime": "nodejs20"
+    },
+    {
+      "source": ".",
+      "codebase": "console",
+      "runtime": "nodejs20",
+      "ignore": [
+        "firebase.json",
+        "**/node_modules/**",
+        "functions/**",
+        "landing/**",
+        "docs/**",
+        ".git/**",
+        ".firebase/**",
+        ".backups/**",
+        ".env",
+        ".env.*",
+        ".secrets.json",
+        ".session",
+        ".logs.json",
+        ".cache-details.json",
+        ".rc-cache.json",
+        ".rc-watch.json",
+        ".gitignore",
+        ".claude/**"
+      ]
+    }
+  ],
   "hosting": {
     "public": "landing",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "rewrites": [
-      { "source": "/api/login", "function": "login" }
+      {
+        "source": "**",
+        "function": "console",
+        "region": "europe-west6"
+      }
     ],
     "headers": [
       {
-        "source": "**",
-        "headers": [{ "key": "Cache-Control", "value": "public, max-age=300" }]
+        "source": "/api/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-store, max-age=0"
+          }
+        ]
+      },
+      {
+        "source": "/console**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-store, max-age=0"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(js|css|png|jpg|jpeg|svg|ico|woff2)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=300"
+          }
+        ]
       }
     ]
   }

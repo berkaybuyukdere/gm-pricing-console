@@ -7,3 +7,5 @@ node_modules/
 .secrets.json
 .rc-watch.json
 .firebase/
+.env
+.env.*

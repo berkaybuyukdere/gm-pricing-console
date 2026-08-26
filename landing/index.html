@@ -217,7 +217,7 @@
   // Entry gate — verifies credentials against the real FuseMetrix login via
   // the /api/login Cloud Function. The function returns only ok:true|false and
   // stores nothing. A pass sends the operator straight into the console.
-  const CONSOLE_URL = localStorage.getItem('ps-console') || 'http://localhost:4646';
+  const CONSOLE_URL = localStorage.getItem('ps-console') || '/console';
 
   function goToConsole() {
     document.getElementById('jumpUrl').textContent = CONSOLE_URL;
