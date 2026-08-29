@@ -6,6 +6,10 @@ node_modules/
 .backups/
 .secrets.json
 .rc-watch.json
+.relay.log
+.auth.json
 .firebase/
 .env
 .env.*
+.tenants.json
+.prefs.json

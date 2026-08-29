@@ -1,11 +1,6 @@
 {
   "functions": [
     {
-      "source": "functions",
-      "codebase": "gate",
-      "runtime": "nodejs20"
-    },
-    {
       "source": ".",
       "codebase": "console",
       "runtime": "nodejs20",
@@ -26,8 +21,16 @@
         ".cache-details.json",
         ".rc-cache.json",
         ".rc-watch.json",
+        ".relay.log",
+        ".auth.json",
         ".gitignore",
-        ".claude/**"
+        ".claude/**",
+        ".tenants.json",
+        ".prefs.json",
+        ".proposals.json",
+        ".autoscan.json",
+        "firestore.rules",
+        "test/**"
       ]
     }
   ],
@@ -74,5 +77,8 @@
         ]
       }
     ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }

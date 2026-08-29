@@ -15,11 +15,12 @@
   <div class="brand">
     <span class="brand-mark"></span>
     <span class="brand-name">PRICING CONSOLE</span>
-    <span class="brand-sub">GM ZURICH // FMX DPS</span>
+    <span class="brand-sub">GM ZURICH // DPS</span>
   </div>
   <div class="topbar-right">
-    <span class="chip" id="tenantChip">TENANT MWO_GMZURICH</span>
+    <span class="chip" id="tenantChip">—</span>
     <span class="chip session-chip" id="sessionChip"><span class="dot dot-red"></span>NO SESSION</span>
+    <span class="chip chip-error hidden" id="relayChip"></span>
     <button class="btn btn-ghost" id="hudBtn" title="HUD scale">HUD 100%</button>
     <button class="btn btn-ghost" id="themeBtn">LIGHT</button>
     <button class="btn btn-ghost" id="sessionBtn">CONNECT</button>
@@ -29,14 +30,26 @@
 <div class="shell">
   <aside class="sidebar">
     <nav class="nav">
-      <button class="nav-item on" data-view="dashboard"><span class="nav-ico">&#9632;</span>DASHBOARD</button>
-      <button class="nav-item" data-view="grid"><span class="nav-ico">&#9638;</span>PRICING GRID</button>
-      <button class="nav-item" data-view="analytics"><span class="nav-ico">&#9650;</span>ANALYTICS</button>
-      <button class="nav-item" data-view="activity"><span class="nav-ico">&#9776;</span>ACTIVITY</button>
+      <button class="nav-item on" data-view="dashboard"><span class="nav-ico">&#9632;</span><span data-i18n="nav_dashboard">DASHBOARD</span></button>
+      <button class="nav-item" data-view="grid"><span class="nav-ico">&#9638;</span><span data-i18n="nav_grid">PRICING GRID</span></button>
+      <button class="nav-item" data-view="analytics"><span class="nav-ico">&#9650;</span><span data-i18n="nav_analytics">ANALYTICS</span></button>
+      <button class="nav-item" data-view="activity"><span class="nav-ico">&#9776;</span><span data-i18n="nav_activity">ACTIVITY</span></button>
+      <button class="nav-item hidden" id="navUsers" data-view="users"><span class="nav-ico">&#9679;</span><span data-i18n="nav_users">USERS</span></button>
+      <button class="nav-item" data-view="settings"><span class="nav-ico">&#9881;</span><span data-i18n="nav_settings">SETTINGS</span></button>
     </nav>
     <div class="side-bottom">
-      <a class="side-link" href="https://zrh.dps.greenmotion.com/index.php" target="_blank" rel="noopener">OPEN FUSEMETRIX &nearr;</a>
-      <span class="side-hint">Right-click a grid cell &rarr; rentalcars compare. Click the &#8981; icon on a day &rarr; top-10 competitor analysis.</span>
+      <a class="side-link" href="https://zrh.dps.greenmotion.com/index.php" target="_blank" rel="noopener" data-i18n="open_fmx">OPEN DPS &nearr;</a>
+      <span class="side-hint" data-i18n="side_hint">Right-click a grid cell &rarr; rentalcars compare. Click the &#8981; icon on a day &rarr; top-10 competitor analysis.</span>
+      <div class="side-user-row">
+        <button class="side-user" id="sideUser" title="Settings">
+          <span class="side-user-avatar" id="sideUserAvatar">—</span>
+          <span class="side-user-info">
+            <span class="side-user-name" id="sideUserName">NOT SIGNED IN</span>
+            <span class="side-user-role" id="sideUserRole" data-i18n="user_role">OPERATOR · DPS</span>
+          </span>
+        </button>
+        <button class="side-signout hidden" id="sideSignout" title="Sign out">&#x23FB;</button>
+      </div>
     </div>
   </aside>
 
@@ -49,32 +62,32 @@
         <div class="dash-row" id="dashStations"></div>
         <div class="dash-row">
           <div class="card card-grow">
-            <div class="card-title">RC MARKET RANK &mdash; <span id="rankMonth">—</span>
+            <div class="card-title"><span data-i18n="rc_market_rank">RC MARKET RANK</span> &mdash; <span id="rankMonth">—</span>
               <span class="rank-controls">
                 <span class="rc-durs rc-durs-sm" id="rankDurs"></span>
                 <button class="btn btn-ghost btn-xs" id="rankRefresh" title="Re-query rentalcars for the month">&#8635;</button>
               </span>
             </div>
-            <div class="rank-strip" id="rankStrip"><div class="drawer-empty">Green Motion's daily rentalcars rank loads here for the current month.</div></div>
-            <div class="rank-legend">GM RANK: <span class="rank-pill rank-good">1–3</span><span class="rank-pill rank-mid">4–7</span><span class="rank-pill rank-bad">8+</span> · click a day for the full top-10 · pickup 19:00 · cached 6h</div>
+            <div class="rank-strip" id="rankStrip"><div class="drawer-empty" data-i18n="rank_strip_empty">Green Motion's daily rentalcars rank loads here for the current month.</div></div>
+            <div class="rank-legend"><span data-i18n="gm_rank">GM RANK</span>: <span class="rank-pill rank-good">1–3</span><span class="rank-pill rank-mid">4–7</span><span class="rank-pill rank-bad">8+</span> · <span data-i18n="rank_legend">click a day for the full top-10 · pickup 19:00 · cached 6h</span></div>
           </div>
         </div>
         <div class="dash-row">
           <div class="card card-grow">
-            <div class="card-title">PRICE CURVE &mdash; <span id="dashChartMonth">—</span></div>
-            <div id="dashChart" class="dash-chart"><div class="chart-empty">Open the grid to load data.</div></div>
+            <div class="card-title"><span data-i18n="price_curve">PRICE CURVE</span> &mdash; <span id="dashChartMonth">—</span></div>
+            <div id="dashChart" class="dash-chart"><div class="chart-empty" data-i18n="open_grid_first">Open the grid to load data.</div></div>
           </div>
           <div class="card card-grow">
-            <div class="card-title">RESTORE POINTS
-              <button class="btn btn-ghost btn-xs" id="backupBtn">+ CREATE</button>
+            <div class="card-title"><span data-i18n="restore_points">RESTORE POINTS</span>
+              <button class="btn btn-ghost btn-xs" id="backupBtn">+ <span data-i18n="create">CREATE</span></button>
             </div>
-            <div id="backupList" class="backup-list"><div class="drawer-empty">No restore points yet.</div></div>
+            <div id="backupList" class="backup-list"><div class="drawer-empty" data-i18n="no_backups">No restore points yet.</div></div>
           </div>
           <div class="card card-grow">
-            <div class="card-title">MARKET WATCH
+            <div class="card-title"><span data-i18n="market_watch">MARKET WATCH</span>
               <span class="rank-controls">
-                <button class="btn btn-ghost btn-xs" id="watchRunBtn" title="Run a sweep now">RUN NOW</button>
-                <button class="btn btn-ghost btn-xs" id="testMailBtn" title="Send a test alert email">TEST MAIL</button>
+                <button class="btn btn-ghost btn-xs" id="watchRunBtn" title="Run a sweep now" data-i18n="run_now">RUN NOW</button>
+                <button class="btn btn-ghost btn-xs" id="testMailBtn" title="Send a test alert email" data-i18n="test_mail">TEST MAIL</button>
               </span>
             </div>
             <div id="watchStatus" class="stat-rows"><div class="drawer-empty">Loading…</div></div>
@@ -82,10 +95,10 @@
         </div>
         <div class="dash-row">
           <div class="card card-grow">
-            <div class="card-title">RECENT ACTIVITY
-              <button class="btn btn-ghost btn-xs" data-view="activity">VIEW ALL</button>
+            <div class="card-title"><span data-i18n="recent_activity">RECENT ACTIVITY</span>
+              <button class="btn btn-ghost btn-xs" data-view="activity" data-i18n="view_all">VIEW ALL</button>
             </div>
-            <div id="dashActivity" class="dash-activity"><div class="drawer-empty">No activity yet.</div></div>
+            <div id="dashActivity" class="dash-activity"><div class="drawer-empty" data-i18n="no_activity2">No activity yet.</div></div>
           </div>
         </div>
       </div>
@@ -100,14 +113,22 @@
           <span class="month-label" id="monthLabel">—</span>
           <button class="btn btn-ghost" id="nextMonth">&#8250;</button>
           <button class="btn btn-ghost" id="reloadBtn" title="Reload grid">&#8635;</button>
-          <button class="btn btn-ghost" id="copyMonthBtn" title="Copy this month's grid to another month">COPY &rarr;</button>
-          <button class="btn btn-ghost" id="sweepBtn" title="Push Green Motion into the top-10 for the whole month">TOP-10 SWEEP</button>
+          <button class="btn btn-ghost" id="copyMonthBtn" title="Copy this month's grid to another month"><span data-i18n="copy">COPY</span> &rarr;</button>
+          <button class="btn btn-ghost" id="sweepBtn" title="Push Green Motion into the top-10 for the whole month" data-i18n="top10_sweep">TOP-10 SWEEP</button>
+          <button class="btn btn-ghost" id="scanBtn" title="Crowd the top-10 for the whole visible month" data-i18n-title="scan_tip" data-i18n="scan_btn">SCAN</button>
+          <button class="btn btn-ghost" id="bulkBtn" title="Create weekly rules for a whole horizon in one go" data-i18n="bulk_btn">WEEKLY RULES</button>
+          <!-- admin-only station maintenance, right where the rules live -->
+          <button class="btn btn-ghost hidden" id="gridCopyBtn" data-i18n="copy_btn">COPY TO…</button>
+          <button class="btn btn-danger hidden" id="gridResetBtn" data-i18n="reset_btn">RESET</button>
         </div>
         <div class="controls-right">
-          <label class="vendor-wrap">VENDOR
+          <label class="vendor-wrap"><span data-i18n="vendor">VENDOR</span>
             <select id="vendorSel" class="vendor-sel"><option value="ALL">ALL</option></select>
           </label>
           <span class="chip chip-sync hidden" id="syncChip">SYNCING</span>
+          <!-- the console pacing itself, so a self-imposed wait never looks
+               like a freeze -->
+          <span class="chip chip-warn hidden" id="pressureChip"></span>
           <span class="chip chip-warn hidden" id="warnChip">0 UNCOVERED</span>
           <span class="chip" id="ruleCountChip">— RULES</span>
           <span class="chip chip-warn hidden" id="conflictChip">0 CONFLICTS</span>
@@ -116,6 +137,9 @@
       </nav>
 
       <main class="grid-wrap">
+        <!-- One vehicle-group set = one price lane. Hidden until a second set
+             exists, so a single-category station looks exactly as before. -->
+        <div class="lane-bar hidden" id="laneBar"></div>
         <div class="grid-scroller">
           <table class="grid" id="gridTable">
             <thead><tr id="gridHead"></tr></thead>
@@ -124,15 +148,15 @@
         </div>
         <div class="grid-empty" id="gridEmpty">
           <div class="empty-code">[ NO SESSION ]</div>
-          <div class="empty-text">Connect your FuseMetrix session to load the pricing grid.</div>
+          <div class="empty-text" data-i18n="grid_empty">Connect your DPS session to load the pricing grid.</div>
         </div>
       </main>
 
       <footer class="applybar hidden" id="applyBar">
-        <span class="staged-label"><span class="staged-count" id="stagedCount">0</span> STAGED CHANGES</span>
+        <span class="staged-label"><span class="staged-count" id="stagedCount">0</span> <span data-i18n="staged_changes">STAGED CHANGES</span></span>
         <div class="applybar-actions">
-          <button class="btn btn-ghost" id="discardBtn">DISCARD</button>
-          <button class="btn btn-primary" id="applyBtn">APPLY TO FMX</button>
+          <button class="btn btn-ghost" id="discardBtn" data-i18n="discard">DISCARD</button>
+          <button class="btn btn-primary" id="applyBtn" data-i18n="apply_fmx">APPLY TO DPS</button>
         </div>
       </footer>
     </section>
@@ -141,12 +165,16 @@
     <section id="view-analytics" class="view hidden">
       <div class="dash">
         <div class="card">
-          <div class="card-title">PRICE CURVE &mdash; <span id="chartMonth">—</span></div>
-          <div class="chart-wrap chart-lg" id="chartWrap"><div class="chart-empty">Open the grid to load data.</div></div>
+          <div class="card-title"><span data-i18n="price_curve2">PRICE CURVE</span> &mdash; <span id="chartMonth">—</span></div>
+          <div class="chart-wrap chart-lg" id="chartWrap"><div class="chart-empty" data-i18n="open_grid_first2">Open the grid to load data.</div></div>
           <div class="chart-legend" id="chartLegend"></div>
         </div>
         <div class="card">
-          <div class="card-title">DURATION AVERAGES</div>
+          <div class="card-title" data-i18n="insights_title">INSIGHTS &amp; COMMENTARY</div>
+          <div id="insightsList" class="insights-list"><div class="drawer-empty" data-i18n="insights_empty">Load the grid and the market rank strip — the commentary builds itself from that data.</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title" data-i18n="duration_avgs">DURATION AVERAGES</div>
           <div id="durStats" class="dash-activity"><div class="drawer-empty">No data.</div></div>
         </div>
       </div>
@@ -156,10 +184,155 @@
     <section id="view-activity" class="view hidden">
       <div class="dash">
         <div class="card card-grow">
-          <div class="card-title">ACTIVITY LOG
-            <button class="btn btn-ghost btn-xs" id="logsRefresh">&#8635; REFRESH</button>
+          <div class="card-title"><span data-i18n="activity_log">ACTIVITY LOG</span>
+            <button class="btn btn-ghost btn-xs" id="logsRefresh">&#8635; <span data-i18n="refresh">REFRESH</span></button>
           </div>
-          <div class="drawer-list" id="logsList"><div class="drawer-empty">No activity yet.</div></div>
+          <div class="drawer-list" id="logsList"><div class="drawer-empty" data-i18n="no_activity">No activity yet.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ USERS (admin only) ============ -->
+    <section id="view-users" class="view hidden">
+      <div class="dash">
+        <div class="dash-row">
+          <div class="card card-grow">
+            <div class="card-title"><span data-i18n="users_title">CONSOLE USERS</span>
+              <button class="btn btn-ghost btn-xs" id="usrRefresh">&#8635; <span data-i18n="refresh">REFRESH</span></button>
+            </div>
+            <div class="usr-table" id="usrTable"><div class="drawer-empty">…</div></div>
+            <div class="set-hint" id="usrHint"></div>
+          </div>
+        </div>
+        <div class="dash-row">
+          <div class="card card-grow">
+            <div class="card-title" data-i18n="usr_create">CREATE USER</div>
+            <div class="usr-form">
+              <input type="email" id="usrEmail" class="field-input" placeholder="you@example.com" spellcheck="false" autocomplete="off">
+              <input type="password" id="usrPass" class="field-input" placeholder="••••••••" autocomplete="new-password">
+              <input type="text" id="usrName" class="field-input" placeholder="Display name" maxlength="60" autocomplete="off">
+              <select id="usrRoleSel" class="vendor-sel">
+                <option value="staff">STAFF</option>
+                <option value="admin">ADMIN</option>
+              </select>
+              <input type="text" id="usrTenant" class="field-input hidden" placeholder="tenant-id" spellcheck="false" autocomplete="off">
+              <button class="btn btn-primary" id="usrCreateBtn" data-i18n="usr_create_btn">CREATE USER</button>
+            </div>
+            <div class="set-hint" data-i18n="usr_hint">Passwords are set once here and never shown again — the new operator can change it from their own account.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SETTINGS ============ -->
+    <section id="view-settings" class="view hidden">
+      <div class="dash">
+        <div class="dash-row">
+          <div class="card card-grow">
+            <div class="card-title" data-i18n="set_account">ACCOUNT</div>
+            <div class="set-user">
+              <span class="side-user-avatar set-avatar" id="setAvatar">—</span>
+              <div class="set-user-info">
+                <div class="set-user-name" id="setUserName">NOT SIGNED IN</div>
+                <div class="set-user-sub" id="setUserSub">—</div>
+              </div>
+            </div>
+            <div class="stat-rows" id="setAccountRows"></div>
+            <div class="set-actions">
+              <button class="btn btn-ghost" id="setReconnect" data-i18n="reconnect">RECONNECT</button>
+              <button class="btn btn-danger" id="setLogout" data-i18n="logout">SIGN OUT</button>
+            </div>
+          </div>
+          <div class="card card-grow">
+            <div class="card-title" data-i18n="set_appearance">APPEARANCE</div>
+            <div class="set-row">
+              <span class="set-label" data-i18n="set_theme">THEME</span>
+              <div class="set-seg" id="setTheme"></div>
+            </div>
+            <div class="set-row">
+              <span class="set-label">HUD <span id="setHudVal">100%</span></span>
+              <input type="range" id="setHud" class="set-range" min="60" max="130" step="5" value="100">
+            </div>
+            <div class="set-hint" data-i18n="set_hud_hint">HUD scale resizes the whole console — 100% fits a full month on one screen.</div>
+          </div>
+        </div>
+        <div class="dash-row">
+          <div class="card card-grow" id="setStationsCard">
+            <div class="card-title"><span data-i18n="set_stations">STATIONS</span>
+              <span class="rank-controls">
+                <button class="btn btn-ghost btn-xs hidden" id="stAddBtn" data-i18n="st_add">+ ADD</button>
+                <button class="btn btn-ghost btn-xs hidden" id="stSaveBtn" data-i18n="save">SAVE</button>
+              </span>
+            </div>
+            <div class="st-list" id="stList"><div class="drawer-empty">…</div></div>
+            <div class="set-hint" id="stHint"></div>
+          </div>
+        </div>
+        <div class="dash-row">
+          <div class="card card-grow" id="setFranchiseCard">
+            <div class="card-title"><span data-i18n="set_franchises">FRANCHISES</span>
+              <span class="rank-controls">
+                <button class="btn btn-ghost btn-xs hidden" id="frNewBtn" data-i18n="fr_new">+ NEW</button>
+              </span>
+            </div>
+            <div class="fr-list" id="frList"><div class="drawer-empty">…</div></div>
+            <div class="fr-create hidden" id="frCreate">
+              <input type="text" id="frId" class="field-input" placeholder="tenant-id" spellcheck="false" autocomplete="off" maxlength="32">
+              <input type="text" id="frName" class="field-input" placeholder="Franchise name" maxlength="60" autocomplete="off">
+              <input type="text" id="frBase" class="field-input" placeholder="https://xxx.dps.greenmotion.com" spellcheck="false" autocomplete="off">
+              <div class="st-pick">
+                <input type="text" id="frSearch" class="field-input st-search" placeholder="Search an airport, city or address…" spellcheck="false" autocomplete="off">
+                <div class="place-drop hidden" id="frDrop"></div>
+              </div>
+              <div class="fr-stations" id="frStations"></div>
+              <div class="set-actions">
+                <button class="btn btn-ghost" id="frCancelBtn" data-i18n="cancel">CANCEL</button>
+                <button class="btn btn-primary" id="frCreateBtn" data-i18n="fr_create_btn">CREATE FRANCHISE</button>
+              </div>
+            </div>
+            <div class="set-hint" id="frHint"></div>
+          </div>
+        </div>
+        <div class="dash-row">
+          <div class="card card-grow">
+            <div class="card-title" data-i18n="set_language">LANGUAGE</div>
+            <div class="set-seg set-seg-lang" id="setLang"></div>
+            <div class="set-hint" data-i18n="set_lang_hint">Interface language only — rule names, logs and DPS data stay as they are.</div>
+          </div>
+          <div class="card card-grow">
+            <div class="card-title" data-i18n="set_mail">ALERT MAIL</div>
+            <div class="set-row set-mail-row">
+              <input type="email" id="setMailInput" class="field-input set-mail-input" placeholder="you@example.com" spellcheck="false" autocomplete="email">
+              <button class="btn btn-primary" id="setMailSave" data-i18n="save">SAVE</button>
+            </div>
+            <div class="stat-rows" id="setMailRows"></div>
+            <div class="set-row">
+              <span class="set-label" data-i18n="set_reports">REPORT MAILS</span>
+              <button class="switch" id="setReports" role="switch" aria-checked="true"><span class="switch-knob"></span></button>
+            </div>
+            <div class="set-hint" data-i18n="set_mail_hint">Market-watch alerts and test mails go to this address. Leave empty and save to fall back to the system default.</div>
+            <div class="set-hint" data-i18n="set_reports_hint">Turning report mails off only stops auto-scan and market-watch mails to <b>this</b> account — other operators keep receiving them.</div>
+          </div>
+          <div class="card card-grow">
+            <div class="card-title" data-i18n="set_system">SYSTEM</div>
+            <div class="stat-rows" id="setSystemRows"><div class="drawer-empty">…</div></div>
+          </div>
+          <div class="card card-grow" id="setRelayCardWrap">
+            <div class="card-title" data-i18n="relay_card_title">RC RELAY MACHINES</div>
+            <div id="setRelayCard"><div class="drawer-empty">…</div></div>
+          </div>
+          <!-- destructive, admin-only: wipes every console-shaped weekly rule
+               at one station after taking a full restore point -->
+          <div class="card card-grow hidden" id="setPurgeCard">
+            <div class="card-title" data-i18n="purge_title">RESET WEEKLY RULES</div>
+            <div class="set-hint" data-i18n="purge_hint">Deletes every console-written weekly rule at the selected station — one-day, percentage rules only. Rules you built by hand in DPS (date ranges, weekday or fixed-price rules) are left untouched. A full restore point is taken first.</div>
+            <div class="purge-row">
+              <select id="purgeStation" class="vendor-sel"></select>
+              <input type="text" id="purgeConfirm" class="field-input" spellcheck="false" autocomplete="off" data-i18n-ph="purge_ph" placeholder="Type the station name to confirm">
+              <button class="btn btn-danger" id="purgeBtn" data-i18n="purge_btn">DELETE ALL</button>
+            </div>
+            <div class="stat-rows" id="purgeRows"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -167,40 +340,68 @@
   </div>
 </div>
 
+<!-- Firebase sign-in gate: the console stays behind this until an ID token has
+     been exchanged for the operator cookie (POST /api/auth/session). -->
+<div class="auth-gate" id="authGate">
+  <div class="modal">
+    <div class="auth-brand">
+      <span class="brand-mark"></span>
+      <span class="auth-brand-name">PRICING CONSOLE</span>
+      <span class="auth-brand-sub">SENTINEL // DPS</span>
+    </div>
+    <div class="modal-head" data-i18n="auth_title">CONSOLE SIGN-IN</div>
+    <div class="modal-body">
+      <p class="modal-text" data-i18n="auth_text">Sign in with your console account. Access, stations and roles are managed centrally.</p>
+      <label class="field-label" for="authEmail" data-i18n="auth_email">E-MAIL</label>
+      <input type="email" id="authEmail" class="field-input" autocomplete="username" spellcheck="false">
+      <label class="field-label" for="authPass" data-i18n="auth_pass">PASSWORD</label>
+      <input type="password" id="authPass" class="field-input" autocomplete="current-password">
+      <div class="modal-error hidden" id="authError"></div>
+      <button class="btn btn-primary" id="authBtn" data-i18n="auth_signin">SIGN IN</button>
+      <div class="auth-hint" data-i18n="auth_step2_hint">After this step the console asks for your DPS login — that is a second, separate session.</div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop hidden" id="sessionModal">
   <div class="modal">
-    <div class="modal-head">FMX LOGIN</div>
+    <div class="modal-head" data-i18n="login_title">DPS LOGIN</div>
     <div class="modal-body">
-      <p class="modal-text">
+      <p class="modal-text" data-i18n="login_text">
         Sign in with your <b>zrh.dps.greenmotion.com</b> account. The console
-        opens its own FuseMetrix session and keeps it alive; your password is
+        opens its own DPS session and keeps it alive; your password is
         held in memory only and never written to disk.
       </p>
-      <label class="field-label" for="userInput">USERNAME</label>
+      <label class="field-label" for="userInput" data-i18n="username">USERNAME</label>
       <input type="text" id="userInput" class="field-input" autocomplete="username" spellcheck="false">
-      <label class="field-label" for="passInput">PASSWORD</label>
+      <label class="field-label" for="passInput" data-i18n="password">PASSWORD</label>
       <input type="password" id="passInput" class="field-input" autocomplete="current-password">
       <div class="modal-error hidden" id="loginError"></div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" id="loginCancel">CANCEL</button>
-      <button class="btn btn-primary" id="loginSave">SIGN IN</button>
+      <button class="btn btn-ghost" id="loginCancel" data-i18n="cancel">CANCEL</button>
+      <button class="btn btn-primary" id="loginSave" data-i18n="sign_in">SIGN IN</button>
     </div>
   </div>
 </div>
 
 <div class="modal-backdrop hidden" id="rcModal">
   <div class="modal modal-rc">
-    <div class="modal-head"><span id="rcTitle">RENTALCARS TOP 10</span>
+    <div class="modal-head"><span id="rcTitle">RENTALCARS TOP 50</span>
+      <span class="rc-hour" id="rcHour"></span>
       <button class="btn btn-ghost btn-xs" id="rcClose">&times;</button>
     </div>
     <div class="modal-body">
-      <div class="rc-durs" id="rcDurs"></div>
+      <div class="rc-toolrow">
+        <div class="rc-durs" id="rcDurs"></div>
+        <div class="rc-fleet" id="rcFleet"></div>
+      </div>
       <div id="rcBody"><div class="drawer-empty">Pick a duration.</div></div>
     </div>
     <div class="modal-actions">
       <span class="rc-meta" id="rcMeta"></span>
-      <a class="btn btn-ghost" id="rcOpen" target="_blank" rel="noopener">OPEN ON RENTALCARS</a>
+      <button class="btn btn-ghost" id="rcRefresh" onclick="refreshRcAnalysis()" data-i18n="refresh_rc">REFRESH</button>
+      <a class="btn btn-ghost" id="rcOpen" target="_blank" rel="noopener" data-i18n="open_rc">OPEN ON RENTALCARS</a>
     </div>
   </div>
 </div>
@@ -212,15 +413,15 @@
     </div>
     <div class="modal-body">
       <div class="sweep-opts">
-        <label class="vendor-wrap">TARGET RANK
+        <label class="vendor-wrap"><span data-i18n="target_rank">TARGET RANK</span>
           <input type="number" id="sweepRank" class="field-input sweep-rank" value="10" min="1" max="20">
         </label>
-        <span class="vendor-wrap">DURATIONS
+        <span class="vendor-wrap"><span data-i18n="durations">DURATIONS</span>
           <span class="rc-durs rc-durs-sm" id="sweepDurs"></span>
         </span>
-        <span class="side-hint">Max 6-day rentals — every searchable day of this month.</span>
+        <span class="side-hint" data-i18n="sweep_hint">Max 6-day rentals — every searchable day of this month.</span>
       </div>
-      <div id="sweepBody"><div class="drawer-empty">SCAN queries rentalcars for each day &amp; duration, then shows the planned FMX changes before anything is written.</div></div>
+      <div id="sweepBody"><div class="drawer-empty">SCAN queries rentalcars for each day &amp; duration, then shows the planned DPS changes before anything is written.</div></div>
     </div>
     <div class="modal-actions">
       <span class="rc-meta" id="sweepMeta"></span>
@@ -230,16 +431,98 @@
   </div>
 </div>
 
+<!-- Bulk weekly-rule creation. Every date in the horizon is walked UTC-safe in
+     app.js with exactly the same arithmetic the server uses, so the preview
+     line and the rules that get written can never disagree. -->
+<div class="modal-backdrop hidden" id="bulkModal">
+  <div class="modal modal-rc">
+    <div class="modal-head"><span id="bulkTitle" data-i18n="bulk_title">WEEKLY RULES</span>
+      <button class="btn btn-ghost btn-xs" id="bulkClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="bulk-grid">
+        <label class="bulk-field"><span class="bulk-label" data-i18n="bulk_start">START DATE</span>
+          <input type="date" id="bulkStart" class="field-input">
+        </label>
+        <label class="bulk-field"><span class="bulk-label" data-i18n="bulk_end">END DATE</span>
+          <input type="date" id="bulkEnd" class="field-input">
+        </label>
+        <label class="bulk-field bulk-field-sm"><span class="bulk-label" data-i18n="bulk_pct">PERCENT</span>
+          <input type="text" id="bulkPct" class="field-input" inputmode="decimal" value="-">
+        </label>
+        <span class="bulk-field bulk-field-sm"><span class="bulk-label" data-i18n="bulk_skip">SKIP EXISTING</span>
+          <button class="switch" id="bulkSkip" role="switch" aria-checked="true"><span class="switch-knob"></span></button>
+        </span>
+      </div>
+      <div class="bulk-row">
+        <span class="bulk-label" data-i18n="bulk_horizon">HORIZON</span>
+        <span class="rc-durs rc-durs-sm bulk-chipset" id="bulkDays"></span>
+        <input type="text" id="bulkDaysCustom" class="field-input bulk-days-custom"
+               maxlength="12" spellcheck="false" autocomplete="off"
+               data-i18n-ph="bulk_horizon_ph" placeholder="or: 45 / 2 weeks">
+      </div>
+      <div class="bulk-row">
+        <span class="bulk-label" data-i18n="durations">DURATIONS</span>
+        <span class="rc-durs rc-durs-sm bulk-chipset" id="bulkDurs"></span>
+      </div>
+      <!-- Vehicle-group selection retired 2026-08-28 (Berkay): weekly rules
+           always cover ALL vehicle groups now. The block stays in the DOM so
+           app.js's element lookups keep working, but never shows. -->
+      <div class="vg-retired hidden">
+      <div class="vg-head"><span data-i18n="bulk_groups">VEHICLE GROUPS</span>
+        <span class="rank-controls">
+          <button class="btn btn-ghost btn-xs" id="vgAllBtn" data-i18n="vg_all_btn">ALL</button>
+          <button class="btn btn-ghost btn-xs" id="vgNoneBtn" data-i18n="vg_none_btn">NONE</button>
+          <span class="vg-count" id="vgCount">—</span>
+        </span>
+      </div>
+      <div class="vg-list" id="vgList"><div class="drawer-empty" data-i18n="vg_loading">Loading vehicle groups…</div></div>
+      <div class="vg-presets" id="vgPresets"></div>
+      <div class="vg-save">
+        <input type="text" id="vgPresetName" class="field-input vg-save-name" maxlength="40" data-i18n-ph="vg_save_ph" placeholder="Set name (e.g. Economy fleet)">
+        <button class="btn btn-ghost btn-xs" id="vgSaveBtn" data-i18n="vg_save_btn">SAVE SET</button>
+      </div>
+      </div><!-- /vg-retired -->
+      <div class="bulk-preview" id="bulkPreview">—</div>
+      <div class="bulk-prog hidden" id="bulkProg">
+        <div class="bulk-bar"><span id="bulkBarFill"></span></div>
+        <div class="bulk-prog-meta" id="bulkProgMeta">—</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <span class="rc-meta" id="bulkMeta"></span>
+      <button class="btn btn-ghost hidden" id="bulkCancelBtn" data-i18n="bulk_cancel">CANCEL RUN</button>
+      <button class="btn btn-primary" id="bulkApplyBtn" data-i18n="bulk_apply">APPLY</button>
+    </div>
+  </div>
+</div>
+
 <div class="page-fx" id="pageFx" aria-hidden="true">
   <div class="page-fx-inner">
     <span class="page-fx-mark"></span>
     <span class="page-fx-text">PRICING&nbsp;SENTINEL</span>
-    <span class="page-fx-sub">GM ZURICH // FMX DPS</span>
+    <span class="page-fx-sub">GM ZURICH // DPS</span>
   </div>
 </div>
 
 <div class="toasts" id="toasts"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script>
+// Firebase web config — public by design (it identifies the project, it does not
+// authorise anything). The console's own operator cookie is minted server-side
+// from the verified ID token by POST /api/auth/session.
+window.FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyDNgmZ2XKFQLP8xhtnFQaibOb3vHvIvrcU',
+  authDomain: 'sentinelpricing.firebaseapp.com',
+  projectId: 'sentinelpricing',
+  storageBucket: 'sentinelpricing.firebasestorage.app',
+  messagingSenderId: '458833228767',
+  appId: '1:458833228767:web:328c8853dde2476dd70a6a',
+};
+if (window.firebase && !firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+</script>
 <script src="app.js"></script>
 </body>
 </html>

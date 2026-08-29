@@ -21,11 +21,20 @@
   --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
   --sans: 'Archivo', system-ui, sans-serif;
   /* chart series (validated for dark surface #1e2124) */
+  --s1: #8f7fe8;
   --s2: #3987e5;
   --s3: #d95926;
   --s4: #199e70;
   --s5: #c98500;
   --s6: #d55181;
+  --s7: #4bb8c9;
+  --s8: #a3873c;
+  --s9: #7f8fa6;
+  --s10: #b0603f;
+  --s11: #5f9e4a;
+  --s12: #9d5bb0;
+  --s13: #c4762c;
+  --s14: #e0e3e7;
 }
 
 :root[data-theme='light'] {
@@ -47,11 +56,20 @@
   --empty-cell: #c4c9cd;
   --btn-primary-text: #ffffff;
   /* chart series (validated for light surface #ffffff) */
+  --s1: #6f5fd0;
   --s2: #2a78d6;
   --s3: #eb6834;
   --s4: #1baf7a;
   --s5: #eda100;
   --s6: #e87ba4;
+  --s7: #2596a6;
+  --s8: #8a6f22;
+  --s9: #5b6b80;
+  --s10: #a04a2a;
+  --s11: #4a8a35;
+  --s12: #8244a0;
+  --s13: #b05f18;
+  --s14: #3b4046;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -121,6 +139,7 @@ body {
 }
 
 .chip-warn { color: var(--warn); border-color: var(--warn); }
+.chip-error { color: var(--error); border-color: var(--error); }
 .chip-dim { color: var(--text-mute); }
 
 .chip-sync {
@@ -367,10 +386,15 @@ body {
 
 /* ---------- rc modal ---------- */
 
-.modal-rc { width: 820px; max-height: 88vh; display: flex; flex-direction: column; }
+/* ONE size, always. The window used to be sized by its content, so swapping a
+   50-row table for the one-line "querying rentalcars…" collapsed it to a sliver
+   and snapped back — every hour step made it jump. A fixed height holds still
+   while a query is in flight. */
+.modal-rc { width: 1440px; height: 90vh; max-height: 90vh; display: flex; flex-direction: column; }
 
 .modal-rc .modal-head { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-.modal-rc .modal-body { overflow-y: auto; }
+/* fills the fixed height instead of dictating it */
+.modal-rc .modal-body { flex: 1; min-height: 0; overflow-y: auto; }
 .modal-rc .modal-actions { flex-shrink: 0; }
 
 .rc-durs { display: flex; gap: 6px; }
@@ -406,7 +430,7 @@ body {
 .rc-table tr.rc-dropover td { border-top: 2px solid var(--accent); }
 .rc-drag-hint { color: var(--text-mute); font-size: 9px; letter-spacing: 0.1em; padding-left: 6px; }
 
-.rc-table td.rc-price { color: var(--text); font-weight: 500; text-align: right; }
+.rc-table td.rc-price { color: var(--text); font-weight: 500; text-align: right; white-space: nowrap; }
 .rc-table th.rc-price { text-align: right; }
 
 .rc-table tr.rc-gm td { background: var(--accent-dim); color: var(--accent); }
@@ -417,21 +441,17 @@ body {
 
 .rc-loading { padding: 26px; text-align: center; color: var(--text-mute); font-size: 11px; letter-spacing: 0.14em; animation: syncblink 1s infinite; }
 
-/* supplier logos — monochrome "palantir" treatment, color on hover */
+/* supplier logos — always the original brand colors, no filter */
 .rc-logo {
   width: 36px;
   height: 15px;
   object-fit: contain;
   vertical-align: -3px;
   margin-right: 8px;
-  filter: grayscale(1) contrast(1.1) opacity(0.8);
-  transition: filter 0.12s;
+  background: #ffffff;
+  border-radius: 2px;
+  padding: 1px 2px;
 }
-
-tr:hover .rc-logo, .rank-cell:hover .rc-logo { filter: none; }
-
-:root:not([data-theme='light']) .rc-logo { filter: grayscale(1) invert(0.88) contrast(0.9); }
-:root:not([data-theme='light']) tr:hover .rc-logo { filter: none; }
 
 .rc-sup { white-space: nowrap; }
 
@@ -465,6 +485,7 @@ tr:hover .rc-logo, .rank-cell:hover .rc-logo { filter: none; }
 .rc-simbar-btns { display: flex; gap: 8px; }
 
 .rc-hint { margin-top: 10px; font-size: 10px; color: var(--text-mute); }
+.rc-hint-dim { margin-top: 4px; opacity: 0.75; }
 
 .rc-syncbar {
   display: flex;
@@ -512,6 +533,7 @@ tr:hover .rc-logo, .rank-cell:hover .rc-logo { filter: none; }
 .rank-none .rank-num { color: var(--text-mute); }
 .rank-pending { opacity: 0.55; }
 .rank-pending .rank-num { animation: syncblink 0.9s infinite; color: var(--text-mute); }
+.rank-stale { opacity: 0.55; border-style: dashed; }
 
 .rank-legend { margin-top: 10px; font-size: 9px; color: var(--text-mute); letter-spacing: 0.08em; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
@@ -588,10 +610,34 @@ tr:hover .rc-logo, .rank-cell:hover .rc-logo { filter: none; }
 .chart-label { font-family: var(--mono); font-size: 8px; fill: var(--text-dim); }
 .chart-cross { stroke: var(--text-mute); stroke-width: 1; stroke-dasharray: 2 3; }
 
-.s-2 { stroke: var(--s2); } .s-3 { stroke: var(--s3); } .s-4 { stroke: var(--s4); }
-.s-5 { stroke: var(--s5); } .s-6 { stroke: var(--s6); }
-.chip-s-2 { background: var(--s2); } .chip-s-3 { background: var(--s3); } .chip-s-4 { background: var(--s4); }
-.chip-s-5 { background: var(--s5); } .chip-s-6 { background: var(--s6); }
+.s-1 { stroke: var(--s1); }
+.s-2 { stroke: var(--s2); }
+.s-3 { stroke: var(--s3); }
+.s-4 { stroke: var(--s4); }
+.s-5 { stroke: var(--s5); }
+.s-6 { stroke: var(--s6); }
+.s-7 { stroke: var(--s7); }
+.s-8 { stroke: var(--s8); }
+.s-9 { stroke: var(--s9); }
+.s-10 { stroke: var(--s10); }
+.s-11 { stroke: var(--s11); }
+.s-12 { stroke: var(--s12); }
+.s-13 { stroke: var(--s13); }
+.s-14 { stroke: var(--s14); }
+.chip-s-1 { background: var(--s1); }
+.chip-s-2 { background: var(--s2); }
+.chip-s-3 { background: var(--s3); }
+.chip-s-4 { background: var(--s4); }
+.chip-s-5 { background: var(--s5); }
+.chip-s-6 { background: var(--s6); }
+.chip-s-7 { background: var(--s7); }
+.chip-s-8 { background: var(--s8); }
+.chip-s-9 { background: var(--s9); }
+.chip-s-10 { background: var(--s10); }
+.chip-s-11 { background: var(--s11); }
+.chip-s-12 { background: var(--s12); }
+.chip-s-13 { background: var(--s13); }
+.chip-s-14 { background: var(--s14); }
 
 .chart-legend {
   display: flex;
@@ -628,9 +674,8 @@ tr:hover .rc-logo, .rank-cell:hover .rc-logo { filter: none; }
 .tip-row { display: flex; align-items: center; gap: 6px; color: var(--text-dim); line-height: 1.6; }
 .tip-row b { color: var(--text); margin-left: auto; font-weight: 500; }
 
-@media (max-width: 1000px) {
-  .sidebar { display: none; }
-}
+/* sidebar stays a desktop element down to the mobile breakpoint (780px), where
+   it converts into a bottom tab bar — see the mobile block at the end of the file */
 
 /* ---------- controls row ---------- */
 
@@ -697,6 +742,8 @@ tr:hover .rc-logo, .rank-cell:hover .rc-logo { filter: none; }
 .grid-scroller { flex: 1; min-height: 0; overflow: auto; }
 
 .grid {
+  /* 14 duration columns: keep each readable and let .grid-scroller scroll */
+  min-width: 900px;
   border-collapse: collapse;
   width: 100%;
   height: 100%;
@@ -752,6 +799,42 @@ tr.weekend .day-label .dow { color: var(--warn); }
 td.cell-empty { color: var(--empty-cell); }
 td.cell-neg { color: var(--accent); font-weight: 500; }
 td.cell-pos { color: var(--warn); font-weight: 500; }
+
+/* Band coding, Palantir blues: the normal discount range (-40..-60) stays
+   green. OUTSIDE the band the cell cools to blue — steel for too-shallow
+   (-39 and up), intense electric with a glow for too-deep (-61 and down) —
+   so what needs checking announces itself before anyone reads a number. */
+td.cell-out-mild {
+  color: #6ea8dc;
+  font-weight: 600;
+  background: rgba(59, 130, 200, 0.08);
+}
+
+td.cell-out-deep {
+  color: #52c7f2;
+  font-weight: 700;
+  background: rgba(37, 99, 235, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(82, 199, 242, 0.35);
+  text-shadow: 0 0 8px rgba(82, 199, 242, 0.35);
+}
+
+/* past the blue: the -70s warm to orange, -80 and beyond burns red — the
+   closer a price is to being given away, the hotter the cell */
+td.cell-out-hot {
+  color: #fb923c;
+  font-weight: 700;
+  background: rgba(234, 120, 40, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(251, 146, 60, 0.4);
+  text-shadow: 0 0 8px rgba(251, 146, 60, 0.35);
+}
+
+td.cell-out-crit {
+  color: #f87171;
+  font-weight: 700;
+  background: rgba(220, 55, 55, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(248, 113, 113, 0.45);
+  text-shadow: 0 0 9px rgba(248, 113, 113, 0.45);
+}
 
 td.cell-inactive { color: var(--text-mute); }
 td.cell-inactive::after {
@@ -949,6 +1032,10 @@ td.cell-conflict {
 
 .modal-sm { width: 400px; }
 
+/* the rc/sweep modal must out-specificity the base .modal width so the top-10
+   table (supplier + vehicle + rating + price) fits without horizontal scroll */
+.modal.modal-rc { width: min(1440px, calc(100vw - 24px)); }
+
 .modal-head {
   padding: 12px 18px;
   border-bottom: 1px solid var(--border);
@@ -1080,3 +1167,1801 @@ td.cell-conflict {
 .toast-warn { border-left-color: var(--warn); }
 
 @keyframes slidein { from { transform: translateX(12px); opacity: 0; } }
+
+/* ---------- sidebar user block ---------- */
+
+.side-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  margin: 2px -6px 0;
+  background: none;
+  border: 1px solid var(--border-soft);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--mono);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.side-user:hover { border-color: var(--accent); background: var(--accent-dim); }
+
+.side-user-avatar {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.side-user-off .side-user-avatar { border-color: var(--border); color: var(--text-mute); background: var(--surface-2); }
+
+.side-user-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.side-user-name {
+  font-size: 10px;
+  color: var(--text);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.side-user-role { font-size: 8px; color: var(--text-mute); letter-spacing: 0.14em; }
+
+/* ---------- settings ---------- */
+
+.set-user { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+
+.set-avatar { width: 40px; height: 40px; font-size: 14px; }
+
+.set-user-name { font-family: var(--mono); font-size: 13px; color: var(--text); letter-spacing: 0.08em; text-transform: uppercase; }
+
+.set-user-sub { font-family: var(--mono); font-size: 10px; color: var(--text-mute); margin-top: 2px; }
+
+.set-actions { display: flex; gap: 8px; margin-top: 14px; }
+
+.btn-danger {
+  background: none;
+  border: 1px solid var(--error);
+  color: var(--error);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-danger:hover { background: var(--error-dim); }
+
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.set-label { font-family: var(--mono); font-size: 10px; color: var(--text-dim); letter-spacing: 0.14em; }
+
+.set-seg { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.set-seg-lang { margin: 6px 0 10px; }
+
+.set-seg-lang .rc-dur { padding: 7px 16px; font-size: 10px; }
+
+.set-hint { font-size: 10px; color: var(--text-mute); line-height: 1.5; margin-top: 8px; }
+
+.set-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 55%;
+  height: 3px;
+  background: var(--border);
+  outline: none;
+}
+
+.set-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border: 1px solid var(--bg);
+  cursor: pointer;
+}
+
+.set-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border: 1px solid var(--bg);
+  cursor: pointer;
+}
+
+/* ---------- rc modal: fleet targeting ---------- */
+
+.rc-toolrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.rc-fleet { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+.rc-fleet-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.14em;
+  margin-right: 2px;
+}
+
+.rc-fleet-label i { font-style: normal; color: var(--text-mute); }
+
+/* ---------- rc modal: the two price columns ----------
+   LIST = base rate (muted), CUSTOMER = what a shopper pays (keeps the black
+   emphasis — ranking runs on it). Chosen over struck-price + badge on
+   2026-08-29: the badge read as an error next to a session that saw none. */
+
+.rc-table td.rc-list { color: var(--text-dim); font-weight: 400; }
+
+/* CUSTOMER prices in Palantir orange — Berkay 2026-08-29: "musteri olan
+   yerdeki fiyatlari da turuncu yaparsan cok iyi olur". The GM-row green
+   override below must not swallow it, hence the explicit rc-gm selector. */
+.rc-table td.rc-cust,
+.rc-table tr.rc-gm td.rc-cust { color: var(--warn); }
+
+/* gearbox + fuel: quiet metadata columns, never louder than the prices */
+.rc-table td.rc-gear, .rc-table td.rc-fuel {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--text-mute);
+  white-space: nowrap;
+}
+.rc-table th.rc-gear, .rc-table th.rc-fuel { white-space: nowrap; }
+
+.rc-before {
+  text-decoration: line-through;
+  opacity: 0.6;
+  font-size: smaller;
+  font-weight: 400;
+  margin-right: 4px;
+  color: var(--warn);
+}
+
+/* rentalcars' own targeted discounts — Palantir orange, matches the site's badge */
+.rc-disc {
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  background: var(--warn-dim);
+  padding: 1px 5px;
+  margin-left: 4px;
+  font-weight: 400;
+}
+
+/* ---------- settings: relay machines card ---------- */
+
+.relay-dl { display: flex; gap: 8px; margin-top: 12px; }
+
+.relay-dl-btn.on { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+.relay-cmds { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+
+.relay-cmd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  min-width: 0;
+}
+
+.relay-cmd span { color: var(--text-mute); letter-spacing: 0.14em; flex-shrink: 0; width: 28px; }
+
+.relay-cmd code {
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  padding: 4px 8px;
+  color: var(--text-dim);
+  user-select: all;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.relay-dl-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ---------- sidebar sign-out ---------- */
+
+.side-user-row { display: flex; align-items: stretch; gap: 6px; }
+
+.side-user-row .side-user { flex: 1; min-width: 0; }
+
+.side-signout {
+  flex: 0 0 auto;
+  width: 30px;
+  background: none;
+  border: 1px solid var(--border-soft);
+  color: var(--text-mute);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.side-signout:hover { color: var(--error); border-color: var(--error); background: var(--error-dim); }
+
+/* ---------- settings: alert mail ---------- */
+
+.set-mail-row { border-bottom: none; padding-top: 2px; }
+
+.set-mail-input { flex: 1; min-width: 0; }
+
+/* ---------- analytics: insights ---------- */
+
+.insights-list { display: flex; flex-direction: column; gap: 10px; }
+
+.insight-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.insight-row b { color: var(--text); font-weight: 600; }
+
+.insight-dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  margin-top: 6px;
+  background: var(--accent);
+}
+
+/* GM's own price cell accepts a typed target price */
+td.rc-price-click { cursor: pointer; }
+td.rc-price-click:hover { color: var(--accent); text-decoration: underline dotted; }
+
+/* the 960px modal has room for full-size supplier logos */
+.rc-table .rc-logo { width: 46px; height: 18px; }
+
+/* ---------- grid: staged old -> new coloring ---------- */
+
+.cell-old {
+  color: var(--warn);
+  text-decoration: line-through;
+  opacity: 0.85;
+  font-size: smaller;
+  margin-right: 5px;
+  font-weight: 400;
+}
+
+.cell-new { color: var(--accent); font-weight: 700; }
+
+/* ---------- rc modal: two-line duration tabs + projection bar ---------- */
+
+.rc-dur-2l { display: inline-flex; flex-direction: column; gap: 2px; line-height: 1.1; }
+
+.rc-dur-pct { font-size: 9px; color: var(--text-mute); }
+
+.rc-dur.on .rc-dur-pct { color: var(--accent); }
+
+.rc-dur-pct-edit { cursor: pointer; text-decoration: underline dotted; }
+
+.rc-dur-pct-edit:hover { color: var(--warn); }
+
+.rc-simbar.rc-sim-applied { border-color: var(--accent); background: var(--accent-dim); }
+
+/* ---------- rc modal: duration % chips (own row directly under the tabs) ---------- */
+
+/* All 14 durations must sit on ONE line, with each % chip directly under its
+   own duration. Both rows are flex tracks of equal 1fr-style columns, so they
+   align by construction and shrink together instead of wrapping. */
+#rcDurs { flex-direction: column; gap: 0; }
+
+.rc-dur-row { display: flex; gap: 5px; width: 100%; }
+
+.rc-dur-row .rc-dur {
+  flex: 1 1 0;
+  min-width: 0; /* lets 14 columns share the width instead of forcing a wrap */
+  padding: 8px 4px;
+  font-size: 11px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.rc-dur-pcts { display: flex; gap: 5px; width: 100%; margin: 3px 0 8px; }
+
+.rc-dur-pcts > * {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 1px solid var(--warn);
+  background: var(--warn-dim);
+  color: var(--warn);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.25;
+  padding: 7px 2px;
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rc-dur-pcts > *:hover { text-decoration: underline dotted; }
+
+/* chip of the active duration — one step louder than its siblings */
+.rc-dur-pcts > .on { box-shadow: inset 0 0 0 1px var(--warn); }
+
+/* the chips may reuse the old .rc-dur-pct class — inside the chip row the
+   tiny muted look must not apply */
+.rc-dur-pcts .rc-dur-pct { font-size: 11px; color: var(--warn); }
+
+/* ---------- grid: SCAN-staged cells (machine proposals, orange) ---------- */
+
+.cell-scan-new { color: var(--warn); font-weight: 700; }
+
+td.cell-staged-scan {
+  outline: 1px dashed var(--warn);
+  outline-offset: -1px;
+  background: var(--warn-dim);
+  color: var(--warn);
+}
+
+/* ---------- activity: collapsed SCAN batch rows ---------- */
+
+.log-batch-ico { color: var(--warn); font-weight: 700; font-size: 14px; line-height: 1; }
+
+.log-entry.log-batch {
+  border-left: 2px solid var(--warn);
+  background: var(--warn-dim);
+}
+
+/* ---------- rc modal: category chip row (ALL / ECONOMY / SUV / …) ---------- */
+
+.rc-cats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.rc-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+
+.rc-cat:hover { border-color: var(--accent); color: var(--text); }
+
+.rc-cat.on { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+.rc-cat-ico { font-size: 13px; line-height: 1; }
+
+.rc-cat-label { letter-spacing: 0.1em; }
+
+/* GM's rank within this category */
+.rc-cat-rank {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: var(--text-mute);
+  border: 1px solid var(--border-soft);
+  background: var(--bg);
+  padding: 1px 5px;
+}
+
+.rc-cat.on .rc-cat-rank { color: var(--accent); border-color: var(--accent); }
+
+/* ---------- rc modal: pending (un-applied) duration % chip ---------- */
+
+/* the active-duration chip while a projected value is staged but not yet written
+   to FMX — brighter, solid orange with a pulse so it reads as "not settled yet".
+   (out-specificity the .rc-dur-pcts .rc-dur-pct muted rule) */
+.rc-dur-pcts > .rc-dur-pct-pending,
+.rc-dur-pcts .rc-dur-pct-pending {
+  background: var(--warn);
+  color: var(--btn-primary-text);
+  border-color: var(--warn);
+  animation: pctpulse 0.9s ease-in-out infinite;
+}
+
+@keyframes pctpulse { 50% { box-shadow: 0 0 9px var(--warn); } }
+
+/* another operator is live on this cell/day: an orange trace with their name
+   riding the corner — presence, not alarm, so it stays subtle */
+td.cell-remote {
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.55);
+}
+
+td.cell-remote::before {
+  content: attr(data-ruser);
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  padding: 0 4px;
+  background: rgba(245, 158, 11, 0.92);
+  color: #1a1408;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* "GM is not listed here" where the 2-6 fleet buttons would be */
+.rc-fleet-none {
+  color: var(--warn);
+  opacity: 0.85;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+/* ---------- grid tip card: Palantir-styled hover detail ---------- */
+
+.grid-tip {
+  position: fixed;
+  z-index: 400;
+  display: none;
+  min-width: 210px;
+  max-width: 280px;
+  padding: 10px 12px 8px;
+  background: linear-gradient(160deg, rgba(13, 20, 32, 0.97), rgba(9, 14, 24, 0.97));
+  border: 1px solid rgba(82, 199, 242, 0.35);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.4),
+              inset 0 1px 0 rgba(82, 199, 242, 0.12);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: #c8d6e5;
+  pointer-events: none;
+}
+
+.grid-tip .gt-head {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding-bottom: 6px; margin-bottom: 6px;
+  border-bottom: 1px solid rgba(82, 199, 242, 0.18);
+}
+
+.grid-tip .gt-title { font-weight: 700; color: #eaf2fa; letter-spacing: 0.08em; }
+
+.grid-tip .gt-status {
+  font-size: 8.5px; font-weight: 700; letter-spacing: 0.12em;
+  padding: 2px 7px; border-radius: 2px; text-transform: uppercase;
+}
+.grid-tip .gt-status.gt-ok   { color: #6ee7b7; background: rgba(52, 211, 153, 0.12); }
+.grid-tip .gt-status.gt-warn { color: #fbbf24; background: rgba(251, 191, 36, 0.12); }
+.grid-tip .gt-status.gt-bad  { color: #f87171; background: rgba(248, 113, 113, 0.14); }
+.grid-tip .gt-status.gt-dim  { color: #7b8794; background: rgba(120, 135, 150, 0.12); }
+
+.grid-tip .gt-row {
+  display: flex; justify-content: space-between; gap: 14px;
+  padding: 2px 0; color: #8fa3b8;
+}
+.grid-tip .gt-row b { color: #dfe9f3; font-weight: 600; text-align: right; }
+.grid-tip .gt-row.gt-warn b { color: #fbbf24; }
+.grid-tip .gt-row.gt-bad b { color: #f87171; }
+
+.grid-tip .gt-foot {
+  margin-top: 6px; padding-top: 5px;
+  border-top: 1px solid rgba(82, 199, 242, 0.12);
+  font-size: 8.5px; color: #5c6f82;
+}
+
+/* ±0.5 steppers flanking the in-chip editor: each tap re-projects the ladder
+   live, so the ranking below answers the click immediately */
+.rc-dur-pcts .chip-wrap {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+}
+
+.rc-dur-pcts .chip-step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  flex: 0 0 22px;
+  border: none;
+  background: var(--warn);
+  color: var(--btn-primary-text);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.rc-dur-pcts .chip-step:active { filter: brightness(1.15); }
+
+/* the in-chip % editor: the chip IS the input — same orange, no dialog */
+.rc-dur-pcts .chip-input {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  padding: 0;
+}
+
+/* The chip being edited grows out of the 14-chip row. At the shared 12px in a
+   ~90px chip the number the operator was typing was barely legible (Berkay,
+   2026-08-29: "yuzde yazma olan yeri biraz daha buyut"). Only the open editor
+   grows, so the row keeps its shape and the other durations stay readable. */
+.rc-dur-pcts > .chip-editing {
+  flex: 2.4 1 0;
+  padding: 8px 4px;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 0 0 2px var(--warn);
+  overflow: visible;
+}
+
+.rc-dur-pcts > .chip-editing .chip-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.rc-dur-pcts > .chip-editing .chip-input { font-weight: 700; }
+
+.rc-dur-pcts > .chip-editing .chip-step {
+  font-size: 20px;
+  line-height: 1;
+  padding: 0 6px;
+  opacity: 0.7;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rc-dur-pcts > .chip-editing .chip-step:hover { opacity: 1; }
+
+/* the modal chips carry the grid's discount-depth blues, so a check reads the
+   same in both places (specificity matches the muted base rule) */
+.rc-dur-pcts .rc-chip-out-mild {
+  color: #6ea8dc;
+  border-color: rgba(59, 130, 200, 0.5);
+  background: rgba(59, 130, 200, 0.1);
+}
+
+.rc-dur-pcts .rc-chip-out-deep {
+  color: #52c7f2;
+  border-color: rgba(82, 199, 242, 0.6);
+  background: rgba(37, 99, 235, 0.18);
+  text-shadow: 0 0 8px rgba(82, 199, 242, 0.35);
+}
+
+.rc-dur-pcts .rc-chip-out-hot {
+  color: #fb923c;
+  border-color: rgba(251, 146, 60, 0.6);
+  background: rgba(234, 120, 40, 0.16);
+  text-shadow: 0 0 8px rgba(251, 146, 60, 0.35);
+}
+
+.rc-dur-pcts .rc-chip-out-crit {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.65);
+  background: rgba(220, 55, 55, 0.18);
+  text-shadow: 0 0 9px rgba(248, 113, 113, 0.45);
+}
+
+/* ---------- rc modal: CONFIRM bar rides above the table (R5) ---------- */
+
+/* the simBar now renders before the table, so it separates from the list below.
+   sticky-pin it to the top of the scroll area so CONFIRM stays visible while the
+   competitor list scrolls; sticky needs an opaque fill, so paint the warn/accent
+   tint as an inset shadow layered over a solid surface background. */
+.modal-rc .rc-simbar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  margin-top: 0;
+  margin-bottom: 10px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 100vh var(--warn-dim);
+}
+
+.modal-rc .rc-simbar.rc-sim-applied { box-shadow: inset 0 0 0 100vh var(--accent-dim); }
+
+.modal-rc .rc-syncbar,
+.modal-rc .rc-hint { margin-bottom: 10px; }
+
+/* ---------- mobile optimization (<= 780px): full console on a phone ---------- */
+
+@media (max-width: 780px) {
+  /* topbar: brand stays, chips/buttons wrap and condense */
+  .topbar { height: auto; min-height: 48px; flex-wrap: wrap; padding: 6px 12px; gap: 6px; }
+  .brand-sub { display: none; }
+  .brand-name { font-size: 12px; letter-spacing: 0.12em; }
+  .topbar-right { gap: 6px; flex-wrap: wrap; }
+  /* the tenant chip now carries the franchise name (multi-tenant), so it stays
+     on a phone instead of being hidden — just tighter and ellipsised */
+  #tenantChip {
+    display: inline-flex;
+    padding: 4px 7px;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .topbar-right .btn { padding: 6px 9px; }
+
+  /* sidebar -> fixed bottom tab bar (thumb-friendly, 6 icons) */
+  .shell { padding-bottom: 56px; }
+  .sidebar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    width: auto;
+    height: 56px;
+    display: flex;
+    flex-direction: row;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    z-index: 45;
+  }
+  .nav { flex-direction: row; flex: 1; padding: 0; justify-content: space-around; }
+  .nav-item {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 2px;
+    border-left: none;
+    border-top: 2px solid transparent;
+    letter-spacing: 0.04em;
+    font-size: 8px;
+    text-align: center;
+  }
+  .nav-item.on { border-left-color: transparent; border-top-color: var(--accent); }
+  .nav-ico { font-size: 14px; width: auto; }
+  .side-bottom { display: none; }
+
+  /* view padding tightens */
+  .dash { padding: 12px; }
+  .controls { padding: 8px 12px; }
+  .grid-wrap { padding: 8px 12px 10px; }
+  .applybar { padding: 10px 12px; }
+
+  /* dashboard/settings cards stack to one column; the small tiles stay 2-up */
+  .dash-row { flex-direction: column; }
+  #dashTiles { flex-direction: row; flex-wrap: wrap; }
+  #dashTiles .tile { flex: 1 1 42%; min-width: 0; }
+  .card { min-width: 0; }
+
+  /* controls row wraps; the month label no longer forces a wide column */
+  .month-nav { flex-wrap: wrap; gap: 6px; }
+  .month-label { min-width: 0; font-size: 12px; }
+  .controls-right { flex-wrap: wrap; }
+  .station-tabs { flex-wrap: wrap; }
+
+  /* grid: scroll horizontally inside its own scroller; the day column stays put.
+     the page body itself never scrolls sideways (the scroller clips it). */
+  .grid { table-layout: auto; min-width: 520px; }
+  .grid th.day-col { position: sticky; left: 0; z-index: 3; background: var(--surface); }
+  .grid td:first-child { position: sticky; left: 0; z-index: 2; background: var(--bg); }
+  tr.weekend td:first-child { background: var(--weekend-bg); }
+
+  /* modals: near full width, internal scroll, ≥40px tap targets */
+  .modal { width: 100%; max-width: calc(100vw - 16px); max-height: calc(100vh - 20px); overflow-y: auto; }
+  .modal.modal-rc { width: calc(100vw - 16px); height: calc(100vh - 20px); max-height: calc(100vh - 20px); }
+  .modal-body { padding: 14px; }
+  .modal-actions { padding: 12px 14px; flex-wrap: wrap; }
+  .btn { padding: 9px 12px; }
+  .btn-xs { padding: 5px 9px; }
+
+  /* rc modal: on a phone 14 columns cannot stay on one line, so the duration
+     tabs and their % chips wrap (they stop lining up column-for-column, which
+     is the right trade at this width) */
+  .rc-toolrow { flex-direction: column; align-items: stretch; }
+  .rc-durs, .rc-cats, .rc-fleet, .rc-dur-row, .rc-dur-pcts { flex-wrap: wrap; }
+  #rcDurs .rc-dur, .rc-dur-pcts > * { flex: 0 1 auto; min-width: 60px; }
+  .rc-cat { padding: 6px 9px; }
+
+  /* competitor table denser so it fits 375px without a second scrollbar */
+  .rc-table { font-size: 11.5px; }
+  .rc-table th, .rc-table td { padding: 6px 6px; }
+  .rc-table .rc-logo { width: 38px; height: 15px; }
+  /* the price column must never be clipped on a phone: drop the rating column
+     (least useful on mobile) AND the muted LIST column (CUSTOMER is the
+     ranking basis), and let the table scroll inside itself if a long
+     supplier/vehicle name still overflows */
+  .rc-table th:nth-child(4), .rc-table td:nth-child(4) { display: none; }
+  .rc-table th.rc-list, .rc-table td.rc-list { display: none; }
+  .rc-table th.rc-gear, .rc-table td.rc-gear,
+  .rc-table th.rc-fuel, .rc-table td.rc-fuel { display: none; }
+  .rc-table { display: block; overflow-x: auto; width: 100%; }
+  .rc-table thead, .rc-table tbody { display: table; width: 100%; table-layout: fixed; }
+  .rc-table td.rc-price, .rc-table th.rc-price { white-space: nowrap; width: 33%; }
+  .rc-table .rc-drag-hint { display: none; }
+
+  /* the top-10 sweep list scrolls inside its own box */
+  .sweep-list { max-height: 46vh; }
+
+  /* toasts span the narrow screen */
+  .toasts { left: 12px; right: 12px; top: 54px; max-width: none; }
+}
+
+/* category rank badge while a projection is live: the number is what the
+   pending % would make it, not the current one */
+.rc-cat-rank-proj {
+  color: var(--warn);
+  border-color: var(--warn);
+  background: var(--warn-dim);
+  font-weight: 700;
+}
+
+/* station rule reset (admin only, destructive) */
+.purge-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.purge-row .field-input { flex: 1 1 200px; min-width: 160px; }
+
+/* a horizon typed by hand, next to the preset chips */
+.bulk-days-custom {
+  width: 118px; flex: 0 0 auto;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
+  padding: 5px 8px;
+}
+
+.field-bad { border-color: var(--danger, #c0504d) !important; }
+
+/* ---------- price lane switcher (one vehicle-group set per lane) ---------- */
+
+.lane-bar {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.lane-label {
+  font-family: var(--mono); font-size: 9px; font-weight: 700;
+  letter-spacing: 0.14em; color: var(--text-mute); margin-right: 4px;
+}
+
+.lane-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 11px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  cursor: pointer;
+}
+
+.lane-chip:hover { border-color: var(--accent); color: var(--text); }
+
+.lane-chip.on {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.lane-count {
+  font-size: 9px; font-weight: 700; opacity: 0.7;
+  padding: 1px 5px; border-radius: 99px;
+  background: var(--bg);
+}
+
+/* ---------- multi-select dialog (SCAN category picker) ---------- */
+
+.multi-list {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 12px; max-height: 46vh; overflow-y: auto;
+}
+
+.multi-opt {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.multi-opt:hover { border-color: var(--accent); background: var(--accent-dim); }
+.multi-opt input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+.multi-opt:has(input:checked) { border-color: var(--accent); }
+.multi-ico { font-size: 15px; line-height: 1; flex-shrink: 0; }
+.multi-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.multi-title {
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em; color: var(--accent);
+}
+
+.multi-desc { font-family: var(--mono); font-size: 10px; line-height: 1.45; color: var(--text-dim); }
+
+.multi-note {
+  margin: 12px 0 0; font-size: 10px; line-height: 1.55;
+  color: var(--text-mute); border-left: 2px solid var(--border); padding-left: 9px;
+}
+
+/* ---------- choice dialog (SCAN strategy picker) ---------- */
+
+.choice-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+
+.choice-opt {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  padding: 11px 13px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.choice-opt:hover { border-color: var(--accent); background: var(--accent-dim); }
+
+.choice-title { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; color: var(--accent); }
+
+.choice-desc { font-size: 11px; line-height: 1.5; color: var(--text-dim); }
+
+/* ---------- before/after comparison popup (opens after a scan APPLY) ---------- */
+
+/* the popup is a dynamically built `.modal.modal-rc`; the summary sentence sits
+   above the per-category table, the per-day detail list scrolls on its own so
+   the table (the actual answer) stays on screen. */
+
+.cmp-summary {
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  padding: 9px 12px;
+  border: 1px solid var(--accent);
+  background: var(--accent-dim);
+}
+
+.cmp-summary b { color: var(--accent); }
+
+/* same visual language as .rc-table: mono, thin rules, mute uppercase head */
+.cmp-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+
+.cmp-table th {
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--text-mute);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cmp-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-soft); color: var(--text-dim); }
+
+/* KATEGORİ stays left; the rank/İYİLEŞME columns read as numbers on the right */
+.cmp-table th:not(:first-child), .cmp-table td:not(:first-child) { text-align: right; white-space: nowrap; }
+.cmp-table td:first-child { color: var(--text); letter-spacing: 0.06em; }
+.cmp-table tbody tr:last-child td { border-bottom: none; }
+
+/* improvement (GM moved up) vs no movement */
+.cmp-up { color: var(--accent); font-weight: 700; }
+.cmp-flat { color: var(--text-mute); }
+
+/* per-day detail: day · duration · old% → new% · categories that moved */
+.cmp-detail {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border-soft);
+  list-style: none;
+}
+
+.cmp-detail > * {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.cmp-detail > *:last-child { border-bottom: none; }
+.cmp-detail b { color: var(--text); }
+.cmp-detail .cmp-up, .cmp-detail .cmp-flat { margin-left: auto; font-size: 10px; }
+
+/* ---------- comparison popup on a phone (375px) ---------- */
+
+@media (max-width: 780px) {
+  .cmp-summary { font-size: 11px; padding: 8px 10px; }
+
+  /* four short columns still fit at 375px once the head loosens its tracking and
+     the long "(ORT. SIRA)" labels are allowed to wrap onto a second line; cells
+     wrap at spaces only, so a category name is never broken mid-word */
+  .cmp-table { font-size: 11px; }
+  .cmp-table th { font-size: 9px; letter-spacing: 0.06em; padding: 6px 4px; }
+  .cmp-table td { padding: 7px 4px; }
+  .cmp-table th:not(:first-child) { white-space: normal; }
+
+  /* the detail list gives up its own scrollbar — the modal body scrolls instead,
+     so a phone never ends up with two nested scroll areas */
+  .cmp-detail { max-height: none; overflow-y: visible; }
+  .cmp-detail > * { gap: 8px; font-size: 11px; padding: 7px 9px; }
+  .cmp-detail .cmp-up, .cmp-detail .cmp-flat { margin-left: 0; }
+}
+
+/* ---------- Firebase auth gate (app-wide sign-in, before the console) ---------- */
+
+/* the console is the second thing a visitor sees: this covers the whole
+   viewport (above modals, toasts and the page-fx sweep) until Firebase reports
+   a signed-in user. The card inside is a plain .modal — same dark aesthetic. */
+
+#authGate {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--bg);
+}
+
+#authGate .modal { width: 380px; }
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 18px 0;
+}
+
+.auth-brand-name {
+  font-family: var(--sans);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  font-size: 14px;
+}
+
+.auth-brand-sub {
+  color: var(--text-mute);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  border-left: 1px solid var(--border);
+  padding-left: 10px;
+}
+
+/* the inputs and the SIGN IN button fill the card width */
+#authGate .field-input { width: 100%; }
+#authBtn { width: 100%; padding: 10px 13px; text-align: center; }
+
+/* an empty error line must not reserve space (the client may leave it in the
+   DOM and only fill textContent) */
+#authError:empty { display: none; }
+
+/* "signing in…" state — same blink as the other live surfaces */
+#authGate.auth-busy #authBtn { animation: syncblink 1s ease-in-out infinite; }
+
+/* step-2 note: Firebase gets you into the console, FMX login binds the
+   FuseMetrix session afterwards */
+.auth-hint {
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--text-mute);
+  border-top: 1px solid var(--border-soft);
+  padding-top: 10px;
+}
+
+/* ---------- role badge (admin / staff) ---------- */
+
+/* usable standalone or on a .chip / .side-user-role */
+.role-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  color: var(--text-mute);
+}
+
+.role-admin { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+.role-staff { color: var(--text-mute); border-color: var(--border); }
+
+/* ---------- settings: STATIONS card (tenant stations + location picker) ---------- */
+
+.st-list { display: flex; flex-direction: column; }
+
+/* one station: id · editable name · rentalcars location · remove */
+.st-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.st-list .st-row:last-child { border-bottom: none; }
+
+.st-id {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--text-mute);
+  width: 54px;
+  flex-shrink: 0;
+}
+
+.st-name { flex: 1 1 150px; min-width: 0; padding: 7px 9px; font-size: 12px; }
+
+/* the location cell doubles as the picker trigger; .place-drop hangs off it */
+.st-pick { position: relative; flex: 1 1 200px; min-width: 0; }
+.st-pick .field-input { width: 100%; padding: 7px 9px; font-size: 12px; }
+
+/* the rentalcars location label — also used under a station tab */
+.st-loc {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--text-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+button.st-loc {
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 5px 8px;
+  text-align: left;
+}
+
+button.st-loc:hover { color: var(--accent); border-color: var(--accent); }
+
+.st-actions { display: flex; gap: 6px; margin-left: auto; flex-shrink: 0; }
+
+.st-empty { font-size: 10px; color: var(--text-mute); padding: 10px 0; }
+
+/* staff sees the card read-only */
+.field-input:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ---------- airport / location picker (GET /api/places) ---------- */
+
+.place-drop {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+}
+
+.place-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 9px;
+  border: none;
+  border-bottom: 1px solid var(--border-soft);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.place-item:last-child { border-bottom: none; }
+.place-item:hover, .place-item.on { background: var(--accent-dim); color: var(--text); }
+
+.place-item b { color: var(--text); font-weight: 500; }
+
+/* the ✈ / IATA marker — airports read as the primary result */
+.place-iata {
+  flex-shrink: 0;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 1px 5px;
+}
+
+.place-sub {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--text-mute);
+}
+
+.place-empty {
+  padding: 9px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-mute);
+}
+
+.place-loading { animation: syncblink 1s ease-in-out infinite; }
+
+/* ---------- station tabs carry their rentalcars location ---------- */
+
+.station-tab .st-loc {
+  display: block;
+  margin-top: 3px;
+  max-width: 150px;
+  letter-spacing: 0.06em;
+}
+
+/* ---------- auth gate + stations card on a phone (375px) ---------- */
+
+@media (max-width: 780px) {
+  #authGate { padding: 12px; align-items: flex-start; padding-top: 12vh; }
+  #authGate .modal { width: 100%; max-width: calc(100vw - 24px); }
+  .auth-brand { padding: 14px 14px 0; gap: 8px; }
+  .auth-brand-sub { display: none; }
+  #authGate .modal-body { padding: 14px; }
+
+  /* a station row becomes a small stack: id + name, then the location picker,
+     then the actions — nothing is clipped at 375px */
+  .st-row { flex-wrap: wrap; gap: 8px; }
+  .st-id { width: auto; }
+  .st-name { flex: 1 1 120px; }
+  .st-pick { flex: 1 1 100%; }
+  .st-loc { max-width: 100%; }
+  .st-actions { margin-left: 0; }
+
+  /* the dropdown spans the row (its offset parent) instead of the narrow cell */
+  .place-drop { max-height: 200px; }
+  .place-item { padding: 9px; font-size: 12px; }
+  .place-sub { margin-left: 0; }
+
+  /* the tab sublabel would double the tab height — keep the tabs one-line */
+  .station-tab .st-loc { display: none; }
+}
+
+/* ---------- users view (#view-users, admin only) ---------- */
+
+/* same visual language as .rc-table / .cmp-table: mono, thin rules, a muted
+   uppercase head. The row is the unit of interaction — hover lifts it. */
+.usr-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+
+.usr-table th {
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--text-mute);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.usr-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text-dim);
+  vertical-align: middle;
+}
+
+.usr-table tbody tr:last-child td { border-bottom: none; }
+
+.usr-row:hover td { background: var(--surface-2); }
+
+/* the signed-in operator's own row — they cannot demote or delete themselves,
+   so it is marked rather than silently unclickable */
+.usr-row.usr-self td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+
+.usr-mail { color: var(--text); letter-spacing: 0.04em; word-break: break-all; }
+.usr-name { color: var(--text-dim); }
+
+/* disabled account: the whole row recedes */
+.usr-row.usr-off td { opacity: 0.6; }
+
+.usr-status { font-size: 9px; letter-spacing: 0.12em; color: var(--accent); white-space: nowrap; }
+.usr-status.usr-off, .usr-status-off { color: var(--error); }
+
+.usr-seen { font-size: 10px; letter-spacing: 0.06em; color: var(--text-mute); white-space: nowrap; }
+
+/* the role cell is either a badge (read-only) or a select (admin editing it) —
+   both read as the same small uppercase token */
+.usr-role {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  color: var(--text-mute);
+}
+
+.usr-role.role-admin, .usr-role.usr-admin { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+.usr-role.role-staff, .usr-role.usr-staff { color: var(--text-mute); border-color: var(--border); }
+
+select.usr-role {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: none;
+  padding: 4px 6px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+select.usr-role:hover { border-color: var(--accent); }
+select.usr-role:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.usr-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+.usr-empty { font-size: 10px; color: var(--text-mute); padding: 10px 0; }
+
+/* CREATE USER form — auto-fitting field columns, same inputs as the modals */
+.usr-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px 14px;
+  align-items: end;
+}
+
+.usr-form .field-label { margin-bottom: 4px; }
+.usr-form .field-input, .usr-form select { width: 100%; padding: 8px 10px; font-size: 12.5px; }
+.usr-form-wide { grid-column: 1 / -1; }
+
+/* ---------- settings: FRANCHISES card (tenants) ---------- */
+
+.fr-list { display: flex; flex-direction: column; }
+
+/* one franchise: name + id · its station chips · counts · actions */
+.fr-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.fr-list .fr-row:last-child { border-bottom: none; }
+
+.fr-name { font-size: 12px; color: var(--text); letter-spacing: 0.08em; }
+
+.fr-id {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--text-mute);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+
+/* the caller's own franchise reads as the active one */
+.fr-row.fr-own .fr-name { color: var(--accent); }
+.fr-row.fr-own .fr-id { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+.fr-chips { display: flex; gap: 5px; flex-wrap: wrap; flex: 1 1 200px; min-width: 0; }
+
+.fr-chip {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+
+.fr-chip b { color: var(--accent); font-weight: 500; }
+
+.fr-meta { font-size: 9px; letter-spacing: 0.1em; color: var(--text-mute); white-space: nowrap; }
+
+.fr-actions { display: flex; gap: 6px; margin-left: auto; flex-shrink: 0; }
+
+.fr-empty { font-size: 10px; color: var(--text-mute); padding: 10px 0; }
+
+/* CREATE FRANCHISE form — id / name / fmxBase plus the reused airport picker
+   (.st-pick + .place-drop), so the rows below it may overflow the card */
+.fr-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px 14px;
+  align-items: end;
+}
+
+.fr-form .field-label { margin-bottom: 4px; }
+.fr-form .field-input { width: 100%; padding: 8px 10px; font-size: 12.5px; }
+.fr-form-wide { grid-column: 1 / -1; }
+
+/* ---------- vehicle-group multi-select (39 FMX groups) ---------- */
+
+/* 39 chips would swallow a modal, so the list is a bounded scroll box; the
+   chips themselves are .rc-cat's smaller sibling */
+.vg-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 168px;
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.vg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 4px 9px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+
+.vg-item:hover { border-color: var(--accent); color: var(--text); }
+
+/* the chip may be a button carrying .vg-on, or a label wrapping a checkbox */
+.vg-item input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+/* Selected, not yet written. The console reads orange as "staged" everywhere
+   else (the duration % chips), and a vehicle-group pick is exactly that: a
+   choice that only becomes real when the rules are applied. */
+.vg-on,
+.vg-item.on,
+.vg-item:has(input:checked) { color: var(--warn); border-color: var(--warn); background: var(--warn-dim); }
+
+.vg-item:has(input:focus-visible) { outline: 1px solid var(--accent); outline-offset: 1px; }
+
+.vg-empty { font-size: 10px; letter-spacing: 0.1em; color: var(--text-mute); padding: 6px 2px; }
+
+/* ALL / NONE shortcuts + the live "12/39 selected" counter share one row */
+.vg-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.vg-count {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--text-mute);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.vg-count b { color: var(--accent); font-weight: 700; }
+
+/* a subset (not every group) is the state worth noticing — same orange the
+   grid uses for partial coverage */
+.vg-count.vg-partial b { color: var(--warn); }
+
+/* ---------- WEEKLY RULES bulk modal (#bulkModal) ---------- */
+
+/* wider than the default .modal: the group list and the horizon chips both
+   want a full row */
+#bulkModal.modal, #bulkModal .modal { width: min(680px, calc(100vw - 40px)); }
+#bulkModal .modal-body { max-height: 72vh; overflow-y: auto; }
+
+.bulk-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 0.7fr) minmax(0, 0.7fr);
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.bulk-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.bulk-field > .field-label { margin-bottom: 0; }
+.bulk-field .field-input { width: 100%; padding: 8px 10px; font-size: 12.5px; }
+
+/* horizon / duration / group rows span the whole grid */
+.bulk-wide { grid-column: 1 / -1; }
+
+.bulk-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* the live "creates up to N rules — start → end" line: it is the one number
+   the operator checks before APPLY, so it gets the accent frame */
+.bulk-preview {
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  padding: 9px 12px;
+  border: 1px solid var(--accent);
+  background: var(--accent-dim);
+}
+
+.bulk-preview b { color: var(--accent); }
+.bulk-preview.bulk-invalid { border-color: var(--error); background: var(--error-dim); color: var(--error); }
+.bulk-preview.bulk-invalid b { color: var(--error); }
+
+/* background job progress (done/total, ok/fail) */
+.bulk-prog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  background: var(--accent-dim);
+}
+
+.bulk-prog-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.bulk-prog-row b { color: var(--accent); font-weight: 700; }
+.bulk-fail { color: var(--error); }
+
+/* the counter blinks while the job is running — same live-surface language as
+   .chip-sync */
+.bulk-prog.bulk-running .bulk-prog-row b { animation: syncblink 1s ease-in-out infinite; }
+
+.bulk-prog.bulk-failed { border-color: var(--error); background: var(--error-dim); }
+
+/* track + fill; the fill may be .bulk-bar-fill or the bar's only child */
+.bulk-bar {
+  position: relative;
+  height: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  overflow: hidden;
+}
+
+.bulk-bar-fill, .bulk-bar > * {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.25s linear;
+}
+
+.bulk-prog.bulk-failed .bulk-bar-fill, .bulk-prog.bulk-failed .bulk-bar > * { background: var(--error); }
+
+/* ---------- on/off switch (report mails, SKIP EXISTING) ---------- */
+
+/* works as <button class="switch"> (state via .on / aria-checked) or as
+   <label class="switch"><input type="checkbox"> (state via :has) */
+.switch {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  width: 40px;
+  height: 20px;
+  padding: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.switch input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: var(--text-mute);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.switch:hover { border-color: var(--accent); }
+
+.switch.on,
+.switch[aria-checked='true'],
+.switch:has(input:checked) { background: var(--accent-dim); border-color: var(--accent); }
+
+.switch.on::after,
+.switch[aria-checked='true']::after,
+.switch:has(input:checked)::after { background: var(--accent); transform: translateX(20px); }
+
+.switch:focus-visible,
+.switch:has(input:focus-visible) { outline: 1px solid var(--accent); outline-offset: 2px; }
+
+.switch:disabled,
+.switch:has(input:disabled) { opacity: 0.5; cursor: not-allowed; }
+
+/* ---------- grid: partial vehicle-group coverage ---------- */
+
+/* a rule may target a subset of the 39 groups. The corners of a cell are
+   already taken (OFF/DEL top-right, the op mismatch marker top-left), so the
+   marker is a small wedge in the bottom-right — painted as a background IMAGE
+   so it survives every state class that sets the background COLOR
+   (.cell-staged, .cell-ok, weekend rows …). The full "3/39: ZU-A, ZU-B, ZU-C"
+   list lives in the cell's title. `.grid` is in the selector so this outweighs
+   `tr.weekend td`, whose background shorthand would otherwise reset the
+   image on Sat/Sun rows. */
+.grid td.cell-partial {
+  background-image: linear-gradient(315deg, var(--s2) 0 6px, transparent 6px);
+  background-repeat: no-repeat;
+  background-position: right bottom;
+  background-size: 100% 100%;
+}
+
+/* if the client marks the value span instead of the cell, the same dot renders
+   inside the cell */
+.grid td .cell-partial {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--s2);
+}
+
+/* ---------- users / franchises / bulk modal on a phone (375px) ---------- */
+
+@media (max-width: 780px) {
+  /* the user table keeps all its columns and scrolls inside its own box —
+     the page body never moves sideways */
+  .usr-table { display: block; overflow-x: auto; width: 100%; font-size: 11.5px; }
+  /* table-layout:fixed keeps the detached thead/tbody column grids aligned;
+     the e-mail column gets a third of the width so an address is not broken
+     into four lines, and the min-width is what makes the box scroll */
+  .usr-table thead, .usr-table tbody { display: table; width: 100%; min-width: 600px; table-layout: fixed; }
+  .usr-table th:first-child { width: 32%; }
+  .usr-table th { font-size: 9px; letter-spacing: 0.06em; padding: 6px 6px; }
+  .usr-table td { padding: 7px 6px; }
+  .usr-actions { justify-content: flex-start; }
+  .usr-form { grid-template-columns: 1fr; }
+
+  /* a franchise row becomes a stack: name + id, station chips, then actions */
+  .fr-row { gap: 8px; }
+  .fr-chips { flex: 1 1 100%; }
+  .fr-actions { margin-left: 0; }
+  .fr-form { grid-template-columns: 1fr; }
+
+  /* the bulk modal follows the other modals to near-full width (its id would
+     otherwise out-specify the generic .modal mobile rule) */
+  #bulkModal.modal, #bulkModal .modal { width: 100%; max-width: calc(100vw - 16px); }
+  #bulkModal .modal-body { max-height: none; }
+  .bulk-grid { grid-template-columns: 1fr; }
+  .bulk-chips .rc-dur { padding: 7px 12px; }
+  .bulk-preview { font-size: 11px; padding: 8px 10px; }
+  .bulk-prog-row { font-size: 10.5px; }
+
+  /* the group list shortens so the APPLY row stays reachable without a long
+     scroll, and the chips get a ≥40px-friendly tap area */
+  .vg-list { max-height: 132px; gap: 5px; padding: 7px; }
+  .vg-item { padding: 7px 10px; font-size: 10px; }
+  .vg-count { margin-left: 0; flex: 1 1 100%; }
+}
+
+/* ---------- sprint 7 reconciliation: classes the client actually emits ----------
+   The users/franchise markup emits a few names the first pass did not style;
+   these rules make the rows line up as a grid instead of collapsing. */
+
+.usr-row, .usr-head {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) 90px 80px 80px 110px auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 11px;
+}
+
+.usr-head {
+  color: var(--text-mute);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  border-bottom: 1px solid var(--border);
+}
+
+.usr-user { min-width: 0; }
+.usr-user b { color: var(--text); font-weight: 600; }
+.usr-tenant, .usr-last { color: var(--text-mute); font-size: 10px; }
+.usr-role-admin { color: var(--accent); border-color: var(--accent); }
+.usr-role-staff { color: var(--text-dim); }
+
+.fr-base { color: var(--text-mute); font-size: 10px; word-break: break-all; }
+.fr-st-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.fr-st-del { margin-left: auto; }
+
+/* the WEEKLY RULES modal must not clip its duration chips at any width */
+.bulk-grid > * { min-width: 0; }
+.bulk-grid .rc-durs { display: flex; flex-wrap: wrap; gap: 6px; }
+
+@media (max-width: 780px) {
+  .usr-row, .usr-head { grid-template-columns: minmax(0, 1fr) 70px auto; row-gap: 4px; }
+  .usr-row > :nth-child(2), .usr-head > :nth-child(2),
+  .usr-row > :nth-child(5), .usr-head > :nth-child(5) { display: none; }
+}
+
+/* email and display name must not run together in the user cell */
+.usr-user { display: flex; flex-direction: column; gap: 1px; line-height: 1.35; min-width: 0; }
+.usr-user > b, .usr-user .usr-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.usr-user .usr-name { color: var(--text-mute); font-size: 10px; }
+
+/* ---------- saved vehicle-group sets ---------- */
+
+.vg-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.vg-presets-hint {
+  width: 100%;
+  font-size: 10px;
+  color: var(--text-mute);
+  margin-bottom: 2px;
+}
+
+.vg-preset { display: inline-flex; align-items: stretch; }
+
+.vg-preset-use {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-right: none;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.vg-preset-use i { color: var(--warn); font-style: normal; margin-left: 4px; }
+
+/* the set whose groups are currently selected — same "staged" orange */
+.vg-preset-use.on {
+  color: var(--warn);
+  border-color: var(--warn);
+  background: var(--warn-dim);
+}
+.vg-preset-use:hover { border-color: var(--accent); color: var(--accent); }
+
+.vg-preset-del {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-mute);
+  font-size: 11px;
+  line-height: 1;
+  padding: 0 7px;
+  cursor: pointer;
+}
+
+.vg-preset-del:hover { color: var(--error); border-color: var(--error); }
+
+.vg-save { display: flex; gap: 8px; margin-top: 8px; }
+.vg-save-name { flex: 1; min-width: 0; font-size: 11px; }
+
+
+/* ---------- weekly rules modal: even, aligned controls ---------- */
+
+.bulk-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+
+.bulk-label {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--text-mute);
+  white-space: nowrap;
+}
+
+.bulk-field .field-input { width: 100%; font-size: 12px; height: 32px; }
+.bulk-field-sm .field-input { text-align: center; }
+
+/* the chip rows get their own full-width line so 14 durations wrap cleanly */
+.bulk-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.bulk-row .bulk-label { padding-top: 6px; min-width: 74px; }
+
+.bulk-chipset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.bulk-chipset .rc-dur { min-width: 42px; text-align: center; }
+
+/* the horizon row carries a free-text box after the preset chips; the chipset
+   must not stretch across the row or the box lands on the far edge, reading
+   as an unrelated field instead of "or type your own" */
+#bulkDays { flex: 0 1 auto; }
+
+/* ---------- 14 durations: keep every chip row tidy site-wide ---------- */
+
+#rcDurs, #rankDurs, #sweepDurs, .rc-durs { flex-wrap: wrap; }
+
+.rc-dur-pcts { flex-wrap: wrap; }
+
+@media (max-width: 780px) {
+  .bulk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bulk-row { flex-direction: column; gap: 6px; }
+  .bulk-row .bulk-label { min-width: 0; padding-top: 0; }
+}
+
+/* pickup-hour stepper in the analysis header: the hour the table answers for,
+   stepped around the 09:00-19:00 ring. Sits next to the title because it is
+   what the whole table is an answer to. */
+.rc-hour {
+  display: inline-flex; align-items: center; gap: 2px;
+  margin-left: 14px;
+  margin-right: auto; /* stay beside the title, not adrift next to the close button */
+  padding-left: 14px;
+  border-left: 1px solid var(--border);
+}
+.rc-hour-val {
+  font-variant-numeric: tabular-nums; letter-spacing: .04em;
+  min-width: 5ch; text-align: center; opacity: .9;
+}
+.rc-hour-step {
+  background: none; border: 1px solid var(--line); color: inherit;
+  font: inherit; line-height: 1; cursor: pointer;
+  padding: 2px 7px; border-radius: 3px; opacity: .75;
+}
+.rc-hour-step:hover { opacity: 1; border-color: var(--accent); }
+.rc-hour-step:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

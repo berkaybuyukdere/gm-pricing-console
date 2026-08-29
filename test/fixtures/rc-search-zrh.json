@@ -1,0 +1,3881 @@
+{
+ "matches": [
+  {
+   "appliedPromotions": [
+    {
+     "afterPromotionPrice": {
+      "amount": 99.38,
+      "currency": "CHF"
+     },
+     "appliedPromotionValue": {
+      "amount": 13.55,
+      "currency": "CHF"
+     },
+     "bookingEndDate": "2026-08-29T23:59:59.999999999Z",
+     "descriptionKey": "tr.promotions.percentage_discount_applied",
+     "order": 1,
+     "promotionBreakdown": [
+      {
+       "fundingEntity": "SUPPLIER",
+       "promotionAmountInCustomerCurrency": {
+        "amount": 10.5,
+        "currency": "CHF"
+       },
+       "promotionAmountInSupplierCurrency": {
+        "amount": 10.5,
+        "currency": "CHF"
+       }
+      },
+      {
+       "fundingEntity": "TBU",
+       "promotionAmountInCustomerCurrency": {
+        "amount": 3.05,
+        "currency": "CHF"
+       }
+      }
+     ],
+     "promotionPercentage": 12,
+     "supplierPromotionId": "8820c952-902f-46b9-a6e3-77eaa5981422"
+    }
+   ],
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "basePrice": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 3000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 400,
+      "currency": "CHF",
+      "maxPrice": 400,
+      "minPrice": 400
+     },
+     "basePrice": {
+      "amount": 400,
+      "currency": "CHF",
+      "maxPrice": 400,
+      "minPrice": 400
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 400,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 45,
+      "currency": "CHF",
+      "maxPrice": 45,
+      "minPrice": 45
+     },
+     "basePrice": {
+      "amount": 45,
+      "currency": "CHF",
+      "maxPrice": 45,
+      "minPrice": 45
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 45,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": ""
+     },
+     "basePrice": {
+      "currency": ""
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "MAPPED",
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "basePrice": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 3000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4756063",
+    "pickUpDepotId": "4756063"
+   },
+   "vehicle": {
+    "id": "775294916",
+    "airConditioning": true,
+    "makeAndModel": "Renault Clio",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "economy"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/web/renault/clio_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 99.38,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 99.38,
+     "currency": "CHF"
+    },
+    "driveAwayPrice": {
+     "amount": 99.38,
+     "currency": "CHF"
+    },
+    "priceBefore": {
+     "amount": 112.93,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "basePriceBefore": {
+     "amount": 112.93,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "driveAwayPriceBefore": {
+     "amount": 112.93,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "EDAR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "AUTOMATIC",
+    "propositionType": "BR",
+    "numberOfDoors": "4",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": false,
+    "productInfo": {
+     "accountNo": "TJW007",
+     "productId": "185490",
+     "rateCode": "TJW007"
+    },
+    "group": [
+     "small"
+    ],
+    "smallSuitcase": 1,
+    "specialOffers": {}
+   },
+   "recommendedDisplayOrder": 1,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 1
+  },
+  {
+   "appliedPromotions": [
+    {
+     "afterPromotionPrice": {
+      "amount": 101.32,
+      "currency": "CHF"
+     },
+     "appliedPromotionValue": {
+      "amount": 13.82,
+      "currency": "CHF"
+     },
+     "bookingEndDate": "2026-08-29T23:59:59.999999999Z",
+     "descriptionKey": "tr.promotions.percentage_discount_applied",
+     "order": 1,
+     "promotionBreakdown": [
+      {
+       "fundingEntity": "SUPPLIER",
+       "promotionAmountInCustomerCurrency": {
+        "amount": 10.7,
+        "currency": "CHF"
+       },
+       "promotionAmountInSupplierCurrency": {
+        "amount": 10.7,
+        "currency": "CHF"
+       }
+      },
+      {
+       "fundingEntity": "TBU",
+       "promotionAmountInCustomerCurrency": {
+        "amount": 3.12,
+        "currency": "CHF"
+       }
+      }
+     ],
+     "promotionPercentage": 12,
+     "supplierPromotionId": "8820c952-902f-46b9-a6e3-77eaa5981422"
+    }
+   ],
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "basePrice": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 3000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 400,
+      "currency": "CHF",
+      "maxPrice": 400,
+      "minPrice": 400
+     },
+     "basePrice": {
+      "amount": 400,
+      "currency": "CHF",
+      "maxPrice": 400,
+      "minPrice": 400
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 400,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 45,
+      "currency": "CHF",
+      "maxPrice": 45,
+      "minPrice": 45
+     },
+     "basePrice": {
+      "amount": 45,
+      "currency": "CHF",
+      "maxPrice": 45,
+      "minPrice": 45
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 45,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": ""
+     },
+     "basePrice": {
+      "currency": ""
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "MAPPED",
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "basePrice": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 3000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4756063",
+    "pickUpDepotId": "4756063"
+   },
+   "vehicle": {
+    "id": "776773986",
+    "airConditioning": true,
+    "makeAndModel": "Honda Jazz",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "economy"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/web/honda/jazz_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 101.32,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 101.32,
+     "currency": "CHF"
+    },
+    "driveAwayPrice": {
+     "amount": 101.32,
+     "currency": "CHF"
+    },
+    "priceBefore": {
+     "amount": 115.14,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "basePriceBefore": {
+     "amount": 115.14,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "driveAwayPriceBefore": {
+     "amount": 115.14,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "EDAH",
+    "freeCancellation": true,
+    "fuel": "Self-charging hybrid",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "AUTOMATIC",
+    "propositionType": "BR",
+    "numberOfDoors": "5",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": false,
+    "productInfo": {
+     "accountNo": "TJW007",
+     "productId": "185490",
+     "rateCode": "TJW007"
+    },
+    "group": [
+     "small"
+    ],
+    "smallSuitcase": 1,
+    "specialOffers": {}
+   },
+   "recommendedDisplayOrder": 2,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 2
+  },
+  {
+   "appliedPromotions": [
+    {
+     "afterPromotionPrice": {
+      "amount": 104.57,
+      "currency": "CHF"
+     },
+     "appliedPromotionValue": {
+      "amount": 14.26,
+      "currency": "CHF"
+     },
+     "bookingEndDate": "2026-08-29T23:59:59.999999999Z",
+     "descriptionKey": "tr.promotions.percentage_discount_applied",
+     "order": 1,
+     "promotionBreakdown": [
+      {
+       "fundingEntity": "SUPPLIER",
+       "promotionAmountInCustomerCurrency": {
+        "amount": 11.05,
+        "currency": "CHF"
+       },
+       "promotionAmountInSupplierCurrency": {
+        "amount": 11.05,
+        "currency": "CHF"
+       }
+      },
+      {
+       "fundingEntity": "TBU",
+       "promotionAmountInCustomerCurrency": {
+        "amount": 3.21,
+        "currency": "CHF"
+       }
+      }
+     ],
+     "promotionPercentage": 12,
+     "supplierPromotionId": "8820c952-902f-46b9-a6e3-77eaa5981422"
+    }
+   ],
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "basePrice": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 3000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 400,
+      "currency": "CHF",
+      "maxPrice": 400,
+      "minPrice": 400
+     },
+     "basePrice": {
+      "amount": 400,
+      "currency": "CHF",
+      "maxPrice": 400,
+      "minPrice": 400
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 400,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 45,
+      "currency": "CHF",
+      "maxPrice": 45,
+      "minPrice": 45
+     },
+     "basePrice": {
+      "amount": 45,
+      "currency": "CHF",
+      "maxPrice": 45,
+      "minPrice": 45
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 45,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": ""
+     },
+     "basePrice": {
+      "currency": ""
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "MAPPED",
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "basePrice": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 3000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4756063",
+    "pickUpDepotId": "4756063"
+   },
+   "vehicle": {
+    "id": "775294956",
+    "airConditioning": true,
+    "makeAndModel": "Toyota Yaris",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "economy"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/web/toyota/yaris_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 104.57,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 104.57,
+     "currency": "CHF"
+    },
+    "driveAwayPrice": {
+     "amount": 104.57,
+     "currency": "CHF"
+    },
+    "priceBefore": {
+     "amount": 118.83,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "basePriceBefore": {
+     "amount": 118.83,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "driveAwayPriceBefore": {
+     "amount": 118.83,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "EDAR",
+    "freeCancellation": true,
+    "fuel": "Petrol",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "AUTOMATIC",
+    "propositionType": "BR",
+    "numberOfDoors": "5",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": false,
+    "productInfo": {
+     "accountNo": "TJW007",
+     "productId": "185490",
+     "rateCode": "TJW007"
+    },
+    "group": [
+     "small"
+    ],
+    "smallSuitcase": 1,
+    "specialOffers": {}
+   },
+   "recommendedDisplayOrder": 3,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 3
+  },
+  {
+   "appliedPromotions": [
+    {
+     "afterPromotionPrice": {
+      "amount": 105.87,
+      "currency": "CHF"
+     },
+     "appliedPromotionValue": {
+      "amount": 14.44,
+      "currency": "CHF"
+     },
+     "bookingEndDate": "2026-08-29T23:59:59.999999999Z",
+     "descriptionKey": "tr.promotions.percentage_discount_applied",
+     "order": 1,
+     "promotionBreakdown": [
+      {
+       "fundingEntity": "SUPPLIER",
+       "promotionAmountInCustomerCurrency": {
+        "amount": 11.19,
+        "currency": "CHF"
+       },
+       "promotionAmountInSupplierCurrency": {
+        "amount": 11.19,
+        "currency": "CHF"
+       }
+      },
+      {
+       "fundingEntity": "TBU",
+       "promotionAmountInCustomerCurrency": {
+        "amount": 3.25,
+        "currency": "CHF"
+       }
+      }
+     ],
+     "promotionPercentage": 12,
+     "supplierPromotionId": "8820c952-902f-46b9-a6e3-77eaa5981422"
+    }
+   ],
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "basePrice": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 3000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 400,
+      "currency": "CHF",
+      "maxPrice": 400,
+      "minPrice": 400
+     },
+     "basePrice": {
+      "amount": 400,
+      "currency": "CHF",
+      "maxPrice": 400,
+      "minPrice": 400
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 400,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 45,
+      "currency": "CHF",
+      "maxPrice": 45,
+      "minPrice": 45
+     },
+     "basePrice": {
+      "amount": 45,
+      "currency": "CHF",
+      "maxPrice": 45,
+      "minPrice": 45
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 45,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": ""
+     },
+     "basePrice": {
+      "currency": ""
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "MAPPED",
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "basePrice": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 3000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4756063",
+    "pickUpDepotId": "4756063"
+   },
+   "vehicle": {
+    "id": "775294831",
+    "airConditioning": true,
+    "makeAndModel": "Mazda 2",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "economy"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/web/mazda/2_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 105.87,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 105.87,
+     "currency": "CHF"
+    },
+    "driveAwayPrice": {
+     "amount": 105.87,
+     "currency": "CHF"
+    },
+    "priceBefore": {
+     "amount": 120.31,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "basePriceBefore": {
+     "amount": 120.31,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "driveAwayPriceBefore": {
+     "amount": 120.31,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "EDAR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "AUTOMATIC",
+    "propositionType": "BR",
+    "numberOfDoors": "4",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": false,
+    "productInfo": {
+     "accountNo": "TJW007",
+     "productId": "185490",
+     "rateCode": "TJW007"
+    },
+    "group": [
+     "small"
+    ],
+    "smallSuitcase": 1,
+    "specialOffers": {}
+   },
+   "recommendedDisplayOrder": 4,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 4
+  },
+  {
+   "appliedPromotions": [
+    {
+     "afterPromotionPrice": {
+      "amount": 109.77,
+      "currency": "CHF"
+     },
+     "appliedPromotionValue": {
+      "amount": 14.97,
+      "currency": "CHF"
+     },
+     "bookingEndDate": "2026-08-29T23:59:59.999999999Z",
+     "descriptionKey": "tr.promotions.percentage_discount_applied",
+     "order": 1,
+     "promotionBreakdown": [
+      {
+       "fundingEntity": "SUPPLIER",
+       "promotionAmountInCustomerCurrency": {
+        "amount": 11.6,
+        "currency": "CHF"
+       },
+       "promotionAmountInSupplierCurrency": {
+        "amount": 11.6,
+        "currency": "CHF"
+       }
+      },
+      {
+       "fundingEntity": "TBU",
+       "promotionAmountInCustomerCurrency": {
+        "amount": 3.37,
+        "currency": "CHF"
+       }
+      }
+     ],
+     "promotionPercentage": 12,
+     "supplierPromotionId": "8820c952-902f-46b9-a6e3-77eaa5981422"
+    }
+   ],
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 3500,
+      "currency": "CHF",
+      "maxPrice": 3500,
+      "minPrice": 3500
+     },
+     "basePrice": {
+      "amount": 3500,
+      "currency": "CHF",
+      "maxPrice": 3500,
+      "minPrice": 3500
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 3500,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 400,
+      "currency": "CHF",
+      "maxPrice": 400,
+      "minPrice": 400
+     },
+     "basePrice": {
+      "amount": 400,
+      "currency": "CHF",
+      "maxPrice": 400,
+      "minPrice": 400
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 400,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 45,
+      "currency": "CHF",
+      "maxPrice": 45,
+      "minPrice": 45
+     },
+     "basePrice": {
+      "amount": 45,
+      "currency": "CHF",
+      "maxPrice": 45,
+      "minPrice": 45
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 45,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": ""
+     },
+     "basePrice": {
+      "currency": ""
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "MAPPED",
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 3500,
+      "currency": "CHF",
+      "maxPrice": 3500,
+      "minPrice": 3500
+     },
+     "basePrice": {
+      "amount": 3500,
+      "currency": "CHF",
+      "maxPrice": 3500,
+      "minPrice": 3500
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 3500,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4756063",
+    "pickUpDepotId": "4756063"
+   },
+   "vehicle": {
+    "id": "775282156",
+    "airConditioning": true,
+    "makeAndModel": "Volkswagen Polo",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "economy"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/new_images/volkswagen/polo_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 109.77,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 109.77,
+     "currency": "CHF"
+    },
+    "driveAwayPrice": {
+     "amount": 109.77,
+     "currency": "CHF"
+    },
+    "priceBefore": {
+     "amount": 124.74,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "basePriceBefore": {
+     "amount": 124.74,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "driveAwayPriceBefore": {
+     "amount": 124.74,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "EDAR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "AUTOMATIC",
+    "propositionType": "BR",
+    "numberOfDoors": "4",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": false,
+    "productInfo": {
+     "accountNo": "TJW007",
+     "productId": "185490",
+     "rateCode": "TJW007"
+    },
+    "group": [
+     "small"
+    ],
+    "smallSuitcase": 1,
+    "specialOffers": {}
+   },
+   "recommendedDisplayOrder": 5,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 5
+  },
+  {
+   "appliedPromotions": [
+    {
+     "afterPromotionPrice": {
+      "amount": 115.6,
+      "currency": "CHF"
+     },
+     "appliedPromotionValue": {
+      "amount": 15.76,
+      "currency": "CHF"
+     },
+     "bookingEndDate": "2026-08-29T23:59:59.999999999Z",
+     "descriptionKey": "tr.promotions.percentage_discount_applied",
+     "order": 1,
+     "promotionBreakdown": [
+      {
+       "fundingEntity": "SUPPLIER",
+       "promotionAmountInCustomerCurrency": {
+        "amount": 12.21,
+        "currency": "CHF"
+       },
+       "promotionAmountInSupplierCurrency": {
+        "amount": 12.21,
+        "currency": "CHF"
+       }
+      },
+      {
+       "fundingEntity": "TBU",
+       "promotionAmountInCustomerCurrency": {
+        "amount": 3.55,
+        "currency": "CHF"
+       }
+      }
+     ],
+     "promotionPercentage": 12,
+     "supplierPromotionId": "8820c952-902f-46b9-a6e3-77eaa5981422"
+    }
+   ],
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "basePrice": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 3000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 400,
+      "currency": "CHF",
+      "maxPrice": 400,
+      "minPrice": 400
+     },
+     "basePrice": {
+      "amount": 400,
+      "currency": "CHF",
+      "maxPrice": 400,
+      "minPrice": 400
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 400,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 45,
+      "currency": "CHF",
+      "maxPrice": 45,
+      "minPrice": 45
+     },
+     "basePrice": {
+      "amount": 45,
+      "currency": "CHF",
+      "maxPrice": 45,
+      "minPrice": 45
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 45,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": ""
+     },
+     "basePrice": {
+      "currency": ""
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "MAPPED",
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "basePrice": {
+      "amount": 3000,
+      "currency": "CHF",
+      "maxPrice": 3000,
+      "minPrice": 3000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 3000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4756063",
+    "pickUpDepotId": "4756063"
+   },
+   "vehicle": {
+    "id": "775294911",
+    "airConditioning": true,
+    "makeAndModel": "Hyundai  i30",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "compact"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/web/hyundai/i30_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 115.6,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 115.6,
+     "currency": "CHF"
+    },
+    "driveAwayPrice": {
+     "amount": 115.6,
+     "currency": "CHF"
+    },
+    "priceBefore": {
+     "amount": 131.36,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "basePriceBefore": {
+     "amount": 131.36,
+     "currency": "CHF",
+     "deposit": 0,
+     "discount": 0
+    },
+    "driveAwayPriceBefore": {
+     "amount": 131.36,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "CDAR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "AUTOMATIC",
+    "propositionType": "BR",
+    "numberOfDoors": "4",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": false,
+    "productInfo": {
+     "accountNo": "TJW007",
+     "productId": "185490",
+     "rateCode": "TJW007"
+    },
+    "group": [
+     "medium"
+    ],
+    "smallSuitcase": 1,
+    "specialOffers": {}
+   },
+   "recommendedDisplayOrder": 6,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 6
+  },
+  {
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "basePrice": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "basePrice": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 53.85,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": "CHF"
+     },
+     "basePrice": {
+      "currency": "CHF"
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "SUPPLIER",
+     "taxIncluded": false,
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4625157",
+    "pickUpDepotId": "4625157"
+   },
+   "vehicle": {
+    "id": "730453056",
+    "airConditioning": true,
+    "makeAndModel": "Renault Clio",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "economy"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/web/renault/clio_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 115.72,
+     "currency": "CHF",
+     "deposit": 115.72,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 115.72,
+     "currency": "CHF",
+     "deposit": 115.72,
+     "discount": 0
+    },
+    "driveAwayPrice": {
+     "amount": 115.72,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "ECMR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "MANUAL",
+    "propositionType": "BR",
+    "numberOfDoors": "2/4",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": true,
+    "productInfo": {
+     "productId": "183148"
+    },
+    "group": [
+     "small"
+    ],
+    "smallSuitcase": 1
+   },
+   "recommendedDisplayOrder": 7,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 7
+  },
+  {
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "basePrice": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "basePrice": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 53.85,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": "CHF"
+     },
+     "basePrice": {
+      "currency": "CHF"
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "SUPPLIER",
+     "taxIncluded": false,
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4625157",
+    "pickUpDepotId": "4625157"
+   },
+   "vehicle": {
+    "id": "730452976",
+    "airConditioning": true,
+    "makeAndModel": "Renault Clio",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "economy"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/web/renault/clio_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 116.89,
+     "currency": "CHF",
+     "deposit": 116.89,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 116.89,
+     "currency": "CHF",
+     "deposit": 116.89,
+     "discount": 0
+    },
+    "driveAwayPrice": {
+     "amount": 116.89,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "ECAR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "AUTOMATIC",
+    "propositionType": "BR",
+    "numberOfDoors": "2/4",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": true,
+    "productInfo": {
+     "productId": "183148"
+    },
+    "group": [
+     "small"
+    ],
+    "smallSuitcase": 1
+   },
+   "recommendedDisplayOrder": 8,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 8
+  },
+  {
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "basePrice": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "basePrice": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 53.85,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": "CHF"
+     },
+     "basePrice": {
+      "currency": "CHF"
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "SUPPLIER",
+     "taxIncluded": false,
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4625157",
+    "pickUpDepotId": "4625157"
+   },
+   "vehicle": {
+    "id": "730453536",
+    "airConditioning": true,
+    "makeAndModel": "Mini Cooper",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "compact"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/web/mini/cooper_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 116.89,
+     "currency": "CHF",
+     "deposit": 116.89,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 116.89,
+     "currency": "CHF",
+     "deposit": 116.89,
+     "discount": 0
+    },
+    "driveAwayPrice": {
+     "amount": 116.89,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "CXAR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "AUTOMATIC",
+    "propositionType": "BR",
+    "numberOfDoors": "4",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": true,
+    "productInfo": {
+     "productId": "183148"
+    },
+    "group": [
+     "medium"
+    ],
+    "smallSuitcase": 1
+   },
+   "recommendedDisplayOrder": 9,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 9
+  },
+  {
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "basePrice": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "basePrice": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 53.85,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": "CHF"
+     },
+     "basePrice": {
+      "currency": "CHF"
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "SUPPLIER",
+     "taxIncluded": false,
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4625157",
+    "pickUpDepotId": "4625157"
+   },
+   "vehicle": {
+    "id": "730452656",
+    "airConditioning": true,
+    "makeAndModel": "Volkswagen Golf",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "compact"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/web/volkswagen/golf_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 119.28,
+     "currency": "CHF",
+     "deposit": 119.28,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 119.28,
+     "currency": "CHF",
+     "deposit": 119.28,
+     "discount": 0
+    },
+    "driveAwayPrice": {
+     "amount": 119.28,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "CDAR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "AUTOMATIC",
+    "propositionType": "BR",
+    "numberOfDoors": "4",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": true,
+    "productInfo": {
+     "productId": "183148"
+    },
+    "group": [
+     "medium"
+    ],
+    "smallSuitcase": 1
+   },
+   "recommendedDisplayOrder": 11,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 11
+  },
+  {
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "basePrice": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "basePrice": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 53.85,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": "CHF"
+     },
+     "basePrice": {
+      "currency": "CHF"
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "SUPPLIER",
+     "taxIncluded": false,
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4625157",
+    "pickUpDepotId": "4625157"
+   },
+   "vehicle": {
+    "id": "756571011",
+    "airConditioning": true,
+    "makeAndModel": "Nissan Juke",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "suvs",
+     "compact"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/web/nissan/juke_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 119.28,
+     "currency": "CHF",
+     "deposit": 119.28,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 119.28,
+     "currency": "CHF",
+     "deposit": 119.28,
+     "discount": 0
+    },
+    "driveAwayPrice": {
+     "amount": 119.28,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "CFMR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "MANUAL",
+    "propositionType": "BR",
+    "numberOfDoors": "4",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": true,
+    "productInfo": {
+     "productId": "183148"
+    },
+    "group": [
+     "compactSuv",
+     "suvs",
+     "medium"
+    ],
+    "smallSuitcase": 1
+   },
+   "recommendedDisplayOrder": 12,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 12
+  },
+  {
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "basePrice": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "basePrice": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 53.85,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": "CHF"
+     },
+     "basePrice": {
+      "currency": "CHF"
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "SUPPLIER",
+     "taxIncluded": false,
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4625157",
+    "pickUpDepotId": "4625157"
+   },
+   "vehicle": {
+    "id": "730452736",
+    "airConditioning": true,
+    "makeAndModel": "Volkswagen Golf",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "compact"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/web/volkswagen/golf_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 122.39,
+     "currency": "CHF",
+     "deposit": 122.39,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 122.39,
+     "currency": "CHF",
+     "deposit": 122.39,
+     "discount": 0
+    },
+    "driveAwayPrice": {
+     "amount": 122.39,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "CDMR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "MANUAL",
+    "propositionType": "BR",
+    "numberOfDoors": "4",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": true,
+    "productInfo": {
+     "productId": "183148"
+    },
+    "group": [
+     "medium"
+    ],
+    "smallSuitcase": 1
+   },
+   "recommendedDisplayOrder": 14,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 14
+  },
+  {
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "basePrice": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "basePrice": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 53.85,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": "CHF"
+     },
+     "basePrice": {
+      "currency": "CHF"
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "SUPPLIER",
+     "taxIncluded": false,
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4625157",
+    "pickUpDepotId": "4625157"
+   },
+   "vehicle": {
+    "id": "737328231",
+    "airConditioning": true,
+    "makeAndModel": "Ford Puma",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "suvs",
+     "compact"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/new_images/ford/puma_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 122.87,
+     "currency": "CHF",
+     "deposit": 122.87,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 122.87,
+     "currency": "CHF",
+     "deposit": 122.87,
+     "discount": 0
+    },
+    "driveAwayPrice": {
+     "amount": 122.87,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "CFAR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "AUTOMATIC",
+    "propositionType": "BR",
+    "numberOfDoors": "4",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": true,
+    "productInfo": {
+     "productId": "183148"
+    },
+    "group": [
+     "compactSuv",
+     "suvs",
+     "medium"
+    ],
+    "smallSuitcase": 1
+   },
+   "recommendedDisplayOrder": 16,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 16
+  },
+  {
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "basePrice": {
+      "amount": 1000,
+      "currency": "CHF",
+      "maxPrice": 1000,
+      "minPrice": 1000
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1000,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "basePrice": {
+      "amount": 53.85,
+      "currency": "CHF",
+      "maxPrice": 53.85,
+      "minPrice": 53.85
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 53.85,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": "CHF"
+     },
+     "basePrice": {
+      "currency": "CHF"
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "SUPPLIER",
+     "taxIncluded": false,
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "basePrice": {
+      "amount": 1622,
+      "currency": "CHF",
+      "maxPrice": 1622,
+      "minPrice": 1622
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 1622,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4625157",
+    "pickUpDepotId": "4625157"
+   },
+   "vehicle": {
+    "id": "736062236",
+    "airConditioning": true,
+    "makeAndModel": "Peugeot 2008",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "suvs",
+     "compact"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/new_images/peugeot/2008_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 125.24,
+     "currency": "CHF",
+     "deposit": 125.24,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 125.24,
+     "currency": "CHF",
+     "deposit": 125.24,
+     "discount": 0
+    },
+    "driveAwayPrice": {
+     "amount": 125.24,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "CFAR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "AUTOMATIC",
+    "propositionType": "BR",
+    "numberOfDoors": "4",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": true,
+    "productInfo": {
+     "productId": "183148"
+    },
+    "group": [
+     "compactSuv",
+     "suvs",
+     "medium"
+    ],
+    "smallSuitcase": 1
+   },
+   "recommendedDisplayOrder": 19,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 19
+  },
+  {
+   "fees": [
+    {
+     "name": "ADMINISTRATION_FEE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 89.8,
+      "currency": "CHF",
+      "maxPrice": 89.8,
+      "minPrice": 89.8
+     },
+     "basePrice": {
+      "amount": 89.8,
+      "currency": "CHF",
+      "maxPrice": 89.8,
+      "minPrice": 89.8
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 89.8,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "ADMINISTRATION_FEE"
+    },
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "basePrice": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 2750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 750,
+      "currency": "CHF",
+      "maxPrice": 750,
+      "minPrice": 750
+     },
+     "basePrice": {
+      "amount": 750,
+      "currency": "CHF",
+      "maxPrice": 750,
+      "minPrice": 750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": ""
+     },
+     "basePrice": {
+      "currency": ""
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "SUPPLIER",
+     "taxIncluded": false,
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "basePrice": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 2750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "WINTERISATION",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 32.31,
+      "currency": "CHF",
+      "maxPrice": 32.31,
+      "minPrice": 32.31
+     },
+     "basePrice": {
+      "amount": 32.31,
+      "currency": "CHF",
+      "maxPrice": 32.31,
+      "minPrice": 32.31
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 32.31,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "WINTERISATION"
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4563325",
+    "pickUpDepotId": "4563325"
+   },
+   "vehicle": {
+    "id": "721489536",
+    "airConditioning": true,
+    "makeAndModel": "Toyota Aygo",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "mini"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/new_images/toyota/aygo_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 128.75,
+     "currency": "CHF",
+     "deposit": 128.75,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 128.75,
+     "currency": "CHF",
+     "deposit": 128.75,
+     "discount": 0
+    },
+    "driveAwayPrice": {
+     "amount": 128.75,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "MBMR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "MANUAL",
+    "propositionType": "BR",
+    "numberOfDoors": "2",
+    "numberOfSeats": "4",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": false,
+    "productInfo": {
+     "productId": "182250"
+    },
+    "group": [
+     "small"
+    ],
+    "smallSuitcase": 1
+   },
+   "recommendedDisplayOrder": 22,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 22
+  },
+  {
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "basePrice": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 2750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 750,
+      "currency": "CHF",
+      "maxPrice": 750,
+      "minPrice": 750
+     },
+     "basePrice": {
+      "amount": 750,
+      "currency": "CHF",
+      "maxPrice": 750,
+      "minPrice": 750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": ""
+     },
+     "basePrice": {
+      "currency": ""
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "source": "MAPPED",
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": ""
+     },
+     "basePrice": {
+      "currency": ""
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "SUPPLIER",
+     "taxIncluded": false,
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "basePrice": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 2750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "1038843",
+    "pickUpDepotId": "1038843"
+   },
+   "vehicle": {
+    "id": "642391421",
+    "airConditioning": true,
+    "makeAndModel": "Toyota Aygo",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "mini"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/new_images/toyota/aygo_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 130.05,
+     "currency": "CHF",
+     "deposit": 130.05,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 130.05,
+     "currency": "CHF",
+     "deposit": 130.05,
+     "discount": 0
+    },
+    "driveAwayPrice": {
+     "amount": 130.05,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "MBMR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "MANUAL",
+    "propositionType": "BR",
+    "numberOfDoors": "2",
+    "numberOfSeats": "4",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": false,
+    "productInfo": {
+     "productId": "34001"
+    },
+    "group": [
+     "small"
+    ],
+    "smallSuitcase": 1
+   },
+   "recommendedDisplayOrder": 25,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 25
+  },
+  {
+   "fees": [
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "basePrice": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 2750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 750,
+      "currency": "CHF",
+      "maxPrice": 750,
+      "minPrice": 750
+     },
+     "basePrice": {
+      "amount": 750,
+      "currency": "CHF",
+      "maxPrice": 750,
+      "minPrice": 750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "FUEL_POLICY",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": ""
+     },
+     "basePrice": {
+      "currency": ""
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "source": "MAPPED",
+     "type": "RETURN_SAME"
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": ""
+     },
+     "basePrice": {
+      "currency": ""
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "SUPPLIER",
+     "taxIncluded": false,
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "basePrice": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 2750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "164569",
+    "pickUpDepotId": "164569"
+   },
+   "vehicle": {
+    "id": "611284936",
+    "airConditioning": true,
+    "makeAndModel": "Toyota  Aygo",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "mini"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/new_images/toyota/aygo_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 131.34,
+     "currency": "CHF",
+     "deposit": 131.34,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 131.34,
+     "currency": "CHF",
+     "deposit": 131.34,
+     "discount": 0
+    },
+    "driveAwayPrice": {
+     "amount": 131.34,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "MCMR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "MANUAL",
+    "propositionType": "BR",
+    "numberOfDoors": "2",
+    "numberOfSeats": "4",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": true,
+    "productInfo": {
+     "productId": "25981"
+    },
+    "group": [
+     "small"
+    ],
+    "smallSuitcase": 0
+   },
+   "recommendedDisplayOrder": 26,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 26
+  },
+  {
+   "fees": [
+    {
+     "name": "ADMINISTRATION_FEE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 89.8,
+      "currency": "CHF",
+      "maxPrice": 89.8,
+      "minPrice": 89.8
+     },
+     "basePrice": {
+      "amount": 89.8,
+      "currency": "CHF",
+      "maxPrice": 89.8,
+      "minPrice": 89.8
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 89.8,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "ADMINISTRATION_FEE"
+    },
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "basePrice": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 2750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 750,
+      "currency": "CHF",
+      "maxPrice": 750,
+      "minPrice": 750
+     },
+     "basePrice": {
+      "amount": 750,
+      "currency": "CHF",
+      "maxPrice": 750,
+      "minPrice": 750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": ""
+     },
+     "basePrice": {
+      "currency": ""
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "SUPPLIER",
+     "taxIncluded": false,
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "basePrice": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 2750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "WINTERISATION",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 32.31,
+      "currency": "CHF",
+      "maxPrice": 32.31,
+      "minPrice": 32.31
+     },
+     "basePrice": {
+      "amount": 32.31,
+      "currency": "CHF",
+      "maxPrice": 32.31,
+      "minPrice": 32.31
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 32.31,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "WINTERISATION"
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4563325",
+    "pickUpDepotId": "4563325"
+   },
+   "vehicle": {
+    "id": "757216291",
+    "airConditioning": true,
+    "makeAndModel": "Citroen C3",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "economy"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/web/citroen/c3_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 132.96,
+     "currency": "CHF",
+     "deposit": 132.96,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 132.96,
+     "currency": "CHF",
+     "deposit": 132.96,
+     "discount": 0
+    },
+    "driveAwayPrice": {
+     "amount": 132.96,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "EDAV",
+    "freeCancellation": true,
+    "fuel": "Petrol",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "AUTOMATIC",
+    "propositionType": "BR",
+    "numberOfDoors": "4",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": false,
+    "productInfo": {
+     "productId": "182250"
+    },
+    "group": [
+     "small"
+    ],
+    "smallSuitcase": 1
+   },
+   "recommendedDisplayOrder": 27,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 27
+  },
+  {
+   "fees": [
+    {
+     "name": "ADMINISTRATION_FEE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 89.8,
+      "currency": "CHF",
+      "maxPrice": 89.8,
+      "minPrice": 89.8
+     },
+     "basePrice": {
+      "amount": 89.8,
+      "currency": "CHF",
+      "maxPrice": 89.8,
+      "minPrice": 89.8
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 89.8,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "ADMINISTRATION_FEE"
+    },
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "basePrice": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 2750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 750,
+      "currency": "CHF",
+      "maxPrice": 750,
+      "minPrice": 750
+     },
+     "basePrice": {
+      "amount": 750,
+      "currency": "CHF",
+      "maxPrice": 750,
+      "minPrice": 750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": ""
+     },
+     "basePrice": {
+      "currency": ""
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "SUPPLIER",
+     "taxIncluded": false,
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "basePrice": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 2750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "WINTERISATION",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 32.31,
+      "currency": "CHF",
+      "maxPrice": 32.31,
+      "minPrice": 32.31
+     },
+     "basePrice": {
+      "amount": 32.31,
+      "currency": "CHF",
+      "maxPrice": 32.31,
+      "minPrice": 32.31
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 32.31,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "WINTERISATION"
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4563325",
+    "pickUpDepotId": "4563325"
+   },
+   "vehicle": {
+    "id": "721488056",
+    "airConditioning": true,
+    "makeAndModel": "Opel Corsa",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "economy"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/new_images/opel/corsa_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 132.96,
+     "currency": "CHF",
+     "deposit": 132.96,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 132.96,
+     "currency": "CHF",
+     "deposit": 132.96,
+     "discount": 0
+    },
+    "driveAwayPrice": {
+     "amount": 132.96,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "EDMR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "MANUAL",
+    "propositionType": "BR",
+    "numberOfDoors": "4",
+    "numberOfSeats": "4",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": false,
+    "productInfo": {
+     "productId": "182250"
+    },
+    "group": [
+     "small"
+    ],
+    "smallSuitcase": 1
+   },
+   "recommendedDisplayOrder": 28,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 28
+  },
+  {
+   "fees": [
+    {
+     "name": "ADMINISTRATION_FEE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 89.8,
+      "currency": "CHF",
+      "maxPrice": 89.8,
+      "minPrice": 89.8
+     },
+     "basePrice": {
+      "amount": 89.8,
+      "currency": "CHF",
+      "maxPrice": 89.8,
+      "minPrice": 89.8
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 89.8,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "ADMINISTRATION_FEE"
+    },
+    {
+     "name": "DAMAGE_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "basePrice": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 2750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "DEPOSIT",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 750,
+      "currency": "CHF",
+      "maxPrice": 750,
+      "minPrice": 750
+     },
+     "basePrice": {
+      "amount": 750,
+      "currency": "CHF",
+      "maxPrice": 750,
+      "minPrice": 750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "MILEAGE",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "currency": ""
+     },
+     "basePrice": {
+      "currency": ""
+     },
+     "distanceUnit": "KM",
+     "isPayableLocally": false,
+     "source": "SUPPLIER",
+     "taxIncluded": false,
+     "unlimited": true
+    },
+    {
+     "name": "THEFT_EXCESS",
+     "alwaysPayable": true,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "basePrice": {
+      "amount": 2750,
+      "currency": "CHF",
+      "maxPrice": 2750,
+      "minPrice": 2750
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 2750,
+     "source": "MAPPED",
+     "taxIncluded": true
+    },
+    {
+     "name": "WINTERISATION",
+     "alwaysPayable": false,
+     "includedInDriveAwayPrice": false,
+     "price": {
+      "amount": 32.31,
+      "currency": "CHF",
+      "maxPrice": 32.31,
+      "minPrice": 32.31
+     },
+     "basePrice": {
+      "amount": 32.31,
+      "currency": "CHF",
+      "maxPrice": 32.31,
+      "minPrice": 32.31
+     },
+     "distanceUnit": "M",
+     "isPayableLocally": false,
+     "maxAmount": 32.31,
+     "source": "MAPPED",
+     "taxIncluded": true,
+     "type": "WINTERISATION"
+    }
+   ],
+   "route": {
+    "dropOffDepotId": "4563325",
+    "pickUpDepotId": "4563325"
+   },
+   "vehicle": {
+    "id": "721687151",
+    "airConditioning": true,
+    "makeAndModel": "Toyota Yaris",
+    "bigSuitcase": 1,
+    "carCategories": [
+     "economy"
+    ],
+    "carImageNoPrefixUrl": "images/car_images/web/toyota/yaris_lrg.jpg",
+    "payWhen": "PAY_NOW",
+    "price": {
+     "amount": 132.96,
+     "currency": "CHF",
+     "deposit": 132.96,
+     "discount": 0
+    },
+    "basePrice": {
+     "amount": 132.96,
+     "currency": "CHF",
+     "deposit": 132.96,
+     "discount": 0
+    },
+    "driveAwayPrice": {
+     "amount": 132.96,
+     "currency": "CHF"
+    },
+    "creditCardRequired": false,
+    "carClass": "EDAR",
+    "freeCancellation": true,
+    "fuel": "N/A",
+    "integrationType": "DIRECT",
+    "mileageType": "UNLIMITED",
+    "transmission": "AUTOMATIC",
+    "propositionType": "BR",
+    "numberOfDoors": "4",
+    "numberOfSeats": "5",
+    "numBookings": 0,
+    "skipCounter": false,
+    "preRegistrationSupported": false,
+    "productInfo": {
+     "productId": "182250"
+    },
+    "group": [
+     "small"
+    ],
+    "smallSuitcase": 1
+   },
+   "recommendedDisplayOrder": 29,
+   "insurance": {},
+   "sponsoredSlot": {
+    "sponsoredVehicle": false
+   },
+   "unfilteredRank": 29
+  }
+ ],
+ "depots": {
+  "164569": {
+   "locationType": "IN_TERMINAL",
+   "name": "Flughafen Zürich",
+   "cityNameEn": "Zurich",
+   "countryIsoCode": "CH",
+   "iataCode": "ZRH",
+   "id": "164569",
+   "latitude": 47.45194,
+   "longitude": 8.563377,
+   "address": "Zurich Airport, Zurich, Switzerland, 8060",
+   "supplierId": "137",
+   "locationId": "34046",
+   "rating": {
+    "average": 7.7,
+    "cleanliness": 8.4,
+    "collectTime": 7.3,
+    "condition": 7.9,
+    "dropOffTime": 8.3,
+    "efficiency": 7.3,
+    "locating": 8.1,
+    "numRatings": 1672,
+    "valForMoney": 6.8
+   }
+  },
+  "1038843": {
+   "locationType": "IN_TERMINAL",
+   "name": "Flughafen Zürich",
+   "cityNameEn": "Zurich",
+   "countryIsoCode": "CH",
+   "iataCode": "ZRH",
+   "id": "1038843",
+   "latitude": 47.451932,
+   "longitude": 8.563353,
+   "address": "Zurich Airport, Zurich, Switzerland, 8060",
+   "supplierId": "227",
+   "locationId": "34046",
+   "rating": {
+    "average": 8.3,
+    "cleanliness": 9.1,
+    "collectTime": 7.8,
+    "condition": 8.3,
+    "dropOffTime": 8.6,
+    "efficiency": 8.2,
+    "locating": 8.3,
+    "numRatings": 1516,
+    "valForMoney": 7.7
+   }
+  },
+  "4563325": {
+   "locationType": "IN_TERMINAL",
+   "name": "Flughafen Zürich",
+   "cityNameEn": "Zurich",
+   "countryIsoCode": "CH",
+   "iataCode": "ZRH",
+   "id": "4563325",
+   "latitude": 47.45174,
+   "longitude": 8.563321,
+   "address": "Zurich Airport, Zurich, Switzerland, 8060",
+   "supplierId": "82",
+   "locationId": "34046",
+   "rating": {
+    "average": 8.5,
+    "cleanliness": 9.1,
+    "collectTime": 8.3,
+    "condition": 8.7,
+    "dropOffTime": 8.8,
+    "efficiency": 8.3,
+    "locating": 8.4,
+    "numRatings": 1578,
+    "valForMoney": 7.7
+   }
+  },
+  "4625157": {
+   "locationType": "IN_TERMINAL",
+   "name": "Flughafen Zürich",
+   "cityNameEn": "Zurich",
+   "countryIsoCode": "CH",
+   "iataCode": "ZRH",
+   "id": "4625157",
+   "latitude": 47.449283,
+   "longitude": 8.562676,
+   "address": "Rondellstrasse, Kloten, Zurich, Switzerland, 8058",
+   "supplierId": "17",
+   "locationId": "34046",
+   "rating": {
+    "average": 8.2,
+    "cleanliness": 8.8,
+    "collectTime": 7.3,
+    "condition": 8.5,
+    "dropOffTime": 8.7,
+    "efficiency": 8.1,
+    "locating": 8.3,
+    "numRatings": 4289,
+    "valForMoney": 7.6
+   }
+  },
+  "4756063": {
+   "locationType": "SHUTTLE_BUS",
+   "name": "Flughafen Zürich",
+   "cityNameEn": "Zurich",
+   "countryIsoCode": "CH",
+   "iataCode": "ZRH",
+   "id": "4756063",
+   "latitude": 47.45195,
+   "longitude": 8.53704,
+   "address": "36 Howiesenstrasse, Rumlang, Zurich, Switzerland, 8153",
+   "supplierId": "516",
+   "locationId": "34046",
+   "rating": {
+    "average": 8.2,
+    "cleanliness": 8.5,
+    "collectTime": 8.2,
+    "condition": 8.3,
+    "dropOffTime": 8.3,
+    "efficiency": 8.1,
+    "locating": 8.3,
+    "numRatings": 390,
+    "valForMoney": 7.6
+   }
+  }
+ },
+ "suppliers": {
+  "17": {
+   "id": "17",
+   "name": "Alamo",
+   "logoUrl": "/sp/images/suppliers/17_logo_200.png",
+   "type": "INTEGRATED"
+  },
+  "82": {
+   "id": "82",
+   "name": "Dollar",
+   "logoUrl": "/sp/images/suppliers/82_logo_200.png",
+   "type": "INTEGRATED"
+  },
+  "137": {
+   "id": "137",
+   "name": "Hertz",
+   "logoUrl": "/sp/images/suppliers/137_logo_200.png",
+   "type": "INTEGRATED"
+  },
+  "227": {
+   "id": "227",
+   "name": "Thrifty",
+   "logoUrl": "/sp/images/suppliers/227_logo_200.png",
+   "type": "INTEGRATED"
+  },
+  "516": {
+   "id": "516",
+   "name": "Green Motion",
+   "logoUrl": "/sp/images/suppliers/516_logo_200.png",
+   "type": "INTEGRATED"
+  }
+ }
+}
