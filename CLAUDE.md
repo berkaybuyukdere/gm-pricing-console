@@ -162,15 +162,18 @@ bar always reserves its space (`.applybar.hidden` keeps display:flex + visibilit
 its appearance never shifts the grid mid-click.
 
 The panel has NO confirm and NO open button (2026-08-30): every projection stages itself and
-the bottom-right APPLY TO DPS bar is the only write path. Grid right-click shows rentalcars
-EMBEDDED in the page (`#rcWeb`, between grid and panel — grid | rcWeb | panel with two
-draggable splitters): the real page cannot be iframed (X-Frame-Options: SAMEORIGIN, measured),
-so the pane renders the full ladder rentalcars serves, queried FRESH at the shown hour; each
-right-click steps the hour forward, ↗ opens the real page, ≤780px falls back to a tab. An
-APPLY refreshes every open market view ("booking gibi"): the panel re-queries fresh, and
-`rcLiveFollowUp` drives the pane onto the applied cell at two further hours (~90s apart). The
-panel's cell wears a solid accent ring on the grid (`cell-active`), the pane's cell a blue
-inner ring (`cell-live`).
+the bottom-right APPLY TO DPS bar is the only write path. rentalcars is EMBEDDED in the page
+(`#rcWeb`, grid | rcWeb | panel with two draggable splitters): the real page cannot be iframed
+(X-Frame-Options: SAMEORIGIN, measured), so the pane renders the full ladder rentalcars
+serves; ↗ opens the real page, ≤780px falls back to a tab. ONE left click drives BOTH side
+views onto the clicked cell (right-click is an alias), there is ONE shared hour (`rcHour`),
+and the pane MIRRORS the panel's own answer (`rcWebMirror` in renderRcTable) — one query, two
+renderings, so the views can never disagree. After an APPLY the panel shows ONLY what
+rentalcars actually serves: no projected overlay pretends to be the market; the applied price
+appears when `checkRcSync` proves the landing (plus a second-random-hour confirm), and the
+follow-up steps the shared hour, re-queries fresh, and looks again ~90s later. The panel's
+cell wears a solid accent ring on the grid (`cell-active`), the pane's cell a blue inner ring
+(`cell-live`). Rollback checkpoints: a02f8dc (before round 5), 97abc34 (after).
 
 ## The pickup hour (2026-08-29)
 
