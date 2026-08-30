@@ -924,6 +924,30 @@ body.dock-resizing { cursor: col-resize; user-select: none; }
 #gridTable td.cell-active { outline: 2px solid var(--accent); outline-offset: -2px; }
 #gridTable td.cell-live { box-shadow: inset 0 0 0 2px rgba(82, 199, 242, 0.55); }
 
+/* cells the background scan wants LOOKED AT: pulsing amber ring, several at
+   once when several days drifted; an edit+apply acknowledges it */
+#gridTable td.cell-suspect {
+  outline: 2px dashed var(--warn);
+  outline-offset: -2px;
+  animation: suspectpulse 1.6s ease-in-out infinite;
+}
+
+@keyframes suspectpulse {
+  0%, 100% { outline-color: var(--warn); }
+  50% { outline-color: transparent; }
+}
+
+/* the selection box's SCAN action sits under the % input */
+.gridsel-scan { margin-top: 6px; }
+
+/* the panel's duration row + % chips are a PREVIEW — visually alive, inert */
+#rcDurs.rc-inert button { pointer-events: none; cursor: default; }
+
+/* the weekly-rules delete list */
+.rules-table tbody tr { cursor: pointer; user-select: none; }
+.rules-table tbody tr.rules-sel { background: var(--warn-dim); outline: 1px solid var(--warn); outline-offset: -1px; }
+.rules-name { font-family: var(--mono); font-size: 11px; }
+
 /* the docked table announces what it shows while a projection is on screen */
 .rc-sec-title {
   font-size: 9px;

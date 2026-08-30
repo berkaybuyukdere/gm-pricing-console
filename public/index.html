@@ -118,9 +118,9 @@
           <button class="btn btn-ghost" id="sweepBtn" title="Push Green Motion into the top-10 for the whole month" data-i18n="top10_sweep">TOP-10 SWEEP</button>
           <button class="btn btn-ghost" id="scanBtn" title="Crowd the top-10 for the whole visible month" data-i18n-title="scan_tip" data-i18n="scan_btn">SCAN</button>
           <button class="btn btn-ghost" id="bulkBtn" title="Create weekly rules for a whole horizon in one go" data-i18n="bulk_btn">WEEKLY RULES</button>
+          <button class="btn btn-ghost" id="rulesListBtn" data-i18n="rules_del_btn" title="See and delete weekly rules as a list">DELETE RULES</button>
           <!-- admin-only station maintenance, right where the rules live -->
           <button class="btn btn-ghost hidden" id="gridCopyBtn" data-i18n="copy_btn">COPY TO…</button>
-          <button class="btn btn-danger hidden" id="gridResetBtn" data-i18n="reset_btn">RESET</button>
         </div>
         <div class="controls-right">
           <label class="vendor-wrap"><span data-i18n="vendor">VENDOR</span>
@@ -435,6 +435,21 @@
 </div>
 
 <!-- #rcModal now lives inside #view-grid as the docked competitor panel -->
+
+<div class="modal-backdrop hidden" id="rulesModal">
+  <div class="modal modal-rc">
+    <div class="modal-head"><span id="rulesTitle">WEEKLY RULES — LIST</span>
+      <button class="btn btn-ghost btn-xs" id="rulesClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="rulesBody"><div class="drawer-empty">…</div></div>
+    </div>
+    <div class="modal-actions">
+      <span class="rc-meta" id="rulesMeta"></span>
+      <button class="btn btn-danger" id="rulesDeleteBtn" data-i18n="rules_delete_sel" disabled>DELETE SELECTED</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal-backdrop hidden" id="sweepModal">
   <div class="modal modal-rc">

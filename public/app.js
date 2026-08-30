@@ -200,6 +200,18 @@ const I18N = {
     sim_apply_hint: 'APPLY TO DPS (bottom right) writes this',
     rc_live_open: 'rentalcars → {d}.{dur}D · {h}:00',
     rc_live_real: 'Open the real rentalcars page (same search, same hour)',
+    rules_del_btn: 'DELETE RULES',
+    rules_delete_sel: 'DELETE SELECTED',
+    rules_loading: 'Loading the rule list…',
+    rules_selected: '{n} of {total} selected — shift-click for a range, Delete removes',
+    rules_confirm: '{n} rule(s) will be DELETED from DPS. Are you sure?',
+    rules_deleted: '{n} rule(s) deleted — the grid is re-syncing.',
+    rules_too_many: 'More than 500 rules selected — narrow the range.',
+    sel_scan: 'SCAN SELECTION',
+    sel_scanning: 'Scanning {n} selected cell(s) live…',
+    sel_scanned: '{n} cell(s) scanned — {bad} need attention (amber).',
+    sel_scan_cap: 'Selection capped at 40 cells per scan.',
+    suspect_reason: 'Served rank {rank} — outside the top 10',
     relay_card_title: 'RC RELAY MACHINES',
     relay_workers: 'CONNECTED WORKERS',
     relay_none: 'No relay machines connected.',
@@ -532,6 +544,18 @@ const I18N = {
     sim_apply_hint: 'APPLY TO DPS (unten rechts) schreibt das',
     rc_live_open: 'rentalcars → {d}.{dur}T · {h}:00',
     rc_live_real: 'Die echte rentalcars-Seite öffnen (gleiche Suche, gleiche Stunde)',
+    rules_del_btn: 'REGELN LÖSCHEN',
+    rules_delete_sel: 'AUSWAHL LÖSCHEN',
+    rules_loading: 'Regelliste wird geladen…',
+    rules_selected: '{n} von {total} ausgewählt — Shift-Klick für Bereich, Entf löscht',
+    rules_confirm: '{n} Regel(n) werden aus DPS GELÖSCHT. Sicher?',
+    rules_deleted: '{n} Regel(n) gelöscht — das Raster synchronisiert sich neu.',
+    rules_too_many: 'Mehr als 500 Regeln ausgewählt — Bereich verkleinern.',
+    sel_scan: 'AUSWAHL SCANNEN',
+    sel_scanning: '{n} ausgewählte Zelle(n) werden live geprüft…',
+    sel_scanned: '{n} Zelle(n) geprüft — {bad} brauchen Aufmerksamkeit (bernstein).',
+    sel_scan_cap: 'Auswahl pro Scan auf 40 Zellen begrenzt.',
+    suspect_reason: 'Ausgelieferter Rang {rank} — außerhalb der Top 10',
     relay_card_title: 'RC-RELAY-RECHNER',
     relay_workers: 'VERBUNDENE WORKER',
     relay_none: 'Keine Relay-Rechner verbunden.',
@@ -864,6 +888,18 @@ const I18N = {
     sim_apply_hint: 'APPLY TO DPS (sağ altta) bunu yazar',
     rc_live_open: 'rentalcars → {d}.{dur}G · {h}:00',
     rc_live_real: 'Gerçek rentalcars sayfasını aç (aynı arama, aynı saat)',
+    rules_del_btn: 'KURAL SİL',
+    rules_delete_sel: 'SEÇİLİLERİ SİL',
+    rules_loading: 'Kural listesi yükleniyor…',
+    rules_selected: '{total} kuraldan {n} seçili — shift-tık aralık seçer, Delete siler',
+    rules_confirm: "{n} kural DPS'ten SİLİNECEK. Emin misin?",
+    rules_deleted: '{n} kural silindi — grid yeniden eşitleniyor.',
+    rules_too_many: "500'den fazla kural seçildi — aralığı daralt.",
+    sel_scan: 'SEÇİMİ TARA',
+    sel_scanning: '{n} seçili hücre canlı taranıyor…',
+    sel_scanned: '{n} hücre tarandı — {bad} tanesi ilgi bekliyor (kehribar).',
+    sel_scan_cap: 'Tarama başına seçim 40 hücreyle sınırlı.',
+    suspect_reason: 'Servis edilen sıra {rank} — top 10 dışı',
     relay_card_title: 'RC RELAY MAKİNELERİ',
     relay_workers: 'BAĞLI MAKİNELER',
     relay_none: 'Bağlı relay makinesi yok.',
@@ -2356,6 +2392,7 @@ function loadGrid() {
   updateChips();
   renderApplyBar();
   ensureSidePanes(); // both side panes are permanent on desktop
+  suspectSweep(); // background rank check paints the amber attention flags
 
   // month-copy landing: stage the copied cells onto this month
   if (state.pendingCopy && state.pendingCopy.targetKey === cacheKey()) {
@@ -2617,6 +2654,8 @@ function renderCell(day, dur) {
     td.classList.add('cell-active');
   if (rcWeb.day === day && rcWeb.dur === dur && !$('rcWeb').classList.contains('hidden'))
     td.classList.add('cell-live');
+  // a background scan asked for this cell to be looked at (amber pulse)
+  if (cellFlags.has(flagKey(day, dur))) td.classList.add('cell-suspect');
   const k = key(day, dur);
 
   td.oncontextmenu = (e) => {
@@ -2975,6 +3014,71 @@ function dropEditorPreview(day, dur) {
 // normal APPLY TO DPS bar writes the batch. A plain click (no drag) loads the
 // cell into the docked panel; double-click opens the single-cell editor;
 // right-click still opens rentalcars (at a random hour).
+// ---------- suspicious-cell flags (Berkay, 2026-08-30) ----------
+// A background sweep (and the selection scan below) checks whether the served
+// ranking is what the doctrine wants (GM inside the top 10). Cells that fail
+// get a pulsing amber ring — several at once when several days drifted — and
+// the ring clears when the cell is edited+applied or a later scan finds it
+// healthy again.
+const cellFlags = new Map(); // `${station}:${year}:${month}:${day}:${dur}` -> reason
+const flagKey = (d, du) => `${state.station}:${state.year}:${state.month}:${d}:${du}`;
+
+function setCellFlag(day, dur, reason) {
+  const k = flagKey(day, dur);
+  const had = cellFlags.has(k);
+  if (reason) cellFlags.set(k, reason);
+  else cellFlags.delete(k);
+  if (had !== !!reason) refreshCell(day, dur);
+}
+
+let suspectEs = null;
+function suspectSweep() {
+  if (state.view !== 'grid' || !state.session || !stationHasRc() || document.hidden) return;
+  if (suspectEs) { suspectEs.close(); suspectEs = null; }
+  const dur = (rcCtx && rcCtx.dur) || 3;
+  const ctx = { station: state.station, year: state.year, month: state.month, dur };
+  const es = new EventSource(
+    `/api/rc-month-stream?station=${ctx.station}&year=${ctx.year}&month=${ctx.month}&duration=${dur}`
+  );
+  suspectEs = es;
+  es.addEventListener('day', (ev) => {
+    if (ctx.station !== state.station || ctx.year !== state.year || ctx.month !== state.month) return;
+    try {
+      const d = JSON.parse(ev.data);
+      if (d.error) return; // a failed probe proves nothing — never flag on it
+      const ok = d.rank != null && d.rank <= 10;
+      setCellFlag(d.day, ctx.dur, ok ? null : t('suspect_reason', { rank: d.rank == null ? '—' : '#' + d.rank }));
+    } catch (_) { /* malformed event — skip */ }
+  });
+  es.onerror = () => { es.close(); if (suspectEs === es) suspectEs = null; };
+}
+// re-sweep every 15 minutes while the grid is on screen
+setInterval(suspectSweep, 15 * 60 * 1000);
+
+/** the selection-scan: analyze ONLY the drag-selected cells, fresh, and flag
+ *  the ones whose ranking is off */
+async function scanSelection(cells) {
+  const todo = cells.slice(0, 40);
+  if (cells.length > todo.length) toast(t('sel_scan_cap'), 'warn');
+  toast(t('sel_scanning', { n: todo.length }));
+  let done = 0, bad = 0;
+  const t0 = new Date();
+  t0.setHours(0, 0, 0, 0);
+  for (const c of todo) {
+    if (new Date(state.year, state.month - 1, c.day) < t0) continue;
+    try {
+      const r = await api(
+        `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${c.day}&duration=${c.dur}&${RC_CANON}&fresh=1&samples=2`
+      );
+      const ok = r.gmRank != null && r.gmRank <= 10;
+      setCellFlag(c.day, c.dur, ok ? null : t('suspect_reason', { rank: r.gmRank == null ? '—' : '#' + r.gmRank }));
+      if (!ok) bad++;
+      done++;
+    } catch (_) { /* one failed cell must not kill the pass */ }
+  }
+  toast(t('sel_scanned', { n: done, bad }), bad ? 'warn' : undefined);
+}
+
 const gridSel = { active: false, moved: false, a: null, b: null, justSelected: false };
 
 function gridSelCells() {
@@ -3017,11 +3121,19 @@ function gridSelPrompt(x, y) {
   box.innerHTML =
     `<span class="gridsel-n">${t('sel_cells', { n: cells.length })}</span>` +
     `<input class="gridsel-input" value="-" spellcheck="false">` +
-    `<span class="gridsel-hint">${t('sel_hint')}</span>`;
+    `<span class="gridsel-hint">${t('sel_hint')}</span>` +
+    `<button class="btn btn-ghost btn-xs gridsel-scan">${t('sel_scan')}</button>`;
   document.body.appendChild(box);
   const pad = 12;
   box.style.left = Math.min(x + pad, window.innerWidth - box.offsetWidth - pad) + 'px';
   box.style.top = Math.min(y + pad, window.innerHeight - box.offsetHeight - pad) + 'px';
+  // analyze ONLY the selected cells (Berkay, 2026-08-30) — flags the ones
+  // whose served ranking is off, without staging anything
+  box.querySelector('.gridsel-scan').onclick = () => {
+    const cs = gridSelCells();
+    gridSelClear();
+    scanSelection(cs);
+  };
   const input = box.querySelector('input');
   input.focus();
   input.setSelectionRange(1, 1);
@@ -3250,6 +3362,8 @@ $('applyBtn').onclick = async () => {
       ok++;
       okDays.add(ch.day);
       okCells.add(k);
+      // an edited+applied cell is acknowledged — the amber flag comes off
+      if (cellFlags.delete(`${state.station}:${state.year}:${state.month}:${k}`)) refreshCell(ch.day, ch.dur);
       const cmp = ch.scan ? scan.compare.get(k) : null;
       // a stale record from an earlier month/station could never describe this write
       if (cmp && cmp.station === state.station && cmp.year === state.year && cmp.month === state.month) {
@@ -4790,11 +4904,12 @@ function openRcAnalysis(day, dur) {
 }
 
 function renderRcDurs() {
-  // an in-progress inline % edit would be wiped by a re-render — let the
-  // operator finish; commit/cancel both re-render the row themselves
-  if ($('rcDurs').querySelector('.chip-input')) return;
+  // Berkay, 2026-08-30: the duration row and the % chips are a PREVIEW only —
+  // not clickable, not editable. Cell selection and % editing live on the
+  // grid; this row just mirrors the selected cell's neighborhood.
+  $('rcDurs').classList.add('rc-inert');
   const buttons = state.durations
-    .map((d) => `<button class="rc-dur ${rcCtx.dur === d ? 'on' : ''}" onclick="setRcDur(${d})">${d >= OPEN_DURATION ? OPEN_DURATION + '+' : d} ${t('days')}</button>`)
+    .map((d) => `<button class="rc-dur ${rcCtx.dur === d ? 'on' : ''}" tabindex="-1">${d >= OPEN_DURATION ? OPEN_DURATION + '+' : d} ${t('days')}</button>`)
     .join('');
   // the rule % per duration lives on its own orange chip row under the buttons:
   // active chip -> open the % editor; inactive chip -> switch duration and
@@ -4826,7 +4941,7 @@ function renderRcDurs() {
       const cls =
         `rc-dur-pct-chip ${active ? 'on' : ''}` +
         `${pend != null || stg !== undefined ? ' rc-dur-pct-pending' : ''}${depth}`;
-      return `<button class="${cls}" data-d="${d}" onclick="rcPctChip(${d})" title="${t('dur_pct_hint')}">${pct}</button>`;
+      return `<button class="${cls}" data-d="${d}" tabindex="-1">${pct}</button>`;
     })
     .join('');
   // two sibling rows, each a flex track of 14 equal columns: the % chip under a
@@ -5361,22 +5476,10 @@ function gmCountInTop10(r) {
 }
 
 function renderRcFleet() {
+  // the GM CARS IN TOP 10 buttons are retired (Berkay, 2026-08-30) — the row
+  // stays empty; placeFleet itself survives for the planned P4 loop
   const el = $('rcFleet');
-  const r = rcCtx && (rcCtx.view || rcCtx.data);
-  if (!r || !r.top || !r.top.length) { el.innerHTML = ''; return; }
-  // The 2-6 buttons place GREEN MOTION cars in the top 10 — with no GM offer
-  // in this market there is nothing to place. They used to just disappear,
-  // which reads as "the feature was removed"; say why instead.
-  if (r.gmPrice == null) {
-    el.innerHTML = `<span class="rc-fleet-label rc-fleet-none">${t('fleet_gm_absent')}</span>`;
-    return;
-  }
-  const sim = rcCtx.placed;
-  el.innerHTML =
-    `<span class="rc-fleet-label">${t('fleet_label')} <i>(${t('fleet_now', { n: gmCountInTop10(r) })})</i></span>` +
-    [2, 3, 4, 5, 6]
-      .map((k) => `<button class="rc-dur ${sim && sim.fleet && sim.k === k ? 'on' : ''}" onclick="placeFleet(${k})">${k}</button>`)
-      .join('');
+  if (el) el.innerHTML = '';
 }
 
 function placeFleet(k) {
@@ -5476,7 +5579,7 @@ function fuelShort(f) {
 function renderRcTable() {
   const r = rcCtx.view || rcCtx.data; // category-scoped when a category is active
   if (!r || !r.top.length) {
-    $('rcBody').innerHTML = `${rcCatsHtml()}<div class="drawer-empty">${t('no_offers')}</div>`;
+    $('rcBody').innerHTML = `<div class="drawer-empty">${t('no_offers')}</div>`;
     renderRcFleet();
     return;
   }
@@ -5624,7 +5727,9 @@ function renderRcTable() {
 
   // R3 category chips first, then R5 confirm/sim bar ABOVE the table so CONFIRM
   // is visible without scrolling, then the sync bar, table and discount hint.
-  $('rcBody').innerHTML = `${rcCatsHtml()}${simBar}${syncBar}${afterTitle}${table}${discHint}${beforeHtml}`;
+  // category chips and fleet buttons are gone (Berkay, 2026-08-30) — the
+  // panel is a viewer; actions live on the grid
+  $('rcBody').innerHTML = `${simBar}${syncBar}${afterTitle}${table}${discHint}${beforeHtml}`;
 
   // drag & drop: grab the Green Motion row and drop it onto any competitor row
   const trs = [...$('rcBody').querySelectorAll('tbody tr')];
@@ -7011,6 +7116,112 @@ function renderBulkProgress(st) {
     done, total, ok: st.ok || 0, fail: st.fail || 0,
   });
 }
+
+// ---------- the weekly-rules DELETE surface (Berkay, 2026-08-30) ----------
+// The DPS-style full rule list: click selects, shift-click selects a range,
+// ctrl/cmd-click toggles, Delete (or the button) asks "emin misin" and bulk-
+// deletes; afterwards the grid re-syncs by itself.
+const rulesUi = { list: [], sel: new Set(), anchor: null, busy: false };
+
+async function openRulesModal() {
+  $('rulesModal').classList.remove('hidden');
+  rulesUi.sel.clear();
+  rulesUi.anchor = null;
+  $('rulesBody').innerHTML = rcLoadingHtml(t('rules_loading'));
+  $('rulesMeta').textContent = '';
+  try {
+    const r = await api(`/api/rules-list?station=${state.station}`);
+    rulesUi.list = Array.isArray(r.rules) ? r.rules : [];
+    renderRulesList();
+  } catch (e) {
+    $('rulesBody').innerHTML = `<div class="drawer-empty">${esc(e.message)}</div>`;
+  }
+}
+
+function renderRulesList() {
+  const rows = rulesUi.list
+    .map((r, i) => `<tr data-i="${i}" class="${rulesUi.sel.has(r.ruleid) ? 'rules-sel' : ''}">
+      <td class="rc-rank">${i + 1}</td>
+      <td class="rules-name">${esc(r.name)}</td>
+      <td>${r.active ? 'YES' : '—'}</td>
+      <td>${esc(r.from)}</td><td>${esc(r.to)}</td><td>${esc(r.updated || r.added || '')}</td>
+    </tr>`)
+    .join('');
+  $('rulesBody').innerHTML = `<table class="rc-table rules-table">
+    <thead><tr><th></th><th>RULE NAME</th><th>ACTIVE</th><th>FROM</th><th>TO</th><th>UPDATED</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+  // selection updates flip classes in place — a full re-render would throw the
+  // scroll back to the top of an 800-row list on every click
+  $('rulesBody').querySelectorAll('tbody tr').forEach((tr) => {
+    tr.onclick = (e) => {
+      const i = Number(tr.dataset.i);
+      const id = rulesUi.list[i].ruleid;
+      if (e.shiftKey && rulesUi.anchor != null) {
+        const a = Math.min(rulesUi.anchor, i);
+        const b = Math.max(rulesUi.anchor, i);
+        if (!e.ctrlKey && !e.metaKey) rulesUi.sel.clear();
+        for (let j = a; j <= b; j++) rulesUi.sel.add(rulesUi.list[j].ruleid);
+      } else if (e.ctrlKey || e.metaKey) {
+        if (rulesUi.sel.has(id)) rulesUi.sel.delete(id);
+        else rulesUi.sel.add(id);
+        rulesUi.anchor = i;
+      } else {
+        rulesUi.sel.clear();
+        rulesUi.sel.add(id);
+        rulesUi.anchor = i;
+      }
+      updateRulesSelection();
+    };
+  });
+  updateRulesSelection();
+}
+
+function updateRulesSelection() {
+  $('rulesBody').querySelectorAll('tbody tr').forEach((tr) => {
+    const id = rulesUi.list[Number(tr.dataset.i)].ruleid;
+    tr.classList.toggle('rules-sel', rulesUi.sel.has(id));
+  });
+  $('rulesMeta').textContent = t('rules_selected', { n: rulesUi.sel.size, total: rulesUi.list.length });
+  $('rulesDeleteBtn').disabled = rulesUi.sel.size === 0 || rulesUi.busy;
+}
+
+async function rulesDeleteSelected() {
+  if (rulesUi.busy) return;
+  const ids = [...rulesUi.sel];
+  if (!ids.length) return;
+  if (ids.length > 500) { toast(t('rules_too_many'), 'warn'); return; }
+  rulesUi.busy = true;
+  updateRulesSelection();
+  try {
+    if (!(await confirmBox(t('rules_confirm', { n: ids.length })))) return;
+    const r = await api('/api/rules-delete', { method: 'POST', body: { station: state.station, ruleids: ids } });
+    toast(t('rules_deleted', { n: r.deleted }));
+    rulesUi.sel.clear();
+    rulesUi.anchor = null;
+    await openRulesModal(); // the list re-reads from the supplier system
+    loadGrid();             // …and the grid re-syncs automatically
+    refreshLogs();
+  } catch (e) {
+    toast('Delete failed: ' + e.message, 'error');
+  } finally {
+    rulesUi.busy = false;
+    updateRulesSelection();
+  }
+}
+
+if ($('rulesListBtn')) $('rulesListBtn').onclick = openRulesModal;
+if ($('rulesClose')) $('rulesClose').onclick = () => $('rulesModal').classList.add('hidden');
+if ($('rulesDeleteBtn')) $('rulesDeleteBtn').onclick = rulesDeleteSelected;
+if ($('rulesModal')) $('rulesModal').addEventListener('click', (e) => {
+  if (e.target === $('rulesModal')) $('rulesModal').classList.add('hidden');
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+  if ($('rulesModal').classList.contains('hidden')) return;
+  if (rulesUi.busy) return;
+  e.preventDefault();
+  rulesDeleteSelected();
+});
 
 $('bulkBtn').onclick = async () => {
   if (!state.session) { openSessionModal(''); return; }

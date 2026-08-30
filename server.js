@@ -3193,6 +3193,60 @@ app.delete(
   })
 );
 
+// ---------- the rules list + bulk delete (Berkay, 2026-08-30) ----------
+// The DELETE side of the weekly-rules split: the operator sees the station's
+// FULL rule list exactly as the supplier system shows it, shift-selects a
+// range and deletes it. The list is the raw list page (name/active/from/to/
+// updated) — no per-rule detail reads, so an 840-rule station answers in one
+// round trip.
+
+app.get(
+  '/api/rules-list',
+  wrap(async (req, res) => {
+    const station = Number(req.query.station);
+    if (!tenantStations(req).some((x) => x.id === station))
+      throw new FmxError('BAD_STATION', 400);
+    const rules = await fmx.getRules(station);
+    res.json({ rules });
+  })
+);
+
+app.post(
+  '/api/rules-delete',
+  wrap(async (req, res) => {
+    const station = Number((req.body || {}).station);
+    if (!tenantStations(req).some((x) => x.id === station))
+      throw new FmxError('BAD_STATION', 400);
+    const ids = [
+      ...new Set(
+        (Array.isArray(req.body.ruleids) ? req.body.ruleids : [])
+          .map(Number)
+          .filter((n) => Number.isInteger(n) && n > 0)
+      ),
+    ];
+    if (!ids.length) throw new FmxError('NO_RULES', 400);
+    // the modal is for pruning ranges, not resetting stations — that flow
+    // (confirm-by-name, restore point, purge job) lives on RESET's successor
+    if (ids.length > 500) throw new FmxError('TOO_MANY_RULES', 400);
+    const base = {
+      action: 'bulk-delete', station, stationName: stationName(station),
+      day: null, month: null, year: null, duration: null,
+      before: null, after: null,
+    };
+    try {
+      const r = await fmx.deleteRules(station, ids, () => {});
+      addLog({ ...base, ok: true, file: `${r.deleted} kural listeden silindi` });
+      // every one of those days just lost its price rule — all cached market
+      // answers for the station are stale now
+      rcInvalidateStation(station);
+      res.json({ ok: true, deleted: r.deleted });
+    } catch (e) {
+      addLog({ ...base, ok: false, error: e.message });
+      throw e;
+    }
+  })
+);
+
 // ---------- bulk weekly-rule creation ----------
 // "Give every day of the next N days a rule at X%": hundreds of FMX writes, so
 // the POST only starts a background job and answers with its id; the console
