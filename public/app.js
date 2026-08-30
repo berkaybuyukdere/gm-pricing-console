@@ -1097,41 +1097,38 @@ const RC_LOCATIONS = {
 // half an hour per rentalcars open (modal query, OPEN ON RENTALCARS, grid
 // right-click) until 10:00, then wrap back to 19:00. Same-hour pickup and
 // dropoff. 19 steps: 19:00, 18:30, … 10:30, 10:00.
-// THE PICKUP RING: 09:00 through 19:00, one hour apart (Berkay, 2026-08-29).
+// THE PICKUP RING: 09:00 through 19:00, HALF an hour apart (Berkay,
+// 2026-08-30: "saat değişimleri her yarım saatte bir olsun 1 saat değil" —
+// the 2026-08-29 ring was hourly). 21 slots, wrapping at both ends.
 //
-// Every query starts at 09:00. The operator steps it with the -/+ control in
-// the analysis header and the ring WRAPS: + at 19:00 comes back to 09:00, - at
-// 09:00 goes to 19:00. Stepping re-runs the analysis for that hour, and each
-// hour keeps its own pinned snapshot because the hour is part of the cache key.
-//
-// The hour is never rotated automatically. An earlier build advanced the clock
-// on every open, so re-opening the same day asked a DIFFERENT question each
-// time — and a price that moves because our own clock moved reads as the
-// console being wrong. The grid, the watcher and the auto-scan all query
-// RC_START_HOUR, so the default view can never disagree with them; stepping is
-// an explicit act and the footer always names the hour that actually answered.
+// Every query starts at 09:00. The ring advances on every cell/duration
+// change, on REFRESH and after an APPLY; each slot is its own rentalcars
+// search key, so a stepped clock is a question nobody can serve stale. The
+// grid, the watcher and the auto-scan stay on RC_CANON (09:00) and the footer
+// always names the slot that actually answered.
 //
 // A pricing rule is a PERCENTAGE covering every hour of the day, so one
-// representative hour is not a compromise — it is the right unit of decision.
-// The ring exists so the operator can SEE how the market moves across the day
-// before committing to that percentage.
+// representative slot is not a compromise — it is the right unit of decision.
+// Slots are DECIMAL hours (9, 9.5, …, 19); rcHH/rcMM render them for URLs.
 const RC_START_HOUR = 9;
 const RC_END_HOUR = 19;
 const RC_HOURS = Array.from(
-  { length: RC_END_HOUR - RC_START_HOUR + 1 },
-  (_, i) => RC_START_HOUR + i
+  { length: (RC_END_HOUR - RC_START_HOUR) * 2 + 1 },
+  (_, i) => RC_START_HOUR + i / 2
 );
 const rcPad = (h) => String(h).padStart(2, '0');
+const rcHH = (h) => rcPad(Math.floor(h));
+const rcMM = (h) => (h % 1 ? '30' : '00');
 // the canonical hour, for every query that must agree with the grid
 const RC_CANON = `hh=${rcPad(RC_START_HOUR)}&mm=00`;
 
-// the hour the analysis is currently asking about. Resets to 09:00 on reload;
+// the slot the analysis is currently asking about. Resets to 09:00 on reload;
 // a stepped value persists while the console stays open so several days can be
-// compared at the same hour without re-stepping each time.
+// compared at the same slot without re-stepping each time.
 let rcHour = RC_START_HOUR;
 
 function currentRcTime() {
-  return [rcPad(rcHour), '00'];
+  return [rcHH(rcHour), rcMM(rcHour)];
 }
 
 /** move `h` around the ring by `dir` places, wrapping at both ends */
@@ -1151,7 +1148,7 @@ function rcFallbackTimes(fromHour) {
   let h = fromHour;
   for (let i = 0; i < 3; i++) {
     h = rcHourAt(h, 1);
-    out.push([rcPad(h), '00']);
+    out.push([rcHH(h), rcMM(h)]);
   }
   return out;
 }
@@ -1162,7 +1159,7 @@ function renderRcHour() {
   if (!el) return;
   el.innerHTML =
     `<button class="rc-hour-step" onclick="stepRcHour(-1)" title="${t('hour_prev')}">&minus;</button>` +
-    `<span class="rc-hour-val">${rcPad(rcHour)}:00</span>` +
+    `<span class="rc-hour-val">${rcHH(rcHour)}:${rcMM(rcHour)}</span>` +
     `<button class="rc-hour-step" onclick="stepRcHour(1)" title="${t('hour_next')}">+</button>`;
 }
 
@@ -1201,7 +1198,7 @@ function rcLoadingHtml(label) {
 function rcWebShow(day, dur) {
   // phones have no room for a third pane — hand the real site to a new tab
   if (window.innerWidth <= 780) {
-    const url = rentalcarsUrl(day, dur, rcPad(rcHour), '00');
+    const url = rentalcarsUrl(day, dur, rcHH(rcHour), rcMM(rcHour));
     if (url) window.open(url, '_blank');
     return;
   }
@@ -1265,8 +1262,8 @@ function rcWebHead(hh, mm) {
 async function runRcWeb() {
   const { day, dur } = rcWeb;
   if (day == null) return;
-  const hh = rcPad(rcHour);
-  rcWebHead(hh);
+  const [hh, mm] = currentRcTime();
+  rcWebHead(hh, mm);
   const seq = ++rcWeb.seq;
   const t0 = new Date();
   t0.setHours(0, 0, 0, 0);
@@ -1281,21 +1278,21 @@ async function runRcWeb() {
   if (rcCtx && rcCtx.day === day && rcCtx.dur === dur && !$('rcModal').classList.contains('hidden')) {
     if (rcCtx.data) rcWebMirror();
     else {
-      $('rcWebBody').innerHTML = rcLoadingHtml(t('querying_at', { time: `${hh}:00` }));
+      $('rcWebBody').innerHTML = rcLoadingHtml(t('querying_at', { time: `${hh}:${mm}` }));
       $('rcWebMeta').textContent = '';
     }
     return;
   }
-  $('rcWebBody').innerHTML = rcLoadingHtml(t('querying_at', { time: `${hh}:00` }));
+  $('rcWebBody').innerHTML = rcLoadingHtml(t('querying_at', { time: `${hh}:${mm}` }));
   $('rcWebMeta').textContent = '';
   try {
     // fallback for a cell the panel does not own: one fresh draw of its own
     const r = await api(
-      `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${day}&duration=${dur}&hh=${hh}&mm=00&fresh=1&samples=2`
+      `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${day}&duration=${dur}&hh=${hh}&mm=${mm}&fresh=1&samples=2`
     );
     if (seq !== rcWeb.seq) return;
     rcWeb.data = r;
-    renderRcWebList(r, hh);
+    renderRcWebList(r, `${hh}:${mm}`);
   } catch (e) {
     if (seq !== rcWeb.seq) return;
     $('rcWebBody').innerHTML = `<div class="drawer-empty">${rcErrorText(e.message)}</div>`;
@@ -1310,13 +1307,13 @@ function rcWebMirror() {
   if (!rcCtx || rcCtx.day !== rcWeb.day || rcCtx.dur !== rcWeb.dur || !rcCtx.data) return;
   rcWeb.seq++; // a mirror supersedes any in-flight own fetch
   rcWeb.data = rcCtx.data;
-  rcWebHead(rcCtx.hh, String(rcCtx.mm).padStart(2, '0')); // the hour that ANSWERED
-  renderRcWebList(rcCtx.data, rcCtx.hh);
+  rcWebHead(rcCtx.hh, String(rcCtx.mm).padStart(2, '0')); // the slot that ANSWERED
+  renderRcWebList(rcCtx.data, `${rcCtx.hh}:${String(rcCtx.mm).padStart(2, '0')}`);
 }
 
 /** the pane's shop-style list: EVERY row the answer carries, GM highlighted,
  *  the same LIST/CUSTOMER convention as the analysis table */
-function renderRcWebList(r, hh) {
+function renderRcWebList(r, slot) {
   if (!r || !r.top || !r.top.length) {
     $('rcWebBody').innerHTML = `<div class="drawer-empty">${t('no_offers')}</div>`;
     return;
@@ -1340,7 +1337,7 @@ function renderRcWebList(r, hh) {
     <tbody>${rows}</tbody></table>`;
   const atTs = r.at || r.cachedAt;
   $('rcWebMeta').textContent =
-    `${r.total} ${t('offers')} · ${t('pickup')} ${hh || rcPad(rcHour)}:00` +
+    `${r.total} ${t('offers')} · ${t('pickup')} ${slot || `${rcHH(rcHour)}:${rcMM(rcHour)}`}` +
     (atTs ? ` · ${t('query_at', { time: new Date(atTs).toLocaleTimeString('de-CH', { hour12: false }) })}` : '') +
     (r.stale ? ` · ${t('stale_cache')}` : '') +
     (r.spread ? ` · GM ±${r.spread}%` : '');
@@ -5019,7 +5016,7 @@ async function ensureFreshBase() {
     if (!rcCtx || rcCtx.day !== day || rcCtx.dur !== dur || rcCtx.seq !== seq) return;
     if (!r || !r.total) return; // an empty slot proves nothing — keep the pin
     rcCtx.data = r;
-    rcSnapPut(day, dur, hh, r);
+    rcSnapPut(day, dur, hh, String(mm).padStart(2, '0'), r);
     rcBuildView();
     const v = rcCtx.view || rcCtx.data;
     if (rcCtx.placed && !rcCtx.placed.applied && rcCtx.placed.newPct != null && v.gmPrice != null) {
@@ -5146,10 +5143,10 @@ async function refreshRcAnalysis() {
     // drop the OUTGOING hour's snapshot too: with the step, REFRESH never
     // re-queries the hour it was pressed on, so a stale pin there would
     // otherwise survive every refresh and greet the operator on step-back
-    rcSnapDrop(rcCtx.day, rcCtx.dur, rcPad(rcHour));
+    rcSnapDrop(rcCtx.day, rcCtx.dur, rcHH(rcHour), rcMM(rcHour));
     rcHour = rcHourAt(rcHour, 1);
     renderRcHour();
-    rcSnapDrop(rcCtx.day, rcCtx.dur, rcPad(rcHour));
+    rcSnapDrop(rcCtx.day, rcCtx.dur, rcHH(rcHour), rcMM(rcHour));
   }
   const b = $('rcRefresh');
   if (b) { b.disabled = true; b.textContent = t('refreshing'); }
@@ -5213,19 +5210,19 @@ function rcSnapAll() {
   try { return JSON.parse(localStorage.getItem(RC_SNAP_KEY) || '{}') || {}; }
   catch (_) { return {}; }
 }
-const rcSnapKey = (day, dur, hh) =>
-  `${state.station}:${state.year}-${state.month}-${day}:${hh}:${dur}`;
+const rcSnapKey = (day, dur, hh, mm) =>
+  `${state.station}:${state.year}-${state.month}-${day}:${hh}${mm || '00'}:${dur}`;
 
-function rcSnapGet(day, dur, hh) {
-  const e = rcSnapAll()[rcSnapKey(day, dur, hh)];
+function rcSnapGet(day, dur, hh, mm) {
+  const e = rcSnapAll()[rcSnapKey(day, dur, hh, mm)];
   if (!e || !e.data || Date.now() - e.savedAt > RC_SNAP_TTL) return null;
   return { ...e.data, cachedAt: e.savedAt };
 }
 
-function rcSnapPut(day, dur, hh, data) {
+function rcSnapPut(day, dur, hh, mm, data) {
   try {
     const all = rcSnapAll();
-    all[rcSnapKey(day, dur, hh)] = { savedAt: Date.now(), data };
+    all[rcSnapKey(day, dur, hh, mm)] = { savedAt: Date.now(), data };
     const keys = Object.keys(all);
     if (keys.length > RC_SNAP_MAX) {
       keys
@@ -5238,10 +5235,10 @@ function rcSnapPut(day, dur, hh, data) {
 }
 
 /** REFRESH must drop this cell's snapshot, or it would be re-served instantly */
-function rcSnapDrop(day, dur, hh) {
+function rcSnapDrop(day, dur, hh, mm) {
   try {
     const all = rcSnapAll();
-    delete all[rcSnapKey(day, dur, hh)];
+    delete all[rcSnapKey(day, dur, hh, mm)];
     localStorage.setItem(RC_SNAP_KEY, JSON.stringify(all));
   } catch (_) { /* nothing to drop */ }
 }
@@ -5316,7 +5313,7 @@ async function runRcAnalysis(opts) {
       }
     }
     rcCtx.data = r;
-    rcSnapPut(rcCtx.day, rcCtx.dur, rcCtx.hh, r);
+    rcSnapPut(rcCtx.day, rcCtx.dur, rcCtx.hh, String(rcCtx.mm).padStart(2, '0'), r);
     // an empty-slot fallback changed the hour — the header must say so too
     $('rcTitle').textContent =
       `RENTALCARS TOP 10 — ${String(rcCtx.day).padStart(2, '0')} ${MONTHS_SHORT[state.month - 1]} ${state.year}` +
@@ -5343,7 +5340,7 @@ async function runRcAnalysis(opts) {
     rcCtx.pendingPctEdit = null; // a failed fetch cancels the pending chip auto-open
     // offline fallback: the last known answer for this cell, clearly stale —
     // better than a blank panel while the relay recovers
-    const snap = rcSnapGet(rcCtx.day, rcCtx.dur, hh);
+    const snap = rcSnapGet(rcCtx.day, rcCtx.dur, hh, mm);
     if (snap) {
       rcCtx.data = { ...snap, stale: true };
       rcBuildView();
@@ -5656,7 +5653,7 @@ function renderRcTable() {
   // when this result was actually fetched from rentalcars (r.at; cachedAt as
   // fallback for entries cached before the server started stamping `at`)
   const atTs = r.at || r.cachedAt;
-  const fellBack = rcCtx.hh !== rcPad(rcHour);
+  const fellBack = rcCtx.hh !== rcHH(rcHour) || String(rcCtx.mm).padStart(2, '0') !== rcMM(rcHour);
   $('rcMeta').textContent =
     `${r.total} ${t('offers')} · ${t('pickup')} ${rcCtx.hh}:${String(rcCtx.mm).padStart(2, '0')}` +
     // an hour other than the requested one only ever appears because that hour
@@ -5901,7 +5898,7 @@ async function confirmSecondHour(s) {
   try {
     const st = s.station ?? state.station, yr = s.year ?? state.year, mo = s.month ?? state.month;
     const r = await api(
-      `/api/rc-top?station=${st}&year=${yr}&month=${mo}&day=${s.day}&duration=${s.dur}&hh=${rcPad(h)}&mm=00&fresh=1&samples=2`
+      `/api/rc-top?station=${st}&year=${yr}&month=${mo}&day=${s.day}&duration=${s.dur}&hh=${rcHH(h)}&mm=${rcMM(h)}&fresh=1&samples=2`
     );
     const { cls } = s.allServed != null
       ? syncClassify(s, r)
