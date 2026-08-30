@@ -209,10 +209,10 @@ const I18N = {
     rules_too_many: 'More than 500 rules selected — narrow the range.',
     sel_scan: 'SCAN SELECTION',
     sel_scanning: 'Scanning {n} selected cell(s) live…',
-    sel_scanned: '{n} cell(s) scanned — {bad} need attention (amber).',
+    sel_scanned: '{n} cell(s) scanned — {bad} sent to multi-hour confirmation.',
     sel_scan_cap: 'Selection capped at 40 cells per scan.',
     sel_scan_unruled: 'No weekly rules in the selection — nothing to check.',
-    suspect_reason: 'Served rank {rank} — outside the top 10',
+    suspect_reason: 'Outside the top 10 at {bad} of {total} hours (ranks {ranks})',
     relay_card_title: 'RC RELAY MACHINES',
     relay_workers: 'CONNECTED WORKERS',
     relay_none: 'No relay machines connected.',
@@ -554,10 +554,10 @@ const I18N = {
     rules_too_many: 'Mehr als 500 Regeln ausgewählt — Bereich verkleinern.',
     sel_scan: 'AUSWAHL SCANNEN',
     sel_scanning: '{n} ausgewählte Zelle(n) werden live geprüft…',
-    sel_scanned: '{n} Zelle(n) geprüft — {bad} brauchen Aufmerksamkeit (bernstein).',
+    sel_scanned: '{n} Zelle(n) geprüft — {bad} in die Mehr-Stunden-Bestätigung.',
     sel_scan_cap: 'Auswahl pro Scan auf 40 Zellen begrenzt.',
     sel_scan_unruled: 'Keine Wochenregeln in der Auswahl — nichts zu prüfen.',
-    suspect_reason: 'Ausgelieferter Rang {rank} — außerhalb der Top 10',
+    suspect_reason: 'Außerhalb der Top 10 in {bad} von {total} Stunden (Ränge {ranks})',
     relay_card_title: 'RC-RELAY-RECHNER',
     relay_workers: 'VERBUNDENE WORKER',
     relay_none: 'Keine Relay-Rechner verbunden.',
@@ -899,10 +899,10 @@ const I18N = {
     rules_too_many: "500'den fazla kural seçildi — aralığı daralt.",
     sel_scan: 'SEÇİMİ TARA',
     sel_scanning: '{n} seçili hücre canlı taranıyor…',
-    sel_scanned: '{n} hücre tarandı — {bad} tanesi ilgi bekliyor (kehribar).',
+    sel_scanned: '{n} hücre tarandı — {bad} tanesi çok-saatli teyide alındı.',
     sel_scan_cap: 'Tarama başına seçim 40 hücreyle sınırlı.',
     sel_scan_unruled: 'Seçimde weekly rule yok — kontrol edilecek bir şey yok.',
-    suspect_reason: 'Servis edilen sıra {rank} — top 10 dışı',
+    suspect_reason: '{total} saatin {bad} tanesinde top-10 dışı (sıralar {ranks})',
     relay_card_title: 'RC RELAY MAKİNELERİ',
     relay_workers: 'BAĞLI MAKİNELER',
     relay_none: 'Bağlı relay makinesi yok.',
@@ -2657,8 +2657,10 @@ function renderCell(day, dur) {
     td.classList.add('cell-active');
   if (rcWeb.day === day && rcWeb.dur === dur && !$('rcWeb').classList.contains('hidden'))
     td.classList.add('cell-live');
-  // a background scan asked for this cell to be looked at (amber pulse)
-  if (cellFlags.has(flagKey(day, dur))) td.classList.add('cell-suspect');
+  // a background scan asked for this cell to be looked at (amber pulse) —
+  // but never on a cell whose rule has since been deleted (unpriced != drifted)
+  if (cellFlags.has(flagKey(day, dur)) && state.cellMap.has(`${day}:${dur}`))
+    td.classList.add('cell-suspect');
   const k = key(day, dur);
 
   td.oncontextmenu = (e) => {
@@ -3026,6 +3028,37 @@ function dropEditorPreview(day, dur) {
 const cellFlags = new Map(); // `${station}:${year}:${month}:${day}:${dur}` -> reason
 const flagKey = (d, du) => `${state.station}:${state.year}:${state.month}:${d}:${du}`;
 
+// The system stays SILENT while work is in flight (Berkay, 2026-08-30: "şüphe
+// her şey bittiğinde çıksın") — a scan mid-run, un-applied staged cells, an
+// apply in progress or fresh propagation all make rank readings provisional.
+// flagsPause() clears the board when an operation starts; flagsResume()
+// schedules the next sweep once the dust settles.
+const suspect = { busy: false, timer: null };
+
+function flagsPause() {
+  suspect.busy = true;
+  clearTimeout(suspect.timer);
+  if (suspectEs) { suspectEs.close(); suspectEs = null; }
+  if (cellFlags.size) {
+    const had = [...cellFlags.keys()];
+    cellFlags.clear();
+    for (const k of had) {
+      const parts = k.split(':');
+      refreshCell(Number(parts[3]), Number(parts[4]));
+    }
+  }
+}
+
+function flagsResume(delayMs) {
+  suspect.busy = false;
+  clearTimeout(suspect.timer);
+  suspect.timer = setTimeout(suspectSweep, Math.max(0, delayMs || 0));
+}
+
+function suspectQuiet() {
+  return !suspect.busy && !state.applying && !scan.running && !bulk.running && state.staged.size === 0;
+}
+
 function setCellFlag(day, dur, reason) {
   const k = flagKey(day, dur);
   const had = cellFlags.has(k);
@@ -3037,6 +3070,8 @@ function setCellFlag(day, dur, reason) {
 let suspectEs = null;
 function suspectSweep() {
   if (state.view !== 'grid' || !state.session || !stationHasRc() || document.hidden) return;
+  // silence while anything is still moving — the sweep re-arms afterwards
+  if (!suspectQuiet()) return;
   if (suspectEs) { suspectEs.close(); suspectEs = null; }
   const dur = (rcCtx && rcCtx.dur) || 3;
   // a month with no rules at this duration has nothing to drift — probing 31
@@ -3057,13 +3092,55 @@ function suspectSweep() {
       // an empty October lit up with suspicion)
       if (!state.cellMap.has(`${d.day}:${ctx.dur}`)) { setCellFlag(d.day, ctx.dur, null); return; }
       const ok = d.rank != null && d.rank <= 10;
-      setCellFlag(d.day, ctx.dur, ok ? null : t('suspect_reason', { rank: d.rank == null ? '—' : '#' + d.rank }));
+      if (ok) setCellFlag(d.day, ctx.dur, null);
+      // one hour alone must never raise the amber: rentalcars re-prices GM by
+      // the hour (measured ±6.9%), so the SAME date is re-checked at other
+      // hours and the flag needs a majority of bad readings
+      else queueSuspectConfirm(d.day, ctx.dur, d.rank);
     } catch (_) { /* malformed event — skip */ }
   });
   es.onerror = () => { es.close(); if (suspectEs === es) suspectEs = null; };
 }
 // re-sweep every 15 minutes while the grid is on screen
 setInterval(suspectSweep, 15 * 60 * 1000);
+
+// ---------- the multi-hour confirmation (Berkay, 2026-08-30) ----------
+// A cell only turns amber after the SAME date fails at a MAJORITY of hours:
+// the first (canonical) reading plus two more slots spread across the
+// shopper's day. Confirmations run one at a time — a sweep that finds ten
+// candidates must not burst twenty draws at the relay.
+const SUSPECT_SLOTS = [11, 16.5]; // 11:00 and 16:30, far from the 09:00 canon
+let suspectChain = Promise.resolve();
+
+function queueSuspectConfirm(day, dur, firstRank) {
+  suspectChain = suspectChain
+    .then(() => confirmSuspect(day, dur, firstRank))
+    .catch(() => { /* a dead confirmation must not break the chain */ });
+}
+
+async function confirmSuspect(day, dur, firstRank) {
+  if (!suspectQuiet()) return; // work started meanwhile — stand down
+  if (!state.cellMap.has(`${day}:${dur}`)) return;
+  const ranks = [firstRank == null ? '—' : '#' + firstRank];
+  let bad = 1; // the reading that nominated this cell
+  let good = 0;
+  for (const h of SUSPECT_SLOTS) {
+    try {
+      const r = await api(
+        `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${day}&duration=${dur}&hh=${rcHH(h)}&mm=${rcMM(h)}&fresh=1&samples=1`
+      );
+      const ok = r.gmRank != null && r.gmRank <= 10;
+      ranks.push(r.gmRank == null ? '—' : '#' + r.gmRank);
+      if (ok) good++;
+      else bad++;
+    } catch (_) { /* a failed draw is no vote either way */ }
+  }
+  const confirmed = bad >= 2 && bad > good;
+  setCellFlag(
+    day, dur,
+    confirmed ? t('suspect_reason', { bad, total: bad + good, ranks: ranks.join(' · ') }) : null
+  );
+}
 
 /** the selection-scan: analyze ONLY the drag-selected cells, fresh, and flag
  *  the ones whose ranking is off */
@@ -3084,8 +3161,8 @@ async function scanSelection(cells) {
         `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${c.day}&duration=${c.dur}&${RC_CANON}&fresh=1&samples=2`
       );
       const ok = r.gmRank != null && r.gmRank <= 10;
-      setCellFlag(c.day, c.dur, ok ? null : t('suspect_reason', { rank: r.gmRank == null ? '—' : '#' + r.gmRank }));
-      if (!ok) bad++;
+      if (ok) setCellFlag(c.day, c.dur, null);
+      else { queueSuspectConfirm(c.day, c.dur, r.gmRank); bad++; }
       done++;
     } catch (_) { /* one failed cell must not kill the pass */ }
   }
@@ -3293,6 +3370,7 @@ $('discardBtn').onclick = async () => {
   // the docked panel may be simulating one of the discarded cells — a ladder
   // still showing TARGET rows for a change that no longer exists would lie
   if (rcCtx && rcCtx.placed && !rcCtx.placed.applied) resetGmSim();
+  flagsResume(60 * 1000); // nothing staged any more — suspicion may re-arm
 };
 
 $('applyBtn').onclick = async () => {
@@ -3305,6 +3383,7 @@ $('applyBtn').onclick = async () => {
 
   state.applying = true;
   renderApplyBar();
+  flagsPause(); // ranks are provisional from here until propagation settles
   let ok = 0, fail = 0;
   const okDays = new Set();
   const okCells = new Set(); // which exact cells landed — the dock check needs one
@@ -3435,6 +3514,9 @@ $('applyBtn').onclick = async () => {
     rcLiveFollowUp(cell.day, cell.dur); // the pane follows; +90s second look
     await runRcAnalysis({ fresh: true });
   }
+  // suspicion re-arms after the propagation window: only a settled market may
+  // nominate cells for attention ("her şey bittiğinde")
+  flagsResume(ok ? 10 * 60 * 1000 : 60 * 1000);
   // no full reload — cells were updated in place from the verified responses
   refreshLogs();
   // C1: an apply that carried scan proposals ends in the before/after popup
@@ -6740,6 +6822,7 @@ async function runScan(scope) {
   const SCAN_POOL = 3;
   const failedCells = []; // cells lost to non-transient errors — retried once at the end
   scan.running = true;
+  flagsPause(); // a scan mid-run repaints the board — no amber until it lands
   scan.cancel = false;
   scan.compare.clear(); // the popup only ever describes the run that just went out
   let done = 0, n = 0;
