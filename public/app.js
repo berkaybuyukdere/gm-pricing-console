@@ -1193,6 +1193,11 @@ function stepRcHour(dir) {
 // own. The ↗ opens the real page 1:1 for eyeball checks.
 const rcWeb = { day: null, dur: null, data: null, seq: 0 };
 
+/** the animated loader both market views share while a live draw is running */
+function rcLoadingHtml(label) {
+  return `<div class="rc-loading"><span class="rc-spinner"></span><span class="rc-loading-txt">${label}</span></div>`;
+}
+
 function rcWebShow(day, dur) {
   // phones have no room for a third pane — hand the real site to a new tab
   if (window.innerWidth <= 780) {
@@ -1276,12 +1281,12 @@ async function runRcWeb() {
   if (rcCtx && rcCtx.day === day && rcCtx.dur === dur && !$('rcModal').classList.contains('hidden')) {
     if (rcCtx.data) rcWebMirror();
     else {
-      $('rcWebBody').innerHTML = `<div class="rc-loading">${t('querying_at', { time: `${hh}:00` })}</div>`;
+      $('rcWebBody').innerHTML = rcLoadingHtml(t('querying_at', { time: `${hh}:00` }));
       $('rcWebMeta').textContent = '';
     }
     return;
   }
-  $('rcWebBody').innerHTML = `<div class="rc-loading">${t('querying_at', { time: `${hh}:00` })}</div>`;
+  $('rcWebBody').innerHTML = rcLoadingHtml(t('querying_at', { time: `${hh}:00` }));
   $('rcWebMeta').textContent = '';
   try {
     // fallback for a cell the panel does not own: one fresh draw of its own
@@ -4760,6 +4765,11 @@ function openRcAnalysis(day, dur) {
   // must land where the panel actually lives
   if (state.view !== 'grid') showView('grid');
   const prevCell = rcCtx ? { day: rcCtx.day, dur: rcCtx.dur } : null;
+  // Berkay, 2026-08-30: EVERY cell change walks the shared hour one step on
+  // the ring — a new question gets a new hour that nobody (rentalcars edge or
+  // a cached generation) can serve stale. The very first open keeps 09:00.
+  const nd = dur || 3;
+  if (prevCell && (prevCell.day !== day || prevCell.dur !== nd)) rcHour = rcHourAt(rcHour, 1);
   rcCtx = {
     day, dur: dur || 3, cat: 'ALL', pendingPct: {},
     // which grid this analysis belongs to — ensureSidePanes re-targets the
@@ -5150,9 +5160,18 @@ window.refreshRcAnalysis = refreshRcAnalysis;
 
 function setRcDur(d) {
   const oldDur = rcCtx.dur;
+  if (d !== oldDur) {
+    rcHour = rcHourAt(rcHour, 1); // a duration switch is a new question too
+    renderRcHour();
+  }
   rcCtx.dur = d;
   refreshCell(rcCtx.day, oldDur); // the ring follows the duration switch
   refreshCell(rcCtx.day, d);
+  // the pane follows the duration switch too — it always sits on the panel's
+  // cell, or the mirror would leave it frozen on the previous duration
+  if (window.innerWidth > 780 && !$('rcWeb').classList.contains('hidden')) {
+    rcWebShow(rcCtx.day, d);
+  }
   renderRcDurs();
   runRcAnalysis();
 }
@@ -5270,8 +5289,14 @@ async function runRcAnalysis(opts) {
     $('rcBody').innerHTML = `<div class="drawer-empty">${t('rc_past')}</div>`;
     return;
   }
-  $('rcBody').innerHTML =
-    `<div class="rc-loading">${t('querying_at', { time: `${hh}:${String(mm).padStart(2, '0')}` })}</div>`;
+  const loadingLbl = t('querying_at', { time: `${hh}:${String(mm).padStart(2, '0')}` });
+  $('rcBody').innerHTML = rcLoadingHtml(loadingLbl);
+  // the pane mirrors this cell — it must visibly refresh WITH the panel
+  if (rcWeb.day === rcCtx.day && rcWeb.dur === rcCtx.dur && !$('rcWeb').classList.contains('hidden')) {
+    rcWebHead(hh, mm);
+    $('rcWebBody').innerHTML = rcLoadingHtml(loadingLbl);
+    $('rcWebMeta').textContent = '';
+  }
   try {
     let r = await api(
       `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${rcCtx.day}&duration=${rcCtx.dur}&hh=${hh}&mm=${mm}&${freshness}`

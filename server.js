@@ -133,7 +133,16 @@ app.use('/api/relay/result', (req, res, next) => {
 });
 app.use('/api/relay/result', express.json({ limit: '12mb' }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+// no-cache, NOT max-age: without an explicit header the CDN stamped
+// `public, max-age=300` on app.js, so every deploy left operators running the
+// PREVIOUS console for up to 5 minutes (measured 2026-08-30: the served file
+// was new while the executed one stayed old through two reloads). no-cache
+// still allows storing — the ETag turns revalidation into a cheap 304 — but
+// every reload provably runs the code that was just deployed.
+app.use(express.static(path.join(__dirname, 'public'), {
+  etag: true,
+  setHeaders(res) { res.set('Cache-Control', 'no-cache'); },
+}));
 
 const wrap = (fn) => (req, res) =>
   fn(req, res).catch((e) => {

@@ -469,7 +469,37 @@ body.side-collapsed .side-user { padding: 6px; }
 
 .rc-meta { font-size: 10px; color: var(--text-mute); letter-spacing: 0.08em; margin-right: auto; }
 
-.rc-loading { padding: 26px; text-align: center; color: var(--text-mute); font-size: 11px; letter-spacing: 0.14em; animation: syncblink 1s infinite; }
+/* the live-draw loader both market views share: an accent arc spinning over a
+   faint ring, the label breathing beneath it */
+.rc-loading {
+  padding: 34px 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  color: var(--text-mute);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+
+.rc-spinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--border-soft);
+  border-top-color: var(--accent);
+  animation: rcspin 0.7s linear infinite;
+}
+
+.rc-loading-txt { animation: rcbreathe 1.4s ease-in-out infinite; }
+
+@keyframes rcspin { to { transform: rotate(360deg); } }
+
+@keyframes rcbreathe {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
 
 /* supplier logos — always the original brand colors, no filter */
 .rc-logo {
