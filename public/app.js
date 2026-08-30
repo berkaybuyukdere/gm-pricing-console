@@ -49,7 +49,7 @@ const I18N = {
     nav_dashboard: 'DASHBOARD', nav_grid: 'PRICING GRID', nav_analytics: 'ANALYTICS',
     nav_activity: 'ACTIVITY', nav_settings: 'SETTINGS',
     open_fmx: 'OPEN DPS &nearr;',
-    side_hint: 'Right-click a grid cell &rarr; rentalcars compare. Click the &#8981; icon on a day &rarr; top-10 competitor analysis.',
+    side_hint: 'Click a grid cell &rarr; both market views follow it. Double-click &rarr; set the %; the ranking preview updates live.',
     user_role: 'OPERATOR · DPS', not_signed_in: 'NOT SIGNED IN',
     rc_market_rank: 'RC MARKET RANK', price_curve: 'PRICE CURVE', restore_points: 'RESTORE POINTS',
     create: 'CREATE', no_backups: 'No restore points yet.', market_watch: 'MARKET WATCH',
@@ -381,7 +381,7 @@ const I18N = {
     nav_dashboard: 'DASHBOARD', nav_grid: 'PREISRASTER', nav_analytics: 'ANALYTIK',
     nav_activity: 'AKTIVITÄT', nav_settings: 'EINSTELLUNGEN',
     open_fmx: 'DPS ÖFFNEN &nearr;',
-    side_hint: 'Rechtsklick auf eine Rasterzelle &rarr; rentalcars-Vergleich. Klick auf das &#8981;-Symbol eines Tages &rarr; Top-10-Konkurrenzanalyse.',
+    side_hint: 'Klick auf eine Rasterzelle &rarr; beide Marktansichten folgen. Doppelklick &rarr; % setzen; die Rangvorschau folgt live.',
     user_role: 'OPERATOR · DPS', not_signed_in: 'NICHT ANGEMELDET',
     rc_market_rank: 'RC-MARKTRANG', price_curve: 'PREISKURVE', restore_points: 'WIEDERHERSTELLUNGSPUNKTE',
     create: 'ERSTELLEN', no_backups: 'Noch keine Wiederherstellungspunkte.', market_watch: 'MARKTÜBERWACHUNG',
@@ -713,7 +713,7 @@ const I18N = {
     nav_dashboard: 'PANO', nav_grid: 'FİYAT TABLOSU', nav_analytics: 'ANALİZ',
     nav_activity: 'AKTİVİTE', nav_settings: 'AYARLAR',
     open_fmx: 'DPS AÇ &nearr;',
-    side_hint: 'Tablo hücresine sağ tık &rarr; rentalcars karşılaştırma. Günün &#8981; simgesine tık &rarr; top-10 rakip analizi.',
+    side_hint: 'Hücreye tek tık &rarr; iki pazar görünümü de o güne gelir. Çift tık &rarr; yüzdeyi yaz; sıralama tahmini canlı güncellenir.',
     user_role: 'OPERATÖR · DPS', not_signed_in: 'GİRİŞ YAPILMADI',
     rc_market_rank: 'RC PAZAR SIRASI', price_curve: 'FİYAT EĞRİSİ', restore_points: 'GERİ DÖNÜŞ NOKTALARI',
     create: 'OLUŞTUR', no_backups: 'Henüz geri dönüş noktası yok.', market_watch: 'PAZAR TAKİBİ',
@@ -1170,31 +1170,33 @@ function stepRcHour(dir) {
   rcHour = rcHourAt(rcHour, dir);
   renderRcHour();
   // stepping while no cell is open just moves the ring; there is nothing to
-  // re-query, and firing one would spend a market call on nobody's question
+  // re-query, and firing one would spend a market call on nobody's question.
+  // ONE shared hour (Berkay, 2026-08-30): the pane follows the same step —
+  // via the mirror when it sits on the panel's cell, else with its own draw.
   if (rcCtx) runRcAnalysis();
+  if (rcWeb.day != null && !$('rcWeb').classList.contains('hidden') &&
+      !(rcCtx && rcCtx.day === rcWeb.day && rcCtx.dur === rcWeb.dur)) runRcWeb();
 }
 
 // ---------- the embedded rentalcars pane (Berkay, 2026-08-30) ----------
-// Right-clicking a grid cell shows rentalcars IN THE PAGE, between the grid
-// and the analysis panel — "websitesinin içinde embed olması lazım". The real
-// page cannot be iframed (rentalcars sends X-Frame-Options: SAMEORIGIN,
-// measured 2026-08-30), so the pane renders the SAME answer rentalcars serves
-// — the full ladder, queried FRESH at the shown hour. Every further
-// right-click walks the hour FORWARD on the 09:00-19:00 ring and re-queries,
-// so successive clicks show the market hour by hour in one place. The ↗ in
-// the pane header opens the real page 1:1 for eyeball checks.
-let rcLiveHour = RC_START_HOUR;
+// The pane shows rentalcars IN THE PAGE, between the grid and the analysis
+// panel — "websitesinin içinde embed olması lazım". The real page cannot be
+// iframed (rentalcars sends X-Frame-Options: SAMEORIGIN, measured
+// 2026-08-30), so the pane renders the answer rentalcars serves instead.
+//
+// Round 5 (same day): ONE left-click drives BOTH views onto the same cell,
+// at the SAME shared hour (`rcHour` — the panel's ring is the only clock),
+// and the pane MIRRORS the panel's own answer rather than drawing its own:
+// one query, one draw, two renderings — the two views can never disagree
+// ("sonuçları eşit olması lazım doğruluktan dolayı"). The pane only fetches
+// for itself in the rare moment it is pointed at a cell the panel does not
+// own. The ↗ opens the real page 1:1 for eyeball checks.
 const rcWeb = { day: null, dur: null, data: null, seq: 0 };
-
-function openRcLive(day, dur) {
-  rcLiveHour = rcHourAt(rcLiveHour, 1); // step FIRST — every click is a new hour
-  rcWebShow(day, dur);
-}
 
 function rcWebShow(day, dur) {
   // phones have no room for a third pane — hand the real site to a new tab
   if (window.innerWidth <= 780) {
-    const url = rentalcarsUrl(day, dur, rcPad(rcLiveHour), '00');
+    const url = rentalcarsUrl(day, dur, rcPad(rcHour), '00');
     if (url) window.open(url, '_blank');
     return;
   }
@@ -1234,32 +1236,32 @@ function ensureSidePanes() {
     !rcCtx || $('rcModal').classList.contains('hidden') ||
     rcCtx.station !== state.station || rcCtx.year !== state.year || rcCtx.month !== state.month;
   if (panelStale) openRcAnalysis(d, rcCtx ? rcCtx.dur : 3);
-  if (rcWeb.day == null || $('rcWeb').classList.contains('hidden')) {
-    rcWebShow(rcCtx.day, rcCtx.dur);
-  } else if (panelStale) {
-    // the pane was on the OLD month's cell — follow the panel to the new grid
-    rcWebShow(rcCtx.day, rcCtx.dur);
+  if (rcWeb.day == null || $('rcWeb').classList.contains('hidden') || panelStale) {
+    rcWebShow(rcCtx.day, rcCtx.dur); // the pane always sits on the panel's cell
   }
 }
 
+/** the pane's -/+ steps the SHARED hour — both views move together */
 function rcWebStep(dir) {
-  if (rcWeb.day == null) return;
-  rcLiveHour = rcHourAt(rcLiveHour, dir);
-  runRcWeb();
+  stepRcHour(dir);
 }
 window.rcWebStep = rcWebStep;
+
+function rcWebHead(hh, mm) {
+  $('rcWebTitle').textContent =
+    `RENTALCARS — ${String(rcWeb.day).padStart(2, '0')} ${MONTHS_SHORT[state.month - 1]} · ` +
+    `${rcWeb.dur >= OPEN_DURATION ? OPEN_DURATION + '+' : rcWeb.dur}D`;
+  $('rcWebHour').textContent = `${hh}:${mm || '00'}`;
+  const real = $('rcWebReal');
+  real.href = rentalcarsUrl(rcWeb.day, rcWeb.dur, hh, mm || '00') || '#';
+  real.title = t('rc_live_real');
+}
 
 async function runRcWeb() {
   const { day, dur } = rcWeb;
   if (day == null) return;
-  const hh = rcPad(rcLiveHour);
-  $('rcWebTitle').textContent =
-    `RENTALCARS — ${String(day).padStart(2, '0')} ${MONTHS_SHORT[state.month - 1]} · ` +
-    `${dur >= OPEN_DURATION ? OPEN_DURATION + '+' : dur}D`;
-  $('rcWebHour').textContent = `${hh}:00`;
-  const real = $('rcWebReal');
-  real.href = rentalcarsUrl(day, dur, hh, '00') || '#';
-  real.title = t('rc_live_real');
+  const hh = rcPad(rcHour);
+  rcWebHead(hh);
   const seq = ++rcWeb.seq;
   const t0 = new Date();
   t0.setHours(0, 0, 0, 0);
@@ -1268,26 +1270,48 @@ async function runRcWeb() {
     $('rcWebMeta').textContent = '';
     return;
   }
+  // MIRROR-FIRST: when the panel owns this cell, its (fresh, sampled) answer
+  // is the single source for both views — render it, or wait for it to land
+  // (renderRcTable mirrors on arrival). No second draw, no disagreement.
+  if (rcCtx && rcCtx.day === day && rcCtx.dur === dur && !$('rcModal').classList.contains('hidden')) {
+    if (rcCtx.data) rcWebMirror();
+    else {
+      $('rcWebBody').innerHTML = `<div class="rc-loading">${t('querying_at', { time: `${hh}:00` })}</div>`;
+      $('rcWebMeta').textContent = '';
+    }
+    return;
+  }
   $('rcWebBody').innerHTML = `<div class="rc-loading">${t('querying_at', { time: `${hh}:00` })}</div>`;
   $('rcWebMeta').textContent = '';
   try {
-    // always FRESH — this pane exists to show what rentalcars serves RIGHT
-    // NOW at this hour, never a pinned snapshot
+    // fallback for a cell the panel does not own: one fresh draw of its own
     const r = await api(
       `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${day}&duration=${dur}&hh=${hh}&mm=00&fresh=1&samples=2`
     );
     if (seq !== rcWeb.seq) return;
     rcWeb.data = r;
-    renderRcWebList(r);
+    renderRcWebList(r, hh);
   } catch (e) {
     if (seq !== rcWeb.seq) return;
     $('rcWebBody').innerHTML = `<div class="drawer-empty">${rcErrorText(e.message)}</div>`;
   }
 }
 
+/** re-render the pane from the panel's OWN data — called by renderRcTable
+ *  whenever the panel's answer changes, so the two views always show the
+ *  same draw, the same hour, the same francs */
+function rcWebMirror() {
+  if ($('rcWeb').classList.contains('hidden') || rcWeb.day == null) return;
+  if (!rcCtx || rcCtx.day !== rcWeb.day || rcCtx.dur !== rcWeb.dur || !rcCtx.data) return;
+  rcWeb.seq++; // a mirror supersedes any in-flight own fetch
+  rcWeb.data = rcCtx.data;
+  rcWebHead(rcCtx.hh, String(rcCtx.mm).padStart(2, '0')); // the hour that ANSWERED
+  renderRcWebList(rcCtx.data, rcCtx.hh);
+}
+
 /** the pane's shop-style list: EVERY row the answer carries, GM highlighted,
  *  the same LIST/CUSTOMER convention as the analysis table */
-function renderRcWebList(r) {
+function renderRcWebList(r, hh) {
   if (!r || !r.top || !r.top.length) {
     $('rcWebBody').innerHTML = `<div class="drawer-empty">${t('no_offers')}</div>`;
     return;
@@ -1311,29 +1335,30 @@ function renderRcWebList(r) {
     <tbody>${rows}</tbody></table>`;
   const atTs = r.at || r.cachedAt;
   $('rcWebMeta').textContent =
-    `${r.total} ${t('offers')} · ${t('pickup')} ${rcPad(rcLiveHour)}:00` +
+    `${r.total} ${t('offers')} · ${t('pickup')} ${hh || rcPad(rcHour)}:00` +
     (atTs ? ` · ${t('query_at', { time: new Date(atTs).toLocaleTimeString('de-CH', { hour12: false }) })}` : '') +
+    (r.stale ? ` · ${t('stale_cache')}` : '') +
     (r.spread ? ` · GM ±${r.spread}%` : '');
 }
 
-// After an APPLY the pane follows on its own (Berkay: "onayladığında
-// rentalcars sayfalarında saatler otomatik değişip refreshlenip ekrana
-// gelsin"): it opens if closed, walks to the NEXT hour immediately, then once
-// more ~90s later when rentalcars has had time to propagate — two different
-// hours, refreshed without a click.
+// After an APPLY both views follow on their own (Berkay: "onayladığında
+// saatler otomatik değişip refreshlenip ekrana gelsin"): the apply handler
+// steps the shared hour and re-queries the panel (the pane mirrors it), and
+// ~90s later — when rentalcars has had time to propagate — one more shared
+// step re-asks again. Two hours, refreshed without a click.
 let rcLiveTimer = null;
 
 function rcLiveFollowUp(day, dur) {
-  rcLiveHour = rcHourAt(rcLiveHour, 1);
-  rcWebShow(day, dur);
+  rcWebShow(day, dur); // opens the pane if closed; mirrors the panel's query
   clearTimeout(rcLiveTimer);
   rcLiveTimer = setTimeout(() => {
     if (rcWeb.day !== day || rcWeb.dur !== dur) return; // the operator moved on
-    rcLiveHour = rcHourAt(rcLiveHour, 1);
-    runRcWeb();
+    if (!rcCtx || rcCtx.day !== day || rcCtx.dur !== dur) return;
+    rcHour = rcHourAt(rcHour, 1);
+    renderRcHour();
+    runRcAnalysis(); // the pane mirrors the landing
   }, 90 * 1000);
 }
-
 
 window.stepRcHour = stepRcHour;
 
@@ -2594,11 +2619,11 @@ function renderCell(day, dur) {
 
   td.oncontextmenu = (e) => {
     e.preventDefault();
-    // Berkay, 2026-08-30: right-click shows rentalcars EMBEDDED in the page,
-    // between the grid and the analysis panel — never a tab, never a popup —
-    // and every further right-click walks the hour FORWARD on the ring and
-    // re-queries, so the operator watches the market hour by hour in place.
-    openRcLive(day, dur);
+    // Berkay, 2026-08-30 round 5: ONE left click drives BOTH side views, so
+    // right-click is just an alias — no separate gesture for the pane, no
+    // separate hour ring. The shared hour moves only via the -/+ controls,
+    // REFRESH, and the post-apply follow-up.
+    selectAnalysisCell(day, dur);
   };
 
   if (state.conflictSet.has(k)) {
@@ -2724,8 +2749,17 @@ setInterval(presenceBeat, 5000);
 function selectAnalysisCell(day, dur) {
   if (gridSel.justSelected) return; // end of a rectangle drag, not a request
   setPresenceFocus(day, dur);
-  if (!$('rcModal').classList.contains('hidden') && rcCtx && rcCtx.day === day && rcCtx.dur === dur) return;
-  openRcAnalysis(day, dur);
+  const samePanel =
+    !$('rcModal').classList.contains('hidden') && rcCtx && rcCtx.day === day && rcCtx.dur === dur;
+  if (!samePanel) openRcAnalysis(day, dur);
+  // ONE click, BOTH views (Berkay, 2026-08-30): the booking pane follows the
+  // same cell at the same shared hour and mirrors the same answer
+  if (
+    window.innerWidth > 780 &&
+    (rcWeb.day !== day || rcWeb.dur !== dur || $('rcWeb').classList.contains('hidden'))
+  ) {
+    rcWebShow(day, dur);
+  }
 }
 
 /** Live ranking preview while the grid editor is open: the docked panel
@@ -3258,31 +3292,19 @@ $('applyBtn').onclick = async () => {
     if (state.view === 'dashboard') startRcMonth(true);
   }
   // With CONFIRM retired from the panel, the APPLY bar owns its follow-up:
-  // step the hour (a new hour is a search nobody can serve stale), re-query
-  // fresh AFTER the invalidates above, and re-lay the applied projection so
-  // GM shows at the just-applied price against live competitors.
-  if (dockApplied && rcCtx && rcCtx.day === dockApplied.day && rcCtx.dur === dockApplied.dur) {
-    rcCtx.appliedPct = dockApplied.pct; // REFRESH re-lays it at the new hour
+  // step the SHARED hour (a new hour is a search nobody can serve stale) and
+  // re-query fresh AFTER the invalidates above. Berkay, 2026-08-30: the panel
+  // shows ONLY what rentalcars actually serves — the applied price appears
+  // when it provably lands (sync bar tracks it; checkRcSync swaps the data
+  // in), never as a projected overlay pretending to be the market. Both views
+  // render the same answer, so they can never disagree.
+  if (ok && rcCtx && !$('rcModal').classList.contains('hidden') &&
+      (dockApplied || okDays.has(rcCtx.day))) {
     rcHour = rcHourAt(rcHour, 1);
     renderRcHour();
+    const cell = dockApplied || { day: rcCtx.day, dur: rcCtx.dur };
+    rcLiveFollowUp(cell.day, cell.dur); // the pane follows; +90s second look
     await runRcAnalysis({ fresh: true });
-    const v = rcCtx.view || rcCtx.data;
-    if (v && v.gmPrice != null) projectPlacement(dockApplied.pct, true);
-  } else if (ok && rcCtx && !$('rcModal').classList.contains('hidden') && okDays.has(rcCtx.day)) {
-    // Berkay, 2026-08-30 ("booking gibi"): an APPLY refreshes EVERY open
-    // market view. The panel's own cell wasn't the one written, but its day
-    // was — its ladder is stale now, so it re-asks fresh at a stepped hour.
-    rcHour = rcHourAt(rcHour, 1);
-    renderRcHour();
-    await runRcAnalysis({ fresh: true });
-  }
-  // …and the embedded rentalcars pane follows too: onto the applied cell
-  // (opening itself if closed), or re-asking its own cell when that day was
-  // in the batch — next hour now, one more hour ~90s later.
-  if (dockApplied) {
-    rcLiveFollowUp(dockApplied.day, dockApplied.dur);
-  } else if (ok && rcWeb.day != null && !$('rcWeb').classList.contains('hidden') && okDays.has(rcWeb.day)) {
-    rcLiveFollowUp(rcWeb.day, rcWeb.dur);
   }
   // no full reload — cells were updated in place from the verified responses
   refreshLogs();
@@ -5121,18 +5143,7 @@ async function refreshRcAnalysis() {
   }
   const b = $('rcRefresh');
   if (b) { b.disabled = true; b.textContent = t('refreshing'); }
-  try {
-    await runRcAnalysis({ fresh: true });
-    // a just-applied pct is re-laid onto the fresh ladder until rentalcars
-    // provably serves it (the sync then clears appliedPct) — GM must keep
-    // showing at the applied price, not flicker back to the stale quote
-    if (rcCtx && rcCtx.appliedPct != null) {
-      const s = rcSync.get(syncKeyOf(rcCtx.day, rcCtx.dur));
-      const v = rcCtx.view || rcCtx.data;
-      if (s && !s.live && !s.expired && v && v.gmPrice != null) projectPlacement(rcCtx.appliedPct, true);
-      else rcCtx.appliedPct = null;
-    }
-  }
+  try { await runRcAnalysis({ fresh: true }); }
   finally { if (b) { b.disabled = false; b.textContent = t('refresh_rc'); } }
 }
 window.refreshRcAnalysis = refreshRcAnalysis;
@@ -5649,6 +5660,7 @@ function renderRcTable() {
       return r.gmRank ? ` · ${t('gm_rank')} #${r.gmRank} (${r.gmPrice.toFixed(2)} ${r.currency})` : ` · ${t('gm_not_listed')}`;
     })();
   renderRcFleet();
+  rcWebMirror(); // the pane re-renders from the SAME answer — never a second draw
 }
 
 function placeGm(rowIndex) {
@@ -5822,7 +5834,6 @@ async function checkRcSync(k, manual) {
         rcCtx.data = r; // live now — the projection overlay is no longer needed
         rcBuildView(); // keep the category-scoped view in sync with fresh data
         if (rcCtx.placed && rcCtx.placed.proj) rcCtx.placed = null;
-        rcCtx.appliedPct = null; // REFRESH stops re-laying: the market serves it
       }
       // Berkay, 2026-08-30: the landing is confirmed at a SECOND, random hour
       // too — rentalcars caches per (date, hour), so one hour agreeing could
