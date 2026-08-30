@@ -211,6 +211,7 @@ const I18N = {
     sel_scanning: 'Scanning {n} selected cell(s) live…',
     sel_scanned: '{n} cell(s) scanned — {bad} need attention (amber).',
     sel_scan_cap: 'Selection capped at 40 cells per scan.',
+    sel_scan_unruled: 'No weekly rules in the selection — nothing to check.',
     suspect_reason: 'Served rank {rank} — outside the top 10',
     relay_card_title: 'RC RELAY MACHINES',
     relay_workers: 'CONNECTED WORKERS',
@@ -555,6 +556,7 @@ const I18N = {
     sel_scanning: '{n} ausgewählte Zelle(n) werden live geprüft…',
     sel_scanned: '{n} Zelle(n) geprüft — {bad} brauchen Aufmerksamkeit (bernstein).',
     sel_scan_cap: 'Auswahl pro Scan auf 40 Zellen begrenzt.',
+    sel_scan_unruled: 'Keine Wochenregeln in der Auswahl — nichts zu prüfen.',
     suspect_reason: 'Ausgelieferter Rang {rank} — außerhalb der Top 10',
     relay_card_title: 'RC-RELAY-RECHNER',
     relay_workers: 'VERBUNDENE WORKER',
@@ -899,6 +901,7 @@ const I18N = {
     sel_scanning: '{n} seçili hücre canlı taranıyor…',
     sel_scanned: '{n} hücre tarandı — {bad} tanesi ilgi bekliyor (kehribar).',
     sel_scan_cap: 'Tarama başına seçim 40 hücreyle sınırlı.',
+    sel_scan_unruled: 'Seçimde weekly rule yok — kontrol edilecek bir şey yok.',
     suspect_reason: 'Servis edilen sıra {rank} — top 10 dışı',
     relay_card_title: 'RC RELAY MAKİNELERİ',
     relay_workers: 'BAĞLI MAKİNELER',
@@ -3036,6 +3039,9 @@ function suspectSweep() {
   if (state.view !== 'grid' || !state.session || !stationHasRc() || document.hidden) return;
   if (suspectEs) { suspectEs.close(); suspectEs = null; }
   const dur = (rcCtx && rcCtx.dur) || 3;
+  // a month with no rules at this duration has nothing to drift — probing 31
+  // empty days would only spend the relay budget on the UNCOVERED story
+  if (![...state.cellMap.keys()].some((k) => k.endsWith(':' + dur))) return;
   const ctx = { station: state.station, year: state.year, month: state.month, dur };
   const es = new EventSource(
     `/api/rc-month-stream?station=${ctx.station}&year=${ctx.year}&month=${ctx.month}&duration=${dur}`
@@ -3046,6 +3052,10 @@ function suspectSweep() {
     try {
       const d = JSON.parse(ev.data);
       if (d.error) return; // a failed probe proves nothing — never flag on it
+      // no weekly rule on the cell = UNPRICED, not drifted — the UNCOVERED
+      // chip owns that story; a flag would just repeat it in amber (Berkay:
+      // an empty October lit up with suspicion)
+      if (!state.cellMap.has(`${d.day}:${ctx.dur}`)) { setCellFlag(d.day, ctx.dur, null); return; }
       const ok = d.rank != null && d.rank <= 10;
       setCellFlag(d.day, ctx.dur, ok ? null : t('suspect_reason', { rank: d.rank == null ? '—' : '#' + d.rank }));
     } catch (_) { /* malformed event — skip */ }
@@ -3058,8 +3068,11 @@ setInterval(suspectSweep, 15 * 60 * 1000);
 /** the selection-scan: analyze ONLY the drag-selected cells, fresh, and flag
  *  the ones whose ranking is off */
 async function scanSelection(cells) {
-  const todo = cells.slice(0, 40);
-  if (cells.length > todo.length) toast(t('sel_scan_cap'), 'warn');
+  const ruled = cells.filter((c) => state.cellMap.has(`${c.day}:${c.dur}`));
+  for (const c of cells) if (!state.cellMap.has(`${c.day}:${c.dur}`)) setCellFlag(c.day, c.dur, null);
+  if (!ruled.length) { toast(t('sel_scan_unruled'), 'warn'); return; }
+  const todo = ruled.slice(0, 40);
+  if (ruled.length > todo.length) toast(t('sel_scan_cap'), 'warn');
   toast(t('sel_scanning', { n: todo.length }));
   let done = 0, bad = 0;
   const t0 = new Date();
@@ -7545,11 +7558,13 @@ async function bulkFollowUp() {
   const scopeNote = inMonth.length
     ? t('bulk_fu_scope', { n: inMonth.length, month: `${MONTHS_SHORT[state.month - 1]} ${state.year}` })
     : t('bulk_fu_none');
+  // the creation window goes first — the choice dialog must stand alone over
+  // the grid, not stack on a spent modal (Berkay, 2026-08-30)
+  $('bulkModal').classList.add('hidden');
   const choice = await choiceBox(t('bulk_fu_q'), [
     { value: 'manual', title: t('bulk_fu_manual'), desc: t('bulk_fu_manual_d') },
     { value: 'scan', title: t('bulk_fu_scan'), desc: `${t('bulk_fu_scan_d')} ${scopeNote}` },
   ]);
-  $('bulkModal').classList.add('hidden');
   if (choice !== 'scan') return;
   if (!inMonth.length) { toast(t('bulk_fu_none'), 'warn'); return; }
   showView('grid');

@@ -924,18 +924,35 @@ body.dock-resizing { cursor: col-resize; user-select: none; }
 #gridTable td.cell-active { outline: 2px solid var(--accent); outline-offset: -2px; }
 #gridTable td.cell-live { box-shadow: inset 0 0 0 2px rgba(82, 199, 242, 0.55); }
 
-/* cells the background scan wants LOOKED AT: pulsing amber ring, several at
-   once when several days drifted; an edit+apply acknowledges it */
+/* cells the background scan wants LOOKED AT: solid amber ring + amber fill +
+   a "!" badge, pulsing — several at once when several days drifted; an
+   edit+apply acknowledges it. Loud on purpose (Berkay: "daha belli olsun"). */
 #gridTable td.cell-suspect {
-  outline: 2px dashed var(--warn);
+  outline: 2px solid var(--warn);
   outline-offset: -2px;
-  animation: suspectpulse 1.6s ease-in-out infinite;
+  background: var(--warn-dim);
+  animation: suspectpulse 1.2s ease-in-out infinite;
+}
+
+#gridTable td.cell-suspect::after {
+  content: '!';
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--warn);
 }
 
 @keyframes suspectpulse {
-  0%, 100% { outline-color: var(--warn); }
-  50% { outline-color: transparent; }
+  0%, 100% { background: var(--warn-dim); outline-color: var(--warn); }
+  50% { background: transparent; outline-color: rgba(255, 179, 71, 0.35); }
 }
+
+/* the weekly-rules CREATE modal is a small form, not a data surface — size it
+   to its content instead of the full-height rc frame */
+.modal.modal-bulk { width: min(720px, calc(100vw - 24px)); }
+.modal-bulk .modal-body { overflow-y: auto; max-height: calc(90vh - 140px); }
 
 /* the selection box's SCAN action sits under the % input */
 .gridsel-scan { margin-top: 6px; }
