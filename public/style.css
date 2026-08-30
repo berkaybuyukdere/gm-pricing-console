@@ -216,7 +216,37 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  transition: width 0.15s ease;
 }
+
+/* ---------- collapsible sidebar (Berkay, 2026-08-30) ---------- */
+
+.side-collapse {
+  align-self: flex-end;
+  margin: 8px 8px 0 0;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.side-collapse:hover { color: var(--text); background: var(--surface-2); }
+
+body.side-collapsed .sidebar { width: 54px; }
+body.side-collapsed .side-collapse { align-self: center; margin-right: 0; }
+body.side-collapsed .nav-item { justify-content: center; padding: 12px 0; }
+body.side-collapsed .nav-item span:not(.nav-ico) { display: none; }
+body.side-collapsed .side-link,
+body.side-collapsed .side-hint,
+body.side-collapsed .side-user-info,
+body.side-collapsed .side-signout { display: none; }
+body.side-collapsed .side-user-row { justify-content: center; }
+body.side-collapsed .side-user { padding: 6px; }
 
 .nav { display: flex; flex-direction: column; padding: 10px 0; }
 
@@ -741,6 +771,152 @@ body {
 
 .grid-scroller { flex: 1; min-height: 0; overflow: auto; }
 
+/* ---------- grid + docked competitor panel (2026-08-30) ----------
+   The analysis is no longer a floating modal on desktop: #rcModal sits INSIDE
+   the grid view, right of the grid, behind a draggable splitter. One click on
+   a cell loads that day's ranking; the phone keeps the full-screen overlay. */
+
+.grid-split {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+.grid-split > .grid-wrap { flex: 1 1 auto; min-width: 300px; }
+
+.grid-splitter {
+  flex: 0 0 6px;
+  cursor: col-resize;
+  background: var(--border-soft);
+}
+
+.grid-splitter:hover,
+body.dock-resizing .grid-splitter { background: var(--accent); }
+
+body.dock-resizing { cursor: col-resize; user-select: none; }
+
+@media (min-width: 781px) {
+  /* undo the overlay: the SAME element, docked */
+  .grid-split > #rcModal {
+    position: static;
+    inset: auto;
+    background: none;
+    z-index: auto;
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+    flex: 0 0 var(--rc-dock-w, 46%);
+    width: var(--rc-dock-w, 46%);
+    min-width: 380px;
+    max-width: 76vw;
+    border-left: 1px solid var(--border);
+  }
+  .grid-split > #rcModal.hidden { display: none; }
+  .grid-split > #rcModal .modal.modal-rc {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    max-width: none;
+    border: none;
+  }
+  .grid-split > #rcModal .modal-head { flex-wrap: wrap; gap: 4px 8px; }
+}
+
+@media (max-width: 780px) {
+  .grid-splitter { display: none; }
+}
+
+/* ---------- embedded rentalcars pane (between grid and analysis panel) ---------- */
+
+.rc-web {
+  flex: 0 0 var(--rc-web-w, 27%);
+  width: var(--rc-web-w, 27%);
+  min-width: 320px;
+  max-width: 60vw;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.rc-web.hidden { display: none; }
+
+.rc-web-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.16em;
+  font-size: 11px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.rc-web-tools { display: flex; align-items: center; gap: 6px; }
+
+.rc-web-hour { font-family: var(--mono); font-size: 12px; color: var(--text); letter-spacing: 0.08em; }
+
+.rc-web-real {
+  color: var(--text-mute);
+  text-decoration: none;
+  font-size: 13px;
+  padding: 0 4px;
+}
+
+.rc-web-real:hover { color: var(--accent); }
+
+.rc-web-body { flex: 1; min-height: 0; overflow: auto; padding: 10px 14px; }
+
+.rc-web-table td, .rc-web-table th { padding-top: 4px; padding-bottom: 4px; }
+
+.rc-web-foot {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-mute);
+}
+
+@media (max-width: 780px) {
+  /* phones have no room for a third pane — openRcLive hands the real site
+     to a new tab instead */
+  .rc-web { display: none; }
+}
+
+/* the two side views mark their cells on the grid: solid accent ring = the
+   analysis panel's cell (where the preview/apply happens), blue inner ring =
+   the embedded rentalcars pane's cell */
+#gridTable td.cell-active { outline: 2px solid var(--accent); outline-offset: -2px; }
+#gridTable td.cell-live { box-shadow: inset 0 0 0 2px rgba(82, 199, 242, 0.55); }
+
+/* the docked table announces what it shows while a projection is on screen */
+.rc-sec-title {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: var(--text-mute);
+  margin: 10px 0 4px;
+}
+
+.rc-sec-title.rc-sec-after { color: var(--accent); }
+
+.rc-before-wrap { opacity: 0.62; }
+.rc-before-wrap .rc-table td, .rc-before-wrap .rc-table th { padding-top: 3px; padding-bottom: 3px; }
+
+/* the sim bar points at the bottom-right APPLY TO DPS bar instead of
+   carrying its own confirm button (2026-08-30) */
+.rc-apply-hint {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  align-self: center;
+  white-space: nowrap;
+}
+
 .grid {
   /* 14 duration columns: keep each readable and let .grid-scroller scroll */
   min-width: 900px;
@@ -913,6 +1089,33 @@ td.cell-conflict {
   text-align: center;
 }
 
+/* double-click cell editor: [−] input [+] — the steppers tick 0.5 points and
+   the docked panel re-ranks live on every tick (Berkay, 2026-08-30) */
+.cell-edit-wrap {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  height: 100%;
+}
+
+.cell-edit-wrap .cell-input { flex: 1 1 auto; min-width: 0; }
+
+.cell-step {
+  flex: 0 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  background: var(--surface-2);
+  color: var(--accent);
+  font-size: 13px;
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.cell-step:hover { background: var(--accent-dim); }
+
 /* ---------- empty state ---------- */
 
 .grid-empty {
@@ -937,6 +1140,16 @@ td.cell-conflict {
   background: var(--surface);
   border-top: 1px solid var(--warn);
   flex-shrink: 0;
+}
+
+/* The bar's SPACE is always reserved (Berkay, 2026-08-30): it used to pop
+   into the layout and shift the whole grid up ~50px at the exact moment the
+   operator was clicking — a misclick machine. Hidden now means invisible and
+   inert, never absent. */
+.applybar.hidden {
+  display: flex !important;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .staged-label { letter-spacing: 0.14em; font-size: 11px; color: var(--text-dim); }
@@ -1515,6 +1728,45 @@ td.rc-price-click:hover { color: var(--accent); text-decoration: underline dotte
    tiny muted look must not apply */
 .rc-dur-pcts .rc-dur-pct { font-size: 11px; color: var(--warn); }
 
+/* ---------- grid: Excel-style rectangle selection ---------- */
+
+body.grid-selecting { user-select: none; cursor: crosshair; }
+
+#gridTable td.cell-sel {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+  background: var(--accent-dim);
+}
+
+#gridSelBox {
+  position: fixed;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  font-family: var(--mono);
+}
+
+#gridSelBox .gridsel-n { font-size: 10px; letter-spacing: 0.12em; color: var(--accent); }
+
+#gridSelBox .gridsel-input {
+  width: 72px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+#gridSelBox .gridsel-hint { font-size: 9px; letter-spacing: 0.1em; color: var(--text-mute); }
+
 /* ---------- grid: SCAN-staged cells (machine proposals, orange) ---------- */
 
 .cell-scan-new { color: var(--warn); font-weight: 700; }
@@ -1836,6 +2088,10 @@ td.cell-remote::before {
     border-top: 1px solid var(--border);
     z-index: 45;
   }
+  /* the bottom tab bar has no collapsed mode — neutralise the desktop toggle */
+  .side-collapse { display: none; }
+  body.side-collapsed .sidebar { width: auto; }
+  body.side-collapsed .nav-item span:not(.nav-ico) { display: initial; }
   .nav { flex-direction: row; flex: 1; padding: 0; justify-content: space-around; }
   .nav-item {
     flex: 1;

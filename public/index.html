@@ -29,6 +29,7 @@
 
 <div class="shell">
   <aside class="sidebar">
+    <button class="side-collapse" id="sideCollapse" title="Collapse / expand">&#171;</button>
     <nav class="nav">
       <button class="nav-item on" data-view="dashboard"><span class="nav-ico">&#9632;</span><span data-i18n="nav_dashboard">DASHBOARD</span></button>
       <button class="nav-item" data-view="grid"><span class="nav-ico">&#9638;</span><span data-i18n="nav_grid">PRICING GRID</span></button>
@@ -136,21 +137,69 @@
         </div>
       </nav>
 
-      <main class="grid-wrap">
-        <!-- One vehicle-group set = one price lane. Hidden until a second set
-             exists, so a single-category station looks exactly as before. -->
-        <div class="lane-bar hidden" id="laneBar"></div>
-        <div class="grid-scroller">
-          <table class="grid" id="gridTable">
-            <thead><tr id="gridHead"></tr></thead>
-            <tbody id="gridBody"></tbody>
-          </table>
+      <!-- Grid + docked competitor panel share this row: one click on a cell
+           loads that day's ranking on the right, the splitter drags the
+           boundary (Berkay, 2026-08-30 — the floating modal is retired on
+           desktop; on phones #rcModal still overlays full-screen). -->
+      <div class="grid-split" id="gridSplit">
+        <main class="grid-wrap">
+          <!-- One vehicle-group set = one price lane. Hidden until a second set
+               exists, so a single-category station looks exactly as before. -->
+          <div class="lane-bar hidden" id="laneBar"></div>
+          <div class="grid-scroller">
+            <table class="grid" id="gridTable">
+              <thead><tr id="gridHead"></tr></thead>
+              <tbody id="gridBody"></tbody>
+            </table>
+          </div>
+          <div class="grid-empty" id="gridEmpty">
+            <div class="empty-code">[ NO SESSION ]</div>
+            <div class="empty-text" data-i18n="grid_empty">Connect your DPS session to load the pricing grid.</div>
+          </div>
+        </main>
+
+        <div class="grid-splitter hidden" id="rcWebSplitter" title="Drag to resize"></div>
+
+        <!-- The embedded rentalcars pane (Berkay, 2026-08-30): grid right-click
+             shows the market HERE, between the grid and the analysis panel.
+             rentalcars sends X-Frame-Options: SAMEORIGIN, so the real page
+             cannot be iframed — this pane renders the SAME answer rentalcars
+             serves, queried live at the shown hour. -->
+        <aside class="rc-web hidden" id="rcWeb">
+          <div class="rc-web-head">
+            <span class="rc-web-title" id="rcWebTitle">RENTALCARS</span>
+            <span class="rc-web-tools">
+              <button class="rc-hour-step" onclick="rcWebStep(-1)" title="&minus;1h">&minus;</button>
+              <span class="rc-web-hour" id="rcWebHour">—</span>
+              <button class="rc-hour-step" onclick="rcWebStep(1)" title="+1h">+</button>
+              <a class="rc-web-real" id="rcWebReal" target="_blank" rel="noopener">&#8599;</a>
+            </span>
+          </div>
+          <div class="rc-web-body" id="rcWebBody"></div>
+          <div class="rc-web-foot" id="rcWebMeta"></div>
+        </aside>
+
+        <div class="grid-splitter hidden" id="gridSplitter" title="Drag to resize"></div>
+
+        <div class="modal-backdrop hidden" id="rcModal">
+          <div class="modal modal-rc">
+            <div class="modal-head"><span id="rcTitle">RENTALCARS TOP 10</span>
+              <span class="rc-hour" id="rcHour"></span>
+            </div>
+            <div class="modal-body">
+              <div class="rc-toolrow">
+                <div class="rc-durs" id="rcDurs"></div>
+                <div class="rc-fleet" id="rcFleet"></div>
+              </div>
+              <div id="rcBody"><div class="drawer-empty">Pick a duration.</div></div>
+            </div>
+            <div class="modal-actions">
+              <span class="rc-meta" id="rcMeta"></span>
+              <button class="btn btn-ghost" id="rcRefresh" onclick="refreshRcAnalysis()" data-i18n="refresh_rc">REFRESH</button>
+            </div>
+          </div>
         </div>
-        <div class="grid-empty" id="gridEmpty">
-          <div class="empty-code">[ NO SESSION ]</div>
-          <div class="empty-text" data-i18n="grid_empty">Connect your DPS session to load the pricing grid.</div>
-        </div>
-      </main>
+      </div>
 
       <footer class="applybar hidden" id="applyBar">
         <span class="staged-label"><span class="staged-count" id="stagedCount">0</span> <span data-i18n="staged_changes">STAGED CHANGES</span></span>
@@ -385,26 +434,7 @@
   </div>
 </div>
 
-<div class="modal-backdrop hidden" id="rcModal">
-  <div class="modal modal-rc">
-    <div class="modal-head"><span id="rcTitle">RENTALCARS TOP 50</span>
-      <span class="rc-hour" id="rcHour"></span>
-      <button class="btn btn-ghost btn-xs" id="rcClose">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="rc-toolrow">
-        <div class="rc-durs" id="rcDurs"></div>
-        <div class="rc-fleet" id="rcFleet"></div>
-      </div>
-      <div id="rcBody"><div class="drawer-empty">Pick a duration.</div></div>
-    </div>
-    <div class="modal-actions">
-      <span class="rc-meta" id="rcMeta"></span>
-      <button class="btn btn-ghost" id="rcRefresh" onclick="refreshRcAnalysis()" data-i18n="refresh_rc">REFRESH</button>
-      <a class="btn btn-ghost" id="rcOpen" target="_blank" rel="noopener" data-i18n="open_rc">OPEN ON RENTALCARS</a>
-    </div>
-  </div>
-</div>
+<!-- #rcModal now lives inside #view-grid as the docked competitor panel -->
 
 <div class="modal-backdrop hidden" id="sweepModal">
   <div class="modal modal-rc">

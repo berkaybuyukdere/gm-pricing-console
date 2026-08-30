@@ -153,10 +153,10 @@ const I18N = {
     querying: 'QUERYING RENTALCARS…', pick_duration: 'Pick a duration.',
     no_offers: 'No offers returned for these dates.',
     rc_past: 'This pickup date has already passed — rentalcars only quotes future pickups.',
-    rc_err_offline: 'rentalcars refuses queries from cloud servers and no relay machine is online. Install the relay once from <b>Settings</b> on any computer you use (it auto-starts from then on) — or use OPEN ON RENTALCARS.',
+    rc_err_offline: 'rentalcars refuses queries from cloud servers and no relay machine is online. Install the relay once from <b>Settings</b> on any computer you use (it auto-starts from then on) — or right-click the grid cell to open rentalcars directly.',
     rc_err_timeout: 'The local relay did not answer in time — check that it is still running, then retry.',
-    rc_err_rejected: 'rentalcars rejected the query ({code}) — retry in a moment or use OPEN ON RENTALCARS.',
-    rc_err_generic: 'Query failed: {code} — use OPEN ON RENTALCARS instead.',
+    rc_err_rejected: 'rentalcars rejected the query ({code}) — retry in a moment or right-click the grid cell to open rentalcars directly.',
+    rc_err_generic: 'Query failed: {code} — right-click the grid cell to open rentalcars directly.',
     rc_hint_click: "Click a competitor row — or drag the Green Motion row onto one — to take that position. You can also click Green Motion's own price to type a target price directly; the DPS rule change is computed automatically.",
     rc_session_note: 'Prices are what a fresh anonymous visitor sees for this exact pickup time. rentalcars targets campaign discounts (e.g. −12%) per session — a browser with old cookies may see the undiscounted price. To compare 1:1, use a private window and the OPEN ON RENTALCARS button (it carries the same pickup time).',
     rc_price_click: 'Click to type a target price',
@@ -192,6 +192,14 @@ const I18N = {
     rc_col_customer: 'CUSTOMER',
     rc_col_gear: 'GEAR',
     rc_col_fuel: 'FUEL',
+    sel_cells: '{n} CELLS',
+    sel_hint: 'Enter apply · Esc cancel',
+    sel_staged: '{n} cells staged at {pct} — APPLY TO DPS writes them',
+    rc_before_title: 'NOW — BEFORE THE CHANGE (as rentalcars serves it)',
+    rc_after_title: 'PROJECTED — AFTER THE CHANGE',
+    sim_apply_hint: 'APPLY TO DPS (bottom right) writes this',
+    rc_live_open: 'rentalcars → {d}.{dur}D · {h}:00',
+    rc_live_real: 'Open the real rentalcars page (same search, same hour)',
     relay_card_title: 'RC RELAY MACHINES',
     relay_workers: 'CONNECTED WORKERS',
     relay_none: 'No relay machines connected.',
@@ -477,10 +485,10 @@ const I18N = {
     querying: 'RENTALCARS WIRD ABGEFRAGT…', pick_duration: 'Mietdauer wählen.',
     no_offers: 'Keine Angebote für diese Daten.',
     rc_past: 'Dieses Abholdatum liegt in der Vergangenheit — rentalcars zeigt nur zukünftige Abholungen.',
-    rc_err_offline: 'rentalcars lehnt Anfragen von Cloud-Servern ab und kein Relay-Rechner ist online. Das Relay einmalig über <b>EINSTELLUNGEN</b> auf einem deiner Rechner installieren (startet danach automatisch) — oder AUF RENTALCARS ÖFFNEN nutzen.',
+    rc_err_offline: 'rentalcars lehnt Anfragen von Cloud-Servern ab und kein Relay-Rechner ist online. Das Relay einmalig über <b>EINSTELLUNGEN</b> auf einem deiner Rechner installieren (startet danach automatisch) — oder die Rasterzelle rechtsklicken, um rentalcars direkt zu öffnen.',
     rc_err_timeout: 'Das lokale Relay hat nicht rechtzeitig geantwortet — prüfen, ob es noch läuft, dann erneut versuchen.',
-    rc_err_rejected: 'rentalcars hat die Anfrage abgelehnt ({code}) — gleich erneut versuchen oder AUF RENTALCARS ÖFFNEN.',
-    rc_err_generic: 'Abfrage fehlgeschlagen: {code} — stattdessen AUF RENTALCARS ÖFFNEN nutzen.',
+    rc_err_rejected: 'rentalcars hat die Anfrage abgelehnt ({code}) — gleich erneut versuchen oder die Rasterzelle rechtsklicken, um rentalcars direkt zu öffnen.',
+    rc_err_generic: 'Abfrage fehlgeschlagen: {code} — die Rasterzelle rechtsklicken, um rentalcars direkt zu öffnen.',
     rc_hint_click: 'Auf eine Konkurrenzzeile klicken — oder die Green-Motion-Zeile darauf ziehen — um diese Position zu übernehmen. Alternativ auf den eigenen Green-Motion-Preis klicken und einen Zielpreis direkt eintippen; die DPS-Regeländerung wird automatisch berechnet.',
     rc_session_note: 'Die Preise entsprechen dem, was ein neuer anonymer Besucher für genau diese Abholzeit sieht. rentalcars steuert Kampagnenrabatte (z. B. −12%) pro Sitzung — ein Browser mit alten Cookies sieht evtl. den Preis ohne Rabatt. Für einen 1:1-Vergleich ein privates Fenster und AUF RENTALCARS ÖFFNEN verwenden (gleiche Abholzeit).',
     rc_price_click: 'Klicken, um einen Zielpreis einzugeben',
@@ -516,6 +524,14 @@ const I18N = {
     rc_col_customer: 'KUNDE',
     rc_col_gear: 'GETRIEBE',
     rc_col_fuel: 'TREIBSTOFF',
+    sel_cells: '{n} ZELLEN',
+    sel_hint: 'Enter übernehmen · Esc abbrechen',
+    sel_staged: '{n} Zellen mit {pct} vorgemerkt — APPLY TO DPS schreibt sie',
+    rc_before_title: 'JETZT — VOR DER ÄNDERUNG (wie rentalcars sie ausliefert)',
+    rc_after_title: 'PROGNOSE — NACH DER ÄNDERUNG',
+    sim_apply_hint: 'APPLY TO DPS (unten rechts) schreibt das',
+    rc_live_open: 'rentalcars → {d}.{dur}T · {h}:00',
+    rc_live_real: 'Die echte rentalcars-Seite öffnen (gleiche Suche, gleiche Stunde)',
     relay_card_title: 'RC-RELAY-RECHNER',
     relay_workers: 'VERBUNDENE WORKER',
     relay_none: 'Keine Relay-Rechner verbunden.',
@@ -801,10 +817,10 @@ const I18N = {
     querying: 'RENTALCARS SORGULANIYOR…', pick_duration: 'Bir süre seç.',
     no_offers: 'Bu tarihler için teklif dönmedi.',
     rc_past: 'Bu alış tarihi geçmişte kaldı — rentalcars yalnızca gelecekteki alışları fiyatlar.',
-    rc_err_offline: "rentalcars bulut sunucularından gelen sorguları reddediyor ve hiçbir relay bilgisayarı çevrimiçi değil. Relay'i <b>AYARLAR</b> sayfasından kullandığın herhangi bir bilgisayara bir kez kur (sonrasında otomatik başlar) — ya da RENTALCARS'TA AÇ'ı kullan.",
+    rc_err_offline: "rentalcars bulut sunucularından gelen sorguları reddediyor ve hiçbir relay bilgisayarı çevrimiçi değil. Relay'i <b>AYARLAR</b> sayfasından kullandığın herhangi bir bilgisayara bir kez kur (sonrasında otomatik başlar) — ya da grid hücresine sağ tıklayıp rentalcars'ı doğrudan aç.",
     rc_err_timeout: 'Yerel relay zamanında yanıt vermedi — hâlâ çalıştığını kontrol edip tekrar dene.',
-    rc_err_rejected: "rentalcars sorguyu reddetti ({code}) — birazdan tekrar dene veya RENTALCARS'TA AÇ'ı kullan.",
-    rc_err_generic: "Sorgu başarısız: {code} — RENTALCARS'TA AÇ'ı kullan.",
+    rc_err_rejected: "rentalcars sorguyu reddetti ({code}) — birazdan tekrar dene veya grid hücresine sağ tıklayıp rentalcars'ı doğrudan aç.",
+    rc_err_generic: "Sorgu başarısız: {code} — grid hücresine sağ tıklayıp rentalcars'ı doğrudan aç.",
     rc_hint_click: 'O konumu almak için bir rakip satırına tıkla — veya Green Motion satırını üstüne sürükle. İstersen Green Motion fiyatına tıklayıp doğrudan hedef fiyat da girebilirsin; gereken DPS kural değişikliği otomatik hesaplanır.',
     rc_session_note: 'Fiyatlar, tam bu alış saati için yeni (çerezsiz) bir ziyaretçinin gördüğü fiyatlardır. rentalcars kampanya indirimlerini (örn. −12%) oturuma göre hedefler — eski çerezli bir tarayıcı indirimsiz fiyatı görebilir. Birebir karşılaştırma için gizli pencere ve RENTALCARS\'TA AÇ düğmesini kullan (aynı alış saatini taşır).',
     rc_price_click: 'Hedef fiyat girmek için tıkla',
@@ -840,6 +856,14 @@ const I18N = {
     rc_col_customer: 'MÜŞTERİ',
     rc_col_gear: 'VİTES',
     rc_col_fuel: 'YAKIT',
+    sel_cells: '{n} HÜCRE',
+    sel_hint: 'Enter uygula · Esc iptal',
+    sel_staged: '{n} hücre {pct} ile hazırlandı — APPLY TO DPS yazar',
+    rc_before_title: 'ŞU AN — DEĞİŞİKLİKTEN ÖNCE (rentalcars böyle satıyor)',
+    rc_after_title: 'TAHMİN — DEĞİŞİKLİKTEN SONRA',
+    sim_apply_hint: 'APPLY TO DPS (sağ altta) bunu yazar',
+    rc_live_open: 'rentalcars → {d}.{dur}G · {h}:00',
+    rc_live_real: 'Gerçek rentalcars sayfasını aç (aynı arama, aynı saat)',
     relay_card_title: 'RC RELAY MAKİNELERİ',
     relay_workers: 'BAĞLI MAKİNELER',
     relay_none: 'Bağlı relay makinesi yok.',
@@ -1149,6 +1173,168 @@ function stepRcHour(dir) {
   // re-query, and firing one would spend a market call on nobody's question
   if (rcCtx) runRcAnalysis();
 }
+
+// ---------- the embedded rentalcars pane (Berkay, 2026-08-30) ----------
+// Right-clicking a grid cell shows rentalcars IN THE PAGE, between the grid
+// and the analysis panel — "websitesinin içinde embed olması lazım". The real
+// page cannot be iframed (rentalcars sends X-Frame-Options: SAMEORIGIN,
+// measured 2026-08-30), so the pane renders the SAME answer rentalcars serves
+// — the full ladder, queried FRESH at the shown hour. Every further
+// right-click walks the hour FORWARD on the 09:00-19:00 ring and re-queries,
+// so successive clicks show the market hour by hour in one place. The ↗ in
+// the pane header opens the real page 1:1 for eyeball checks.
+let rcLiveHour = RC_START_HOUR;
+const rcWeb = { day: null, dur: null, data: null, seq: 0 };
+
+function openRcLive(day, dur) {
+  rcLiveHour = rcHourAt(rcLiveHour, 1); // step FIRST — every click is a new hour
+  rcWebShow(day, dur);
+}
+
+function rcWebShow(day, dur) {
+  // phones have no room for a third pane — hand the real site to a new tab
+  if (window.innerWidth <= 780) {
+    const url = rentalcarsUrl(day, dur, rcPad(rcLiveHour), '00');
+    if (url) window.open(url, '_blank');
+    return;
+  }
+  const prev = rcWeb.day != null ? { day: rcWeb.day, dur: rcWeb.dur } : null;
+  rcWeb.day = day;
+  rcWeb.dur = dur;
+  $('rcWeb').classList.remove('hidden');
+  $('rcWebSplitter').classList.remove('hidden');
+  if (prev) refreshCell(prev.day, prev.dur); // the blue ring follows the pane
+  refreshCell(day, dur);
+  runRcWeb();
+}
+
+function rcWebHide() {
+  const prev = rcWeb.day != null ? { day: rcWeb.day, dur: rcWeb.dur } : null;
+  rcWeb.day = null;
+  rcWeb.seq++; // orphan any in-flight answer
+  $('rcWeb').classList.add('hidden');
+  $('rcWebSplitter').classList.add('hidden');
+  if (prev) refreshCell(prev.day, prev.dur); // drop the blue ring
+}
+
+/** Both side panes are PERMANENT on desktop (Berkay, 2026-08-30): the grid
+ *  opens them by itself on the first future day, and a month or station
+ *  switch re-targets them. The operator resizes; nothing closes. */
+function ensureSidePanes() {
+  if (window.innerWidth <= 780 || !state.grid || state.view !== 'grid') return;
+  // the default cell must still be BOOKABLE: a 09:00 pickup that already
+  // passed today answers "no offers", so the first day whose canonical
+  // pickup lies in the future wins (today before 09:00, else tomorrow)
+  const now = new Date();
+  let d = 1;
+  for (let i = 1; i <= state.grid.daysInMonth; i++) {
+    if (new Date(state.year, state.month - 1, i, RC_START_HOUR, 0) > now) { d = i; break; }
+  }
+  const panelStale =
+    !rcCtx || $('rcModal').classList.contains('hidden') ||
+    rcCtx.station !== state.station || rcCtx.year !== state.year || rcCtx.month !== state.month;
+  if (panelStale) openRcAnalysis(d, rcCtx ? rcCtx.dur : 3);
+  if (rcWeb.day == null || $('rcWeb').classList.contains('hidden')) {
+    rcWebShow(rcCtx.day, rcCtx.dur);
+  } else if (panelStale) {
+    // the pane was on the OLD month's cell — follow the panel to the new grid
+    rcWebShow(rcCtx.day, rcCtx.dur);
+  }
+}
+
+function rcWebStep(dir) {
+  if (rcWeb.day == null) return;
+  rcLiveHour = rcHourAt(rcLiveHour, dir);
+  runRcWeb();
+}
+window.rcWebStep = rcWebStep;
+
+async function runRcWeb() {
+  const { day, dur } = rcWeb;
+  if (day == null) return;
+  const hh = rcPad(rcLiveHour);
+  $('rcWebTitle').textContent =
+    `RENTALCARS — ${String(day).padStart(2, '0')} ${MONTHS_SHORT[state.month - 1]} · ` +
+    `${dur >= OPEN_DURATION ? OPEN_DURATION + '+' : dur}D`;
+  $('rcWebHour').textContent = `${hh}:00`;
+  const real = $('rcWebReal');
+  real.href = rentalcarsUrl(day, dur, hh, '00') || '#';
+  real.title = t('rc_live_real');
+  const seq = ++rcWeb.seq;
+  const t0 = new Date();
+  t0.setHours(0, 0, 0, 0);
+  if (new Date(state.year, state.month - 1, day) < t0) {
+    $('rcWebBody').innerHTML = `<div class="drawer-empty">${t('rc_past')}</div>`;
+    $('rcWebMeta').textContent = '';
+    return;
+  }
+  $('rcWebBody').innerHTML = `<div class="rc-loading">${t('querying_at', { time: `${hh}:00` })}</div>`;
+  $('rcWebMeta').textContent = '';
+  try {
+    // always FRESH — this pane exists to show what rentalcars serves RIGHT
+    // NOW at this hour, never a pinned snapshot
+    const r = await api(
+      `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${day}&duration=${dur}&hh=${hh}&mm=00&fresh=1&samples=2`
+    );
+    if (seq !== rcWeb.seq) return;
+    rcWeb.data = r;
+    renderRcWebList(r);
+  } catch (e) {
+    if (seq !== rcWeb.seq) return;
+    $('rcWebBody').innerHTML = `<div class="drawer-empty">${rcErrorText(e.message)}</div>`;
+  }
+}
+
+/** the pane's shop-style list: EVERY row the answer carries, GM highlighted,
+ *  the same LIST/CUSTOMER convention as the analysis table */
+function renderRcWebList(r) {
+  if (!r || !r.top || !r.top.length) {
+    $('rcWebBody').innerHTML = `<div class="drawer-empty">${t('no_offers')}</div>`;
+    return;
+  }
+  const rows = r.top
+    .map((x, i) => {
+      const isGm = /green motion/i.test(x.supplier || '');
+      const before = typeof x.before === 'number' && x.before > x.price ? x.before : null;
+      return `<tr class="${isGm ? 'rc-gm' : ''}">
+        <td class="rc-rank">${i + 1}</td>
+        <td class="rc-sup">${logoImg(x)}${esc(x.supplier)}</td>
+        <td>${esc(x.vehicle)}</td>
+        <td class="rc-gear">${x.gear === 'A' ? 'AUTO' : x.gear === 'M' ? 'MAN' : '—'}</td>
+        <td class="rc-price rc-list">${(before != null ? before : x.price).toFixed(2)}</td>
+        <td class="rc-price rc-cust">${x.price.toFixed(2)}&nbsp;${esc(x.currency)}</td>
+      </tr>`;
+    })
+    .join('');
+  $('rcWebBody').innerHTML = `<table class="rc-table rc-web-table">
+    <thead><tr><th></th><th>SUPPLIER</th><th>VEHICLE</th><th class="rc-gear">${t('rc_col_gear')}</th><th class="rc-price rc-list">${t('rc_col_list')}</th><th class="rc-price">${t('rc_col_customer')}</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+  const atTs = r.at || r.cachedAt;
+  $('rcWebMeta').textContent =
+    `${r.total} ${t('offers')} · ${t('pickup')} ${rcPad(rcLiveHour)}:00` +
+    (atTs ? ` · ${t('query_at', { time: new Date(atTs).toLocaleTimeString('de-CH', { hour12: false }) })}` : '') +
+    (r.spread ? ` · GM ±${r.spread}%` : '');
+}
+
+// After an APPLY the pane follows on its own (Berkay: "onayladığında
+// rentalcars sayfalarında saatler otomatik değişip refreshlenip ekrana
+// gelsin"): it opens if closed, walks to the NEXT hour immediately, then once
+// more ~90s later when rentalcars has had time to propagate — two different
+// hours, refreshed without a click.
+let rcLiveTimer = null;
+
+function rcLiveFollowUp(day, dur) {
+  rcLiveHour = rcHourAt(rcLiveHour, 1);
+  rcWebShow(day, dur);
+  clearTimeout(rcLiveTimer);
+  rcLiveTimer = setTimeout(() => {
+    if (rcWeb.day !== day || rcWeb.dur !== dur) return; // the operator moved on
+    rcLiveHour = rcHourAt(rcLiveHour, 1);
+    runRcWeb();
+  }, 90 * 1000);
+}
+
+
 window.stepRcHour = stepRcHour;
 
 /** Deep-link config for a station: the tenant's own rc config decides where the
@@ -2142,6 +2328,7 @@ function loadGrid() {
   renderLaneBar(); // from cache: the switcher is up before the stream finishes
   updateChips();
   renderApplyBar();
+  ensureSidePanes(); // both side panes are permanent on desktop
 
   // month-copy landing: stage the copied cells onto this month
   if (state.pendingCopy && state.pendingCopy.targetKey === cacheKey()) {
@@ -2395,13 +2582,23 @@ function renderCell(day, dur) {
   const td = document.createElement('td');
   td.dataset.day = day;
   td.dataset.dur = dur;
+  // Berkay, 2026-08-30: the cell the analysis panel is on (solid ring) and
+  // the cell the embedded rentalcars pane is on (blue inner ring) stay
+  // visibly marked on the grid — the operator always sees WHERE the two
+  // side views are looking and where the preview/apply is happening
+  if (rcCtx && rcCtx.day === day && rcCtx.dur === dur && !$('rcModal').classList.contains('hidden'))
+    td.classList.add('cell-active');
+  if (rcWeb.day === day && rcWeb.dur === dur && !$('rcWeb').classList.contains('hidden'))
+    td.classList.add('cell-live');
   const k = key(day, dur);
 
   td.oncontextmenu = (e) => {
     e.preventDefault();
-    // every rentalcars open advances the shared 19:00->10:00 rotation
-    const url = rentalcarsUrl(day, dur);
-    if (url) window.open(url, '_blank');
+    // Berkay, 2026-08-30: right-click shows rentalcars EMBEDDED in the page,
+    // between the grid and the analysis panel — never a tab, never a popup —
+    // and every further right-click walks the hour FORWARD on the ring and
+    // re-queries, so the operator watches the market hour by hour in place.
+    openRcLive(day, dur);
   };
 
   if (state.conflictSet.has(k)) {
@@ -2459,10 +2656,15 @@ function renderCell(day, dur) {
   } else {
     td.classList.add('cell-empty');
     td.textContent = '—';
-    td.title = 'Click: set % · Right-click: compare on rentalcars.com';
+    td.title = 'Click: competitor panel · Double-click: set % · Right-click: open on rentalcars.com';
   }
 
-  td.onclick = () => editCell(td, day, dur);
+  // Berkay, 2026-08-30: ONE click loads this cell's day into the docked
+  // competitor panel; DOUBLE-click opens the % editor (with -/+ steppers).
+  // The first click of a double-click pair already selects the same cell, so
+  // the panel is loading the right ladder by the time the editor opens.
+  td.onclick = () => selectAnalysisCell(day, dur);
+  td.ondblclick = () => editCell(td, day, dur);
 
   // someone else is on this cell (or this whole day, from their analysis
   // modal): an orange live trace. Applied here, in renderCell, so every
@@ -2516,7 +2718,31 @@ async function presenceBeat() {
 }
 setInterval(presenceBeat, 5000);
 
+/** ONE grid click = show that cell's day in the docked competitor panel,
+ *  without touching anything. Re-clicking the shown cell is a no-op, so the
+ *  first click of a double-click pair never re-rolls the analysis. */
+function selectAnalysisCell(day, dur) {
+  if (gridSel.justSelected) return; // end of a rectangle drag, not a request
+  setPresenceFocus(day, dur);
+  if (!$('rcModal').classList.contains('hidden') && rcCtx && rcCtx.day === day && rcCtx.dur === dur) return;
+  openRcAnalysis(day, dur);
+}
+
+/** Live ranking preview while the grid editor is open: the docked panel
+ *  re-ranks on every stepper tick / keystroke. If the panel's data is still
+ *  in flight, the wish is parked on rcCtx and applied the moment it lands. */
+function gridLivePreview(day, dur, pct) {
+  if (!rcCtx || rcCtx.day !== day || rcCtx.dur !== dur) return;
+  if ($('rcModal').classList.contains('hidden')) return;
+  const r = rcCtx.view || rcCtx.data;
+  if (r && r.gmPrice != null) projectPlacement(pct);
+  else rcCtx.previewPct = pct;
+}
+
 function editCell(td, day, dur) {
+  // a rectangle drag ends with the browser firing this cell's click — that
+  // click is the end of the selection gesture, not a request to edit one cell
+  if (gridSel.justSelected) return;
   setPresenceFocus(day, dur);
   if (state.applying) return;
   const k = key(day, dur);
@@ -2528,51 +2754,312 @@ function editCell(td, day, dur) {
   const current = staged !== undefined ? (staged.pct === null ? '' : staged.pct) : cell ? cell.pct : '';
 
   td.textContent = '';
-  const input = document.createElement('input');
-  input.className = 'cell-input';
+  // [−] input [+] — Berkay, 2026-08-30: the steppers tick 0.5 points and the
+  // docked panel re-ranks after every tick; typing still works as before
+  const wrap = document.createElement('span');
+  wrap.className = 'cell-edit-wrap';
+  wrap.innerHTML =
+    `<span class="cell-step" data-s="-1">&minus;</span>` +
+    `<input class="cell-input" placeholder="-62" spellcheck="false">` +
+    `<span class="cell-step" data-s="1">+</span>`;
+  td.appendChild(wrap);
+  // pricing starts here — quietly verify the panel's ladder against live
+  // rentalcars so the projection stands on a just-checked market
+  if (rcCtx && rcCtx.day === day && rcCtx.dur === dur) ensureFreshBase();
+  const input = wrap.querySelector('input');
   // empty cell: pre-type the minus so the operator only types digits
   input.value = current === '' ? '-' : current;
-  input.placeholder = '-62';
-  td.appendChild(input);
   input.focus();
   if (current === '') {
     input.setSelectionRange(1, 1); // caret after the minus, nothing selected
-  } else if (input.value.startsWith('-')) {
-    // the minus is a default, not a lock: select everything so a positive
-    // value can be typed straight over it (click once more to keep the sign
-    // and edit only the digits)
-    input.select();
   } else {
+    // the minus is a default, not a lock: select everything so a positive
+    // value can be typed straight over it
     input.select();
   }
 
-  const commit = () => {
+  let done = false;
+  let previewed = false; // whether this editor projected into the panel
+  const parse = () => {
     const raw = input.value.trim().replace(',', '.').replace(/^\+/, '');
-    if (raw === '-') { cancel(); return; } // untouched pre-filled minus
+    if (raw === '' || raw === '-') return null;
+    const num = Number(raw);
+    return isFinite(num) ? Math.round(num * 100) / 100 : null;
+  };
+  const clamp = (n) => Math.max(-95, Math.min(100, n));
+  const preview = (n) => {
+    previewed = true;
+    gridLivePreview(day, dur, n);
+  };
+  let previewTimer = null;
+
+  const closeEditor = () => {
+    wrap.remove(); // refreshCell skips cells that hold an open editor
+    refreshCell(day, dur);
+  };
+  const commit = () => {
+    if (done) return;
+    done = true;
+    const raw = input.value.trim().replace(',', '.').replace(/^\+/, '');
+    clearTimeout(previewTimer);
+    if (raw === '-') { cancel(true); return; } // untouched pre-filled minus
     if (raw === '') {
       // empty: delete if a rule exists, otherwise unstage
       if (cell) state.staged.set(k, { pct: null });
       else state.staged.delete(k);
+      if (previewed) dropEditorPreview(day, dur);
     } else {
       const num = Number(raw);
-      if (!isFinite(num)) { cancel(); return; }
-      if (cell && Number(cell.pct) === num) state.staged.delete(k);
-      else state.staged.set(k, { pct: num });
+      if (!isFinite(num)) { cancel(true); return; }
+      const pct = clamp(Math.round(num * 100) / 100);
+      if (cell && Number(cell.pct) === pct && staged === undefined) state.staged.delete(k);
+      else state.staged.set(k, { pct });
+      // the committed value IS the projection now — the panel keeps showing
+      // the projected ladder with its CONFIRM bar until applied or reset
+      gridLivePreview(day, dur, pct);
     }
-    refreshCell(day, dur);
+    closeEditor();
     renderApplyBar();
   };
-  const cancel = () => refreshCell(day, dur);
+  const cancel = (already) => {
+    if (done && !already) return;
+    done = true;
+    clearTimeout(previewTimer);
+    if (previewed) dropEditorPreview(day, dur);
+    closeEditor();
+  };
 
+  wrap.querySelectorAll('.cell-step').forEach((b) => {
+    // mousedown would blur the input and commit mid-step — block it
+    b.onmousedown = (e) => e.preventDefault();
+    b.onclick = (e) => {
+      e.stopPropagation();
+      const base = parse();
+      const from = base != null ? base : Number(cell ? cell.pct : 0) || 0;
+      const next = clamp(Math.round((from + Number(b.dataset.s) * 0.5) * 100) / 100);
+      input.value = String(next);
+      preview(next);
+    };
+  });
+
+  input.oninput = () => {
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(() => {
+      const n = parse();
+      if (n != null && n >= -95 && n <= 100) preview(n);
+    }, 250);
+  };
   input.onkeydown = (e) => {
     if (e.key === 'Enter') { e.preventDefault(); commit(); }
-    if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); wrap.querySelector('.cell-step[data-s="1"]').onclick(e); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); wrap.querySelector('.cell-step[data-s="-1"]').onclick(e); }
   };
   input.onblur = commit;
+  // a double-click lands on the wrap after the editor opens — keep it inert
+  wrap.ondblclick = (e) => e.stopPropagation();
 }
+
+/** An abandoned editor preview must not leave the panel simulating: clear the
+ *  un-applied projection it created (and only that — an applied one stays). */
+function dropEditorPreview(day, dur) {
+  if (rcCtx && rcCtx.day === day && rcCtx.dur === dur) {
+    rcCtx.previewPct = null;
+    if (rcCtx.placed && rcCtx.placed.proj && !rcCtx.placed.applied) resetGmSim();
+  }
+}
+
+// ---------- collapsible sidebar ----------
+(() => {
+  const KEY = 'sideCollapsed.v1';
+  const btn = $('sideCollapse');
+  if (!btn) return;
+  const apply = (on) => {
+    document.body.classList.toggle('side-collapsed', on);
+    btn.innerHTML = on ? '&#187;' : '&#171;';
+  };
+  let on = false;
+  try { on = localStorage.getItem(KEY) === '1'; } catch (_) { /* default open */ }
+  apply(on);
+  btn.onclick = () => {
+    on = !on;
+    apply(on);
+    try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (_) { /* session-only */ }
+  };
+})();
+
+// ---------- draggable boundaries: grid | rentalcars pane | analysis panel ----------
+// Berkay, 2026-08-30: "sağdaki panel ile grid boyutu oynanabilir olsun" —
+// and since the embedded rentalcars pane, the middle boundary drags too.
+// Each pane's width lives in a CSS variable on the split container and is
+// remembered per browser; dragging clamps so no pane can disappear.
+(() => {
+  const split = $('gridSplit');
+  if (!split) return;
+  const wire = (barId, cssVar, storeKey, minPx, rightEdgeEl) => {
+    const bar = $(barId);
+    if (!bar) return;
+    const clampW = (px) => Math.max(minPx, Math.min(px, Math.round(window.innerWidth * 0.6)));
+    const apply = (px) => split.style.setProperty(cssVar, clampW(px) + 'px');
+    let saved = 0;
+    try { saved = Number(localStorage.getItem(storeKey)) || 0; } catch (_) { /* default width */ }
+    if (saved) apply(saved);
+    bar.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      document.body.classList.add('dock-resizing');
+      let last = 0;
+      const move = (ev) => {
+        // the pane being resized sits RIGHT of its bar: width = its right edge − cursor
+        const edge = rightEdgeEl().getBoundingClientRect().right;
+        last = clampW(edge - ev.clientX);
+        apply(last);
+      };
+      const up = () => {
+        document.body.classList.remove('dock-resizing');
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+        if (last) {
+          saved = last;
+          try { localStorage.setItem(storeKey, String(last)); } catch (_) { /* session-only */ }
+        }
+      };
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+    });
+  };
+  // right splitter resizes the analysis panel; middle one the rentalcars pane
+  wire('gridSplitter', '--rc-dock-w', 'rcDockW.v1', 380, () => $('rcModal'));
+  wire('rcWebSplitter', '--rc-web-w', 'rcWebW.v1', 320, () => $('rcWeb'));
+})();
+
+// ---------- Excel-style rectangular selection on the grid ----------
+// Hold the left button on a cell and drag: every cell in the day x duration
+// rectangle highlights; release and type one percentage — it is STAGED into
+// every selected cell (same green staged path as a single edit), and the
+// normal APPLY TO DPS bar writes the batch. A plain click (no drag) loads the
+// cell into the docked panel; double-click opens the single-cell editor;
+// right-click still opens rentalcars (at a random hour).
+const gridSel = { active: false, moved: false, a: null, b: null, justSelected: false };
+
+function gridSelCells() {
+  if (!gridSel.a || !gridSel.b) return [];
+  const d1 = Math.min(gridSel.a.day, gridSel.b.day), d2 = Math.max(gridSel.a.day, gridSel.b.day);
+  const durs = state.durations;
+  const i1 = Math.min(durs.indexOf(gridSel.a.dur), durs.indexOf(gridSel.b.dur));
+  const i2 = Math.max(durs.indexOf(gridSel.a.dur), durs.indexOf(gridSel.b.dur));
+  const out = [];
+  for (let d = d1; d <= d2; d++)
+    for (let i = i1; i <= i2; i++) out.push({ day: d, dur: durs[i] });
+  return out;
+}
+
+function gridSelPaint() {
+  for (const td of document.querySelectorAll('#gridBody td.cell-sel')) td.classList.remove('cell-sel');
+  for (const c of gridSelCells()) {
+    const td = document.querySelector(`td[data-day="${c.day}"][data-dur="${c.dur}"]`);
+    if (td) td.classList.add('cell-sel');
+  }
+}
+
+function gridSelClear() {
+  gridSel.active = false;
+  gridSel.moved = false;
+  gridSel.a = gridSel.b = null;
+  document.body.classList.remove('grid-selecting');
+  for (const td of document.querySelectorAll('#gridBody td.cell-sel')) td.classList.remove('cell-sel');
+  const box = $('gridSelBox');
+  if (box) box.remove();
+}
+
+function gridSelPrompt(x, y) {
+  const cells = gridSelCells();
+  if (cells.length < 2) { gridSelClear(); return; }
+  const old = $('gridSelBox');
+  if (old) old.remove();
+  const box = document.createElement('div');
+  box.id = 'gridSelBox';
+  box.innerHTML =
+    `<span class="gridsel-n">${t('sel_cells', { n: cells.length })}</span>` +
+    `<input class="gridsel-input" value="-" spellcheck="false">` +
+    `<span class="gridsel-hint">${t('sel_hint')}</span>`;
+  document.body.appendChild(box);
+  const pad = 12;
+  box.style.left = Math.min(x + pad, window.innerWidth - box.offsetWidth - pad) + 'px';
+  box.style.top = Math.min(y + pad, window.innerHeight - box.offsetHeight - pad) + 'px';
+  const input = box.querySelector('input');
+  input.focus();
+  input.setSelectionRange(1, 1);
+  input.onkeydown = (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); gridSelClear(); return; }
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const raw = input.value.trim().replace(',', '.').replace(/^\+/, '');
+    const num = Number(raw);
+    if (raw === '' || raw === '-' || !isFinite(num)) { gridSelClear(); return; }
+    const pct = Math.max(-95, Math.min(100, Math.round(num * 100) / 100));
+    let staged = 0, conflicts = 0;
+    for (const c of cells) {
+      const k = key(c.day, c.dur);
+      if (state.conflictSet.has(k)) { conflicts++; continue; }
+      const cell = state.cellMap.get(k);
+      if (cell && Number(cell.pct) === pct) state.staged.delete(k);
+      else state.staged.set(k, { pct });
+      staged++;
+      refreshCell(c.day, c.dur);
+    }
+    gridSelClear();
+    renderApplyBar();
+    toast(t('sel_staged', { n: staged, pct: fmtPct(pct) }) + (conflicts ? ` (${conflicts} CONFLICT)` : ''));
+  };
+  // clicking anywhere outside the box abandons the selection
+  setTimeout(() => {
+    const away = (e) => {
+      if (!box.contains(e.target)) { gridSelClear(); document.removeEventListener('mousedown', away, true); }
+    };
+    document.addEventListener('mousedown', away, true);
+  }, 0);
+}
+
+(() => {
+  const table = $('gridTable');
+  if (!table) return;
+  table.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    const td = e.target.closest('td[data-day][data-dur]');
+    if (!td || td.querySelector('input') || state.applying) return;
+    gridSel.active = true;
+    gridSel.moved = false;
+    gridSel.a = gridSel.b = { day: Number(td.dataset.day), dur: Number(td.dataset.dur) };
+  });
+  table.addEventListener('mouseover', (e) => {
+    if (!gridSel.active) return;
+    const td = e.target.closest('td[data-day][data-dur]');
+    if (!td) return;
+    const cur = { day: Number(td.dataset.day), dur: Number(td.dataset.dur) };
+    if (cur.day === gridSel.a.day && cur.dur === gridSel.a.dur && !gridSel.moved) return;
+    gridSel.moved = true;
+    document.body.classList.add('grid-selecting');
+    gridSel.b = cur;
+    gridSelPaint();
+  });
+  document.addEventListener('mouseup', (e) => {
+    if (!gridSel.active) return;
+    gridSel.active = false;
+    if (gridSel.moved) {
+      // the td's own click handler fires right after mouseup — squelch it once
+      gridSel.justSelected = true;
+      setTimeout(() => { gridSel.justSelected = false; }, 0);
+      gridSelPrompt(e.clientX, e.clientY);
+    }
+  });
+})();
 
 function refreshCell(day, dur) {
   const old = document.querySelector(`td[data-day="${day}"][data-dur="${dur}"]`);
+  // an OPEN editor owns its cell: the live panel preview stages on every
+  // stepper tick, and replacing the td here would destroy the input mid-type.
+  // The editor's own commit/cancel removes the input first, then re-renders.
+  if (old && old.querySelector('.cell-input')) return;
   if (old) old.replaceWith(renderCell(day, dur));
   // the tip card is only fed on mouseover — if the cursor is sitting still on
   // this very cell while the stream/apply swaps it, the card would keep
@@ -2642,6 +3129,9 @@ $('discardBtn').onclick = async () => {
     refreshCell(day, dur);
   }
   renderApplyBar();
+  // the docked panel may be simulating one of the discarded cells — a ladder
+  // still showing TARGET rows for a change that no longer exists would lie
+  if (rcCtx && rcCtx.placed && !rcCtx.placed.applied) resetGmSim();
 };
 
 $('applyBtn').onclick = async () => {
@@ -2656,6 +3146,16 @@ $('applyBtn').onclick = async () => {
   renderApplyBar();
   let ok = 0, fail = 0;
   const okDays = new Set();
+  const okCells = new Set(); // which exact cells landed — the dock check needs one
+  // Captured BEFORE any write: the docked panel's guarded base divides the
+  // served price by the rule the market actually served. The loop below
+  // overwrites cellMap with the NEW pct, after which gmServedBase would
+  // divide by a rule rentalcars has never served — the invented-base trap.
+  let dockBase = null;
+  if (rcCtx && rcCtx.data && !$('rcModal').classList.contains('hidden')) {
+    const v0 = rcCtx.view || rcCtx.data;
+    if (v0 && v0.gmPrice != null) dockBase = gmServedBase(v0);
+  }
   const applied = []; // C1: the scan proposals that really landed, for the popup
   // scan-born entries share one batch id so the activity log can collapse
   // them into a single row with a one-click REVERT ALL
@@ -2713,6 +3213,7 @@ $('applyBtn').onclick = async () => {
       if (fresh) fresh.classList.add('cell-ok');
       ok++;
       okDays.add(ch.day);
+      okCells.add(k);
       const cmp = ch.scan ? scan.compare.get(k) : null;
       // a stale record from an earlier month/station could never describe this write
       if (cmp && cmp.station === state.station && cmp.year === state.year && cmp.month === state.month) {
@@ -2730,6 +3231,21 @@ $('applyBtn').onclick = async () => {
   state.applying = false;
   renderApplyBar();
   toast(`Apply finished: ${ok} ok, ${fail} failed.`, fail ? 'warn' : undefined);
+  // Berkay, 2026-08-30: an APPLY that wrote the cell the docked panel is
+  // showing starts the live-sync check right there — the panel verifies the
+  // landing on its own (canonical hour at 2/5/10 min, then a second random
+  // hour), exactly like a CONFIRM from inside the panel does.
+  let dockApplied = null;
+  if (ok && dockBase && dockBase.base != null && rcCtx && !$('rcModal').classList.contains('hidden')) {
+    const done = changes.find(
+      (c) => c.day === rcCtx.day && c.dur === rcCtx.dur && c.pct !== null && okCells.has(key(c.day, c.dur))
+    );
+    if (done) {
+      const target = Math.round(dockBase.base * (1 + done.pct / 100) * 100) / 100;
+      startRcSync(rcCtx.day, rcCtx.dur, target, done.pct, dockBase.servedPct);
+      dockApplied = { day: rcCtx.day, dur: rcCtx.dur, pct: done.pct };
+    }
+  }
   if (ok) {
     // the server rc cache for the touched days is stale now — purge it, and
     // only re-stream the rank strip once every invalidate has landed
@@ -2740,6 +3256,33 @@ $('applyBtn').onclick = async () => {
     }).catch(() => {})));
     rcMonth.loadedKey = null;
     if (state.view === 'dashboard') startRcMonth(true);
+  }
+  // With CONFIRM retired from the panel, the APPLY bar owns its follow-up:
+  // step the hour (a new hour is a search nobody can serve stale), re-query
+  // fresh AFTER the invalidates above, and re-lay the applied projection so
+  // GM shows at the just-applied price against live competitors.
+  if (dockApplied && rcCtx && rcCtx.day === dockApplied.day && rcCtx.dur === dockApplied.dur) {
+    rcCtx.appliedPct = dockApplied.pct; // REFRESH re-lays it at the new hour
+    rcHour = rcHourAt(rcHour, 1);
+    renderRcHour();
+    await runRcAnalysis({ fresh: true });
+    const v = rcCtx.view || rcCtx.data;
+    if (v && v.gmPrice != null) projectPlacement(dockApplied.pct, true);
+  } else if (ok && rcCtx && !$('rcModal').classList.contains('hidden') && okDays.has(rcCtx.day)) {
+    // Berkay, 2026-08-30 ("booking gibi"): an APPLY refreshes EVERY open
+    // market view. The panel's own cell wasn't the one written, but its day
+    // was — its ladder is stale now, so it re-asks fresh at a stepped hour.
+    rcHour = rcHourAt(rcHour, 1);
+    renderRcHour();
+    await runRcAnalysis({ fresh: true });
+  }
+  // …and the embedded rentalcars pane follows too: onto the applied cell
+  // (opening itself if closed), or re-asking its own cell when that day was
+  // in the batch — next hour now, one more hour ~90s later.
+  if (dockApplied) {
+    rcLiveFollowUp(dockApplied.day, dockApplied.dur);
+  } else if (ok && rcWeb.day != null && !$('rcWeb').classList.contains('hidden') && okDays.has(rcWeb.day)) {
+    rcLiveFollowUp(rcWeb.day, rcWeb.dur);
   }
   // no full reload — cells were updated in place from the verified responses
   refreshLogs();
@@ -3988,8 +4531,11 @@ function rcProjFactor() {
   const sim = rcCtx.placed;
   const r = rcCtx.data;
   if (!sim || !sim.proj || !r || r.gmPrice == null) return null;
-  const cellPct = Number((state.cellMap.get(key(rcCtx.day, rcCtx.dur)) || {}).pct ?? 0);
-  const base = r.gmPrice / (1 + cellPct / 100);
+  // the SAME guarded base as the table (gmServedBase) — rebuilding it from raw
+  // cellMap here made the category chips rank GM at the old price (#8) while
+  // the table showed the projected one (#2) during every post-confirm window
+  const { base } = gmServedBase(r);
+  if (base == null) return null;
   const f = (base * (1 + sim.newPct / 100)) / r.gmPrice;
   return isFinite(f) && f > 0 ? f : null;
 }
@@ -4188,14 +4734,27 @@ function stationHasRc() {
 
 function openRcAnalysis(day, dur) {
   if (!stationHasRc()) { toast(t('no_rc_station'), 'warn'); return; }
-  rcCtx = { day, dur: dur || 3, cat: 'ALL', pendingPct: {} };
+  // the panel is docked INSIDE the grid view — a dashboard rank-strip click
+  // must land where the panel actually lives
+  if (state.view !== 'grid') showView('grid');
+  const prevCell = rcCtx ? { day: rcCtx.day, dur: rcCtx.dur } : null;
+  rcCtx = {
+    day, dur: dur || 3, cat: 'ALL', pendingPct: {},
+    // which grid this analysis belongs to — ensureSidePanes re-targets the
+    // permanent panes when the operator lands on another month or station
+    station: state.station, year: state.year, month: state.month,
+  };
   // the hour lives in its own -/+ control beside the title, and the footer
   // reports the hour that actually ANSWERED — so the two never say the same
   // thing twice, and a fallback is visible as a difference between them
   $('rcTitle').textContent =
-    `RENTALCARS TOP 50 — ${String(day).padStart(2, '0')} ${MONTHS_SHORT[state.month - 1]} ${state.year}` +
+    `RENTALCARS TOP 10 — ${String(day).padStart(2, '0')} ${MONTHS_SHORT[state.month - 1]} ${state.year}` +
     ` · ${stationName().toUpperCase()}`;
   $('rcModal').classList.remove('hidden');
+  $('gridSplitter').classList.remove('hidden');
+  // the active-cell ring follows the selection
+  if (prevCell) refreshCell(prevCell.day, prevCell.dur);
+  refreshCell(rcCtx.day, rcCtx.dur);
   renderRcHour();
   renderRcDurs();
   runRcAnalysis();
@@ -4272,6 +4831,59 @@ window.rcPctChip = rcPctChip;
 // what base price is rentalcars' CURRENT GM quote built on? If a just-applied
 // rule is still propagating (live-sync pending), the sync target is the truth;
 // otherwise the grid's rule % against the live quote.
+// rentalcars' targeted campaign discount: a campaign-free draw serves the LIST
+// basis, exactly this factor above the customer basis every anchor lives on
+const RC_CAMPAIGN_RATE = 0.88;
+
+/** Judge a pending apply against a FULL ladder (never a category view — the
+ *  sync's anchors are the OVERALL-cheapest GM as served at apply time, and the
+ *  target may be a per-car price from a category placement, so absolute-price
+ *  comparison against "whatever car is cheapest now" was comparing two
+ *  different cars). Returns { cls, servedUnderPct }:
+ *    'live'       — the market serves the applied price (anchor x ratio)
+ *    'prev'       — it still serves a rule it provably had (prevPct, or a
+ *                   replaced-but-written intermediate apply from alsoPcts);
+ *                   servedUnderPct names WHICH, so a base can divide by it
+ *    'ambiguous'  — the change is smaller than the 2.5% quote noise: the same
+ *                   draw matches both readings, so it proves nothing (this is
+ *                   how a -45 -> -46 nudge was once confirmed "live" against
+ *                   the untouched old quote)
+ *    'genlive'    — matches the target only through the concurrent-generation
+ *                   offset (2.4-2.7%): looks live, not provable — never a strike
+ *    'silent'     — GM absent from the ladder: contradicts nothing
+ *    'contradict' — matches neither side: the target never described this cell
+ *  A campaign-free draw is also tested x0.88, because every anchor is customer-
+ *  basis and rcParse leaves before=null on clean draws — without the conversion
+ *  a landed 121.08-list price failed a 106.55 customer target by exactly 13.6%. */
+function syncClassify(sync, data) {
+  const gmRow = ((data && data.top) || []).find((x) => /green motion/i.test(x.supplier || ''));
+  let served = [data && data.gmPrice, gmRow && gmRow.price, gmRow && gmRow.before]
+    .filter((v) => typeof v === 'number' && v > 0);
+  if (!served.length) return { cls: 'silent', servedUnderPct: null };
+  const campaignFree = ((data && data.top) || []).every((x) => x.before == null);
+  if (campaignFree) served = served.concat(served.map((v) => v * RC_CAMPAIGN_RATE));
+  const near = (v, e, tol) => e > 0 && Math.abs(v - e) / e < tol;
+  const liveExp = [sync.allServed * sync.ratio]
+    .concat(sync.allBefore != null ? [sync.allBefore * sync.ratio] : [])
+    .filter((v) => typeof v === 'number' && v > 0);
+  // every rule the market may legitimately still serve: the one it provably had
+  // at apply time, plus any replaced-but-written intermediate applies
+  const prevVariants = [{ pct: sync.prevPct, f: 1 }].concat(
+    (sync.alsoPcts || []).map((p) => ({ pct: p, f: (1 + p / 100) / (1 + sync.prevPct / 100) }))
+  );
+  const liveHit = served.some((v) => liveExp.some((e) => near(v, e, 0.025)));
+  let prevHit = null;
+  for (const pv of prevVariants) {
+    const exps = [sync.allServed * pv.f].concat(sync.allBefore != null ? [sync.allBefore * pv.f] : []);
+    if (served.some((v) => exps.some((e) => near(v, e, 0.025)))) { prevHit = pv; break; }
+  }
+  if (liveHit && prevHit) return { cls: 'ambiguous', servedUnderPct: prevHit.pct };
+  if (liveHit) return { cls: 'live', servedUnderPct: null };
+  if (prevHit) return { cls: 'prev', servedUnderPct: prevHit.pct };
+  if (served.some((v) => liveExp.some((e) => near(v, e, 0.04)))) return { cls: 'genlive', servedUnderPct: null };
+  return { cls: 'contradict', servedUnderPct: null };
+}
+
 function gmServedBase(r) {
   const cellPct = Number((state.cellMap.get(key(rcCtx.day, rcCtx.dur)) || {}).pct ?? 0);
   const marketBase = r.gmPrice != null ? r.gmPrice / (1 + cellPct / 100) : null;
@@ -4283,33 +4895,28 @@ function gmServedBase(r) {
   // base — measured 2026-08-29 (01 Sep, 1D): a stuck target of 122.06 held a
   // base of 141.93 while rentalcars served GM at 74, so every new percentage
   // projected GM to #107 at 117.80 when the site had it #4 at 65.
-  if (sync && sync.appliedPct != null && !sync.live && !sync.expired) {
-    const syncBase = sync.target / (1 + sync.appliedPct / 100);
-    if (marketBase == null || syncExplainsMarket(sync, syncBase, r)) {
-      return { base: syncBase, rulePct: sync.appliedPct };
+  if (sync && sync.appliedPct != null && !sync.live && !sync.expired && sync.allServed != null) {
+    const { cls, servedUnderPct } = syncClassify(sync, rcCtx.data || r);
+    if (cls === 'contradict') {
+      sync.expired = true; // stale proxy — never let it price another projection
+    } else if (cls === 'live' || cls === 'genlive') {
+      // the market already serves the applied price, so the normal division by
+      // cellPct (== appliedPct after a confirm) is the truthful base again
+      return { base: marketBase, rulePct: cellPct, servedPct: cellPct };
+    } else if (r.gmPrice != null) {
+      // still on a previous rule: THIS view's own served price divided by the
+      // rule that provably produced it — correct in the ALL view AND in a
+      // category view (each view's car keeps its own basis), and correct for
+      // chained applies (servedUnderPct names which rule actually landed)
+      const under = servedUnderPct != null ? servedUnderPct : (sync.prevPct ?? cellPct);
+      return { base: r.gmPrice / (1 + under / 100), rulePct: sync.appliedPct, servedPct: under };
+    } else {
+      // GM absent from the view — the case the proxy exists for
+      const under = sync.prevPct ?? 0;
+      return { base: sync.allServed / (1 + under / 100), rulePct: sync.appliedPct, servedPct: under };
     }
-    sync.expired = true; // stale proxy — never let it price another projection
   }
-  return { base: marketBase, rulePct: cellPct };
-}
-
-/** Does a pending apply still explain what rentalcars is serving? The served
- *  price must be either the target (it landed) or what the PREVIOUS rule
- *  produced (it has not landed yet) — checked on the campaign AND the list
- *  basis, since rentalcars hands out its -12% per request. Anything else means
- *  the target never described this cell, and a base drawn from it would be
- *  fiction. GM missing from the ladder contradicts nothing, so the proxy
- *  stands: that is exactly the case it exists for. */
-function syncExplainsMarket(sync, syncBase, r) {
-  const gmRow = (r.top || []).find((x) => /green motion/i.test(x.supplier || ''));
-  const served = [r.gmPrice, gmRow && gmRow.price, gmRow && gmRow.before]
-    .filter((v) => typeof v === 'number' && v > 0);
-  if (!served.length) return true;
-  const expected = [sync.target];
-  if (sync.prevPct != null) expected.push(syncBase * (1 + sync.prevPct / 100));
-  // 8%: rentalcars rounds to whole francs and its campaign moves the basis, so
-  // the check must not fire on presentation noise — only on a real mismatch
-  return expected.some((e) => e > 0 && served.some((v) => Math.abs(v - e) / e < 0.08));
+  return { base: marketBase, rulePct: cellPct, servedPct: cellPct };
 }
 
 // live projection: competitors stay as freshly queried, every GM offer is
@@ -4318,13 +4925,16 @@ function syncExplainsMarket(sync, syncBase, r) {
 function projectPlacement(p, applied) {
   const r = rcCtx.view || rcCtx.data;
   if (!r || r.gmPrice == null) return;
-  const { base, rulePct } = gmServedBase(r);
+  const { base, rulePct, servedPct } = gmServedBase(r);
   const f = (base * (1 + p / 100)) / r.gmPrice;
   const offers = (r.gmOffers && r.gmOffers.length ? r.gmOffers : [{ vehicle: '', price: r.gmPrice }]);
   const newPrices = offers.map((g) => Math.round(g.price * f * 100) / 100);
   rcCtx.placed = {
     fleet: true, proj: true, applied: !!applied,
-    newPct: p, curPct: rulePct, target: newPrices[0], newPrices,
+    // servedPct: the rule the market last provably served — what a subsequent
+    // CONFIRM must hand to startRcSync as prevPct (curPct may be a pending
+    // apply's pct that rentalcars has NEVER served)
+    newPct: p, curPct: rulePct, servedPct, target: newPrices[0], newPrices,
   };
   // R4: an applied projection settles the chip (read from the updated cellMap);
   // an un-applied one shows the projected value in the pending style.
@@ -4354,6 +4964,40 @@ function syncProjectionToGrid(pct) {
   renderApplyBar();
 }
 
+// Berkay, 2026-08-30: "estimated ... çok iyi olması lazım — direkt baksın
+// rentalcars'dan arkadan doğru mu diye." A projection is only as good as the
+// ladder under it, and a pinned snapshot can be hours old. So the moment the
+// operator starts pricing (cell editor, chip editor, row click, fleet
+// button), ONE background fresh draw re-asks rentalcars; when it lands, the
+// data is swapped in and the same pct re-laid, so the estimate stands on a
+// just-verified market instead of a stale pin. One check per cell per query.
+const RC_FRESH_MS = 10 * 60 * 1000;
+
+async function ensureFreshBase() {
+  if (!rcCtx || !rcCtx.data) return;
+  const at = rcCtx.data.at || rcCtx.data.cachedAt;
+  if (at && Date.now() - at < RC_FRESH_MS) return; // recent enough already
+  if (rcCtx.freshCheck) return;
+  rcCtx.freshCheck = true;
+  const day = rcCtx.day, dur = rcCtx.dur, seq = rcCtx.seq, hh = rcCtx.hh, mm = rcCtx.mm;
+  try {
+    const r = await api(
+      `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${day}&duration=${dur}&hh=${hh}&mm=${mm}&fresh=1&samples=2`
+    );
+    if (!rcCtx || rcCtx.day !== day || rcCtx.dur !== dur || rcCtx.seq !== seq) return;
+    if (!r || !r.total) return; // an empty slot proves nothing — keep the pin
+    rcCtx.data = r;
+    rcSnapPut(day, dur, hh, r);
+    rcBuildView();
+    const v = rcCtx.view || rcCtx.data;
+    if (rcCtx.placed && !rcCtx.placed.applied && rcCtx.placed.newPct != null && v.gmPrice != null) {
+      projectPlacement(rcCtx.placed.newPct); // same pct, re-laid on the live ladder
+    } else {
+      renderRcTable();
+    }
+  } catch (_) { /* background check — the pinned answer stands */ }
+}
+
 function editDurPct(d) {
   if (rcCtx.dur !== d) { setRcDur(d); return; }
   const r = rcCtx.data;
@@ -4374,6 +5018,7 @@ function editDurPct(d) {
     rcCtx.pendingPct && rcCtx.pendingPct[d] != null ? rcCtx.pendingPct[d] :
     stgV !== undefined && stgV.pct !== null ? stgV.pct :
     (state.cellMap.get(key(rcCtx.day, d)) || {}).pct ?? 0;
+  ensureFreshBase(); // pricing starts here — verify the ladder behind it live
   chip.classList.add('rc-dur-pct-pending', 'chip-editing');
   // [−] value [+] : the steppers move the price in 0.5-point ticks, and every
   // tick re-projects the whole ladder below, so the ranking answers live
@@ -4460,16 +5105,43 @@ window.editDurPct = editDurPct;
 
 // the ONLY path back to the live market — everything else reads the snapshot
 async function refreshRcAnalysis() {
-  if (rcCtx) rcSnapDrop(rcCtx.day, rcCtx.dur, rcPad(rcHour));
+  // Berkay, 2026-08-29 (evening): REFRESH always walks one hour toward 19:00
+  // before asking. rentalcars serves cached generations per exact (date, hour)
+  // search key, so re-asking the SAME hour can hand back the generation it
+  // already answered with — a stepped hour is the only question nobody can
+  // serve stale. The footer names the hour that answered, as always.
+  if (rcCtx) {
+    // drop the OUTGOING hour's snapshot too: with the step, REFRESH never
+    // re-queries the hour it was pressed on, so a stale pin there would
+    // otherwise survive every refresh and greet the operator on step-back
+    rcSnapDrop(rcCtx.day, rcCtx.dur, rcPad(rcHour));
+    rcHour = rcHourAt(rcHour, 1);
+    renderRcHour();
+    rcSnapDrop(rcCtx.day, rcCtx.dur, rcPad(rcHour));
+  }
   const b = $('rcRefresh');
   if (b) { b.disabled = true; b.textContent = t('refreshing'); }
-  try { await runRcAnalysis({ fresh: true }); }
+  try {
+    await runRcAnalysis({ fresh: true });
+    // a just-applied pct is re-laid onto the fresh ladder until rentalcars
+    // provably serves it (the sync then clears appliedPct) — GM must keep
+    // showing at the applied price, not flicker back to the stale quote
+    if (rcCtx && rcCtx.appliedPct != null) {
+      const s = rcSync.get(syncKeyOf(rcCtx.day, rcCtx.dur));
+      const v = rcCtx.view || rcCtx.data;
+      if (s && !s.live && !s.expired && v && v.gmPrice != null) projectPlacement(rcCtx.appliedPct, true);
+      else rcCtx.appliedPct = null;
+    }
+  }
   finally { if (b) { b.disabled = false; b.textContent = t('refresh_rc'); } }
 }
 window.refreshRcAnalysis = refreshRcAnalysis;
 
 function setRcDur(d) {
+  const oldDur = rcCtx.dur;
   rcCtx.dur = d;
+  refreshCell(rcCtx.day, oldDur); // the ring follows the duration switch
+  refreshCell(rcCtx.day, d);
   renderRcDurs();
   runRcAnalysis();
 }
@@ -4497,7 +5169,12 @@ function rcErrorText(msg) {
 // 134.19 the next. Keeping the answer here as well means a cell that has been
 // looked at once keeps showing that answer, across reloads and across
 // instances, until the operator presses REFRESH.
-const RC_SNAP_KEY = 'rcSnap.v1';
+// v2, 2026-08-29: every v1 snapshot predates the day the base rates were
+// rewritten in DPS — some of them froze the minutes when rentalcars served
+// RULE-LESS prices (GM at base×0.55×0.88 = rank #77), and a pinned snapshot
+// would have shown that for 12 hours. A version bump orphans them everywhere.
+const RC_SNAP_KEY = 'rcSnap.v2';
+try { localStorage.removeItem('rcSnap.v1'); } catch (_) { /* nothing to drop */ }
 const RC_SNAP_MAX = 60;              // LRU cap; a month of cells is well under this
 const RC_SNAP_TTL = 12 * 3600 * 1000; // a snapshot older than a working day is stale
 
@@ -4539,19 +5216,20 @@ function rcSnapDrop(day, dur, hh) {
   } catch (_) { /* nothing to drop */ }
 }
 
-// The day's answer is PINNED. Every duration click used to send fresh=1, so
-// re-opening the same cell re-queried rentalcars and could land in a different
-// campaign bucket — the operator clicked "3 DAYS" twice, 65 seconds apart, and
-// got two different ladders (2026-08-29). Now a query is served from the stored
-// snapshot for the rest of the working day and only the explicit REFRESH button
-// goes back to the market, so one day reads one way until the operator says so.
-const RC_PIN_MIN = 360; // the server's ceiling — a full working day
+// The panel queries the LIVE market on every open (Berkay, 2026-08-30:
+// "rakip analizinde tamamen buradan gelen veriyle analiz yapılacak" — and the
+// complaint that the panel only showed the right prices after a few
+// refreshes, because it used to serve a pinned snapshot for up to 6 hours).
+// The old re-roll problem the pin solved is now handled by the SAMPLER:
+// campaign draws are confirmed, split generations settle by continuity, and
+// a clean market stops at two agreeing draws — so a fresh query is stable
+// enough to be the default. Snapshots remain as an OFFLINE FALLBACK only
+// (relay down → last known answer, marked stale).
 
 async function runRcAnalysis(opts) {
   // nothing to answer for when no cell is open — guarded here rather than at
   // each caller so every future one is safe too
   if (!rcCtx) return;
-  const wantFresh = !!(opts && opts.fresh);
   // A fresh snapshot is sampled. rentalcars answers the same search either as
   // ~200 offers with a -12% Green Motion campaign or ~231 offers with none, at
   // random per request — and fresh sessions (incognito, booking.com logged-in)
@@ -4560,11 +5238,12 @@ async function runRcAnalysis(opts) {
   // every sample is clean, i.e. the campaign is genuinely off), so this is ~1
   // call in practice and a REFRESH cannot flip the ladder on a re-roll. Only
   // this path samples; grid scans and sweeps stay at one call per cell.
-  const freshness = wantFresh ? 'fresh=1&samples=5' : `ttlMin=${RC_PIN_MIN}&samples=5`;
+  const freshness = 'fresh=1&samples=5';
   const [hh, mm] = currentRcTime();
   rcCtx.hh = hh;
   rcCtx.mm = mm;
   rcCtx.placed = null;
+  rcCtx.freshCheck = false; // each query earns its own background verification
   rcCtx.pendingPct = {}; // a fresh query abandons any un-applied projection
   // the PREVIOUS answer must not survive into this query: a failed fetch used
   // to leave 3-day prices behind, and a chip edit then projected 7-day cells
@@ -4574,26 +5253,11 @@ async function runRcAnalysis(opts) {
   const seq = (rcCtx.seq = (rcCtx.seq || 0) + 1);
   $('rcMeta').textContent = '';
   $('rcFleet').innerHTML = '';
-  $('rcOpen').href = rentalcarsUrl(rcCtx.day, rcCtx.dur, hh, mm) || '#';
   const t0 = new Date();
   t0.setHours(0, 0, 0, 0);
   if (new Date(state.year, state.month - 1, rcCtx.day) < t0) {
     $('rcBody').innerHTML = `<div class="drawer-empty">${t('rc_past')}</div>`;
     return;
-  }
-  // an answer already taken for this exact cell is shown as-is, without asking
-  // rentalcars a second question it would answer differently
-  if (!wantFresh) {
-    const snap = rcSnapGet(rcCtx.day, rcCtx.dur, hh);
-    if (snap) {
-      rcCtx.data = snap;
-      $('rcTitle').textContent =
-        `RENTALCARS TOP 50 — ${String(rcCtx.day).padStart(2, '0')} ${MONTHS_SHORT[state.month - 1]} ${state.year}` +
-        ` · ${stationName().toUpperCase()}`;
-      rcBuildView();
-      renderRcTable();
-      return;
-    }
   }
   $('rcBody').innerHTML =
     `<div class="rc-loading">${t('querying_at', { time: `${hh}:${String(mm).padStart(2, '0')}` })}</div>`;
@@ -4619,10 +5283,18 @@ async function runRcAnalysis(opts) {
     rcSnapPut(rcCtx.day, rcCtx.dur, rcCtx.hh, r);
     // an empty-slot fallback changed the hour — the header must say so too
     $('rcTitle').textContent =
-      `RENTALCARS TOP 50 — ${String(rcCtx.day).padStart(2, '0')} ${MONTHS_SHORT[state.month - 1]} ${state.year}` +
+      `RENTALCARS TOP 10 — ${String(rcCtx.day).padStart(2, '0')} ${MONTHS_SHORT[state.month - 1]} ${state.year}` +
       ` · ${stationName().toUpperCase()}`;
     rcBuildView(); // resolve the category-scoped view before the first render
     renderRcTable();
+    // a grid editor asked for a preview while this query was in flight —
+    // honour it now that there is a ladder to project onto
+    if (rcCtx.previewPct != null) {
+      const p = rcCtx.previewPct;
+      rcCtx.previewPct = null;
+      const v = rcCtx.view || rcCtx.data;
+      if (v && v.gmPrice != null) projectPlacement(p);
+    }
     if (rcCtx.pendingPctEdit != null && rcCtx.pendingPctEdit === rcCtx.dur) {
       rcCtx.pendingPctEdit = null;
       // the operator may have closed the modal while the query was in flight —
@@ -4633,6 +5305,15 @@ async function runRcAnalysis(opts) {
   } catch (e) {
     if (seq !== rcCtx.seq) return;
     rcCtx.pendingPctEdit = null; // a failed fetch cancels the pending chip auto-open
+    // offline fallback: the last known answer for this cell, clearly stale —
+    // better than a blank panel while the relay recovers
+    const snap = rcSnapGet(rcCtx.day, rcCtx.dur, hh);
+    if (snap) {
+      rcCtx.data = { ...snap, stale: true };
+      rcBuildView();
+      renderRcTable();
+      return;
+    }
     $('rcBody').innerHTML = `<div class="drawer-empty">${rcErrorText(e.message)}</div>`;
   }
 }
@@ -4666,6 +5347,7 @@ function renderRcFleet() {
 }
 
 function placeFleet(k) {
+  ensureFreshBase(); // re-lay on the live ladder when the check lands
   const r = rcCtx.view || rcCtx.data;
   if (!r || r.gmPrice == null) return;
   if (!Array.isArray(r.gmOffers) || !r.gmOffers.length || !Array.isArray(r.compPrices)) {
@@ -4683,9 +5365,13 @@ function placeFleet(k) {
     return;
   }
   const comp = r.compPrices;
-  const cell = state.cellMap.get(key(rcCtx.day, rcCtx.dur));
-  const curPct = cell ? cell.pct : 0;
-  const bases = r.gmOffers.map((g) => g.price / (1 + curPct / 100));
+  // the guarded base, not raw cellMap: right after a confirm cellMap already
+  // holds the NEW pct while rentalcars still serves the OLD price — dividing
+  // served by the new pct invented a base and wrote a pct that missed the
+  // promised prices (measured 12.5% deep in the placeGm sibling)
+  const { base: gmBase, rulePct: curPct, servedPct } = gmServedBase(r);
+  if (gmBase == null || r.gmPrice == null) return;
+  const bases = r.gmOffers.map((g) => g.price * (gmBase / r.gmPrice));
   // the pricing band's floor, on displayed prices: whatever K asks for, the
   // cheapest GM car never lands more than 5% or 10 CHF under the cheapest
   // competitor — crowding the top 10 must not mean giving cars away
@@ -4730,8 +5416,9 @@ function placeFleet(k) {
   }
   const newFactor = 1 + newPct / 100;
   const newPrices = bases.map((b) => Math.round(b * newFactor * 100) / 100);
-  rcCtx.placed = { fleet: true, k, newPct, curPct, target: newPrices[0], newPrices };
+  rcCtx.placed = { fleet: true, k, newPct, curPct, servedPct, target: newPrices[0], newPrices };
   markPendingPct(newPct);
+  syncProjectionToGrid(newPct); // staged — the bottom-right APPLY bar writes it
   renderRcTable();
 }
 window.placeFleet = placeFleet;
@@ -4772,7 +5459,7 @@ function renderRcTable() {
       supplier: 'Green Motion', vehicle: esc(g.vehicle || ''), rating: null,
       price: sim.newPrices[i], currency: r.currency, gm: true, simulated: true, logo: gmLogo,
     }));
-    displayRows = [...others, ...simGm].sort((a, b) => a.price - b.price).slice(0, 51);
+    displayRows = [...others, ...simGm].sort((a, b) => a.price - b.price).slice(0, 11);
   } else if (sim) {
     displayRows = others.slice();
     const gmVehicle = (r.top.find((x) => /green motion/i.test(x.supplier)) || {}).vehicle || '';
@@ -4781,9 +5468,9 @@ function renderRcTable() {
       price: sim.target, currency: r.currency, gm: true, simulated: true,
       logo: gmLogo,
     });
-    displayRows = displayRows.slice(0, 51);
+    displayRows = displayRows.slice(0, 11);
   } else {
-    displayRows = r.top.slice(0, 50);
+    displayRows = r.top.slice(0, 10);
   }
 
   const rows = displayRows
@@ -4822,8 +5509,8 @@ function renderRcTable() {
     simBar = `<div class="rc-simbar${sim.applied ? ' rc-sim-applied' : ''}">
       <span>${info}</span>
       ${sim.applied ? '' : `<span class="rc-simbar-btns">
+        <span class="rc-apply-hint">${t('sim_apply_hint')}</span>
         <button class="btn btn-ghost btn-xs" onclick="resetGmSim()">${t('reset')}</button>
-        <button class="btn btn-primary btn-xs" id="rcConfirmBtn" onclick="confirmGmSim()">${t('confirm_fmx')}</button>
       </span>`}
     </div>`;
   } else if (sim && sim.fleet) {
@@ -4834,8 +5521,8 @@ function renderRcTable() {
         p1: sim.target.toFixed(2), ccy: r.currency,
       })}${cell ? '' : ' (new rule)'}</span>
       <span class="rc-simbar-btns">
+        <span class="rc-apply-hint">${t('sim_apply_hint')}</span>
         <button class="btn btn-ghost btn-xs" onclick="resetGmSim()">${t('reset')}</button>
-        <button class="btn btn-primary btn-xs" id="rcConfirmBtn" onclick="confirmGmSim()">${t('confirm_fmx')}</button>
       </span>
     </div>`;
   } else if (sim) {
@@ -4843,8 +5530,8 @@ function renderRcTable() {
       <span>GM #${r.gmRank || '—'} &rarr; <b>#${sim.rank}</b> · ${r.gmPrice.toFixed(2)} &rarr; <b>${sim.target.toFixed(2)} ${r.currency}</b>
       · DPS RULE ${durLabel}D: ${curPct}% &rarr; <b>${sim.newPct}%</b>${cell ? '' : ' (new rule)'}</span>
       <span class="rc-simbar-btns">
+        <span class="rc-apply-hint">${t('sim_apply_hint')}</span>
         <button class="btn btn-ghost btn-xs" onclick="resetGmSim()">${t('reset')}</button>
-        <button class="btn btn-primary btn-xs" id="rcConfirmBtn" onclick="confirmGmSim()">${t('confirm_fmx')}</button>
       </span>
     </div>`;
   }
@@ -4857,9 +5544,18 @@ function renderRcTable() {
   // an expired sync is one whose target never arrived: saying "rentalcars still
   // serves its cached quote" about it would be a claim the market contradicts
   if (sync && !sync.expired) {
+    // the second-hour confirmation (Berkay, 2026-08-30: "farklı saatlerde de
+    // onay alınsın") reports right here, beside the primary verdict
+    const h2 = sync.hour2
+      ? sync.hour2.state === 'checking'
+        ? ` · ${rcPad(sync.hour2.hh)}:00 …`
+        : sync.hour2.state === 'ok'
+          ? ` · ${rcPad(sync.hour2.hh)}:00 &#10003;`
+          : ` · ${rcPad(sync.hour2.hh)}:00 ${sync.hour2.price != null ? sync.hour2.price.toFixed(2) : '—'} &#9888;`
+      : '';
     syncBar = sync.live
-      ? `<div class="rc-syncbar rc-sync-live">RENTALCARS LIVE &#10003; — Green Motion is now #${sync.liveRank} at the applied price.</div>`
-      : `<div class="rc-syncbar">DPS APPLIED &#10003; (target ${sync.target.toFixed(2)}) — rentalcars still serves its cached quote; auto-recheck at 2/5/10 min.
+      ? `<div class="rc-syncbar rc-sync-live">RENTALCARS LIVE &#10003; — Green Motion is now #${sync.liveRank} at the applied price.${h2}</div>`
+      : `<div class="rc-syncbar">DPS APPLIED &#10003; (target ${sync.target.toFixed(2)}) — rentalcars still serves its cached quote; auto-recheck at 2/5/10 min.${h2}
          <button class="btn btn-ghost btn-xs" onclick="checkRcSyncManual('${sk}')">${sync.checking ? 'CHECKING…' : 'CHECK NOW'}</button></div>`;
   }
 
@@ -4871,9 +5567,31 @@ function renderRcTable() {
     <thead><tr><th></th><th>SUPPLIER</th><th>VEHICLE</th><th>RATING</th><th class="rc-gear">${t('rc_col_gear')}</th><th class="rc-fuel">${t('rc_col_fuel')}</th><th class="rc-price rc-list">${t('rc_col_list')}</th><th class="rc-price">${t('rc_col_customer')} ${durLabel}D</th></tr></thead>
     <tbody>${rows}</tbody></table>`;
 
+  // Berkay, 2026-08-30: with a projection on screen BOTH states must be
+  // visible — the projected ladder on top (interactive, CONFIRM writes it) and
+  // the served ladder below it, muted, exactly as rentalcars answers today.
+  let afterTitle = '';
+  let beforeHtml = '';
+  if (sim) {
+    afterTitle = `<div class="rc-sec-title rc-sec-after">${t('rc_after_title')}</div>`;
+    const beforeRows = r.top.slice(0, 10).map((x, i) => {
+      const isGm = /green motion/i.test(x.supplier || '');
+      return `<tr class="${isGm ? 'rc-gm' : ''}">
+        <td class="rc-rank">${i + 1}</td>
+        <td class="rc-sup">${logoImg(x)}${esc(x.supplier)}</td>
+        <td>${esc(x.vehicle)}</td>
+        <td class="rc-price rc-cust">${x.price.toFixed(2)}&nbsp;${esc(x.currency)}</td>
+      </tr>`;
+    }).join('');
+    beforeHtml = `<div class="rc-sec-title">${t('rc_before_title')}</div>
+      <div class="rc-before-wrap"><table class="rc-table">
+      <thead><tr><th></th><th>SUPPLIER</th><th>VEHICLE</th><th class="rc-price">${t('rc_col_customer')} ${durLabel}D</th></tr></thead>
+      <tbody>${beforeRows}</tbody></table></div>`;
+  }
+
   // R3 category chips first, then R5 confirm/sim bar ABOVE the table so CONFIRM
   // is visible without scrolling, then the sync bar, table and discount hint.
-  $('rcBody').innerHTML = `${rcCatsHtml()}${simBar}${syncBar}${table}${discHint}`;
+  $('rcBody').innerHTML = `${rcCatsHtml()}${simBar}${syncBar}${afterTitle}${table}${discHint}${beforeHtml}`;
 
   // drag & drop: grab the Green Motion row and drop it onto any competitor row
   const trs = [...$('rcBody').querySelectorAll('tbody tr')];
@@ -4934,6 +5652,7 @@ function renderRcTable() {
 }
 
 function placeGm(rowIndex) {
+  ensureFreshBase(); // re-lay on the live ladder when the check lands
   const r = rcCtx.view || rcCtx.data;
   if (!r || r.gmPrice == null) return;
   const others = r.top.filter((x) => !/green motion/i.test(x.supplier));
@@ -4946,13 +5665,18 @@ function placeGm(rowIndex) {
     target = hi - Math.max(0.01, hi * 0.005); // just under that competitor
     if (target <= lo) target = (lo + hi) / 2; // tight gap: midpoint
   }
-  const cell = state.cellMap.get(key(rcCtx.day, rcCtx.dur));
-  const curPct = cell ? cell.pct : 0;
-  const base = r.gmPrice / (1 + curPct / 100);
+  // gmServedBase, not raw cellMap: during a pending apply the cellMap pct has
+  // never been served, and dividing the still-old price by it invented a base
+  // — a click promising 59.70 wrote a pct that landed GM at 52.24
+  const { base, rulePct: curPct, servedPct } = gmServedBase(r);
+  if (base == null) return;
   let newPct = (target / base - 1) * 100;
   newPct = Math.max(-95, Math.min(100, Math.round(newPct * 100) / 100));
-  rcCtx.placed = { rank: targetRank, target, newPct, curPct };
+  rcCtx.placed = { rank: targetRank, target, newPct, curPct, servedPct };
   markPendingPct(newPct);
+  // CONFIRM lives in the bottom-right APPLY TO DPS bar now (Berkay,
+  // 2026-08-30) — a placement must stage itself or it would have no way out
+  syncProjectionToGrid(newPct);
   renderRcTable();
 }
 window.placeGm = placeGm;
@@ -4960,6 +5684,7 @@ window.placeGm = placeGm;
 // type a target price on Green Motion's own price cell: the rank falls out of
 // where that price lands among the listed competitors, the DPS % from the base
 async function editGmPrice() {
+  ensureFreshBase(); // re-lay on the live ladder when the check lands
   const r = rcCtx.view || rcCtx.data;
   if (!r || r.gmPrice == null) return;
   const raw = await inputBox(t('rc_price_prompt', { ccy: r.currency }), r.gmPrice.toFixed(2));
@@ -4968,13 +5693,14 @@ async function editGmPrice() {
   if (!isFinite(target) || target <= 0) { toast(t('rc_price_bad'), 'error'); return; }
   const others = r.top.filter((x) => !/green motion/i.test(x.supplier));
   const rank = others.filter((o) => o.price < target).length + 1;
-  const cell = state.cellMap.get(key(rcCtx.day, rcCtx.dur));
-  const curPct = cell ? cell.pct : 0;
-  const base = r.gmPrice / (1 + curPct / 100);
+  // same guarded base as placeGm/projectPlacement — see the comment there
+  const { base, rulePct: curPct, servedPct } = gmServedBase(r);
+  if (base == null) return;
   let newPct = (target / base - 1) * 100;
   newPct = Math.max(-95, Math.min(100, Math.round(newPct * 100) / 100));
-  rcCtx.placed = { rank, target, newPct, curPct, manual: true };
+  rcCtx.placed = { rank, target, newPct, curPct, servedPct, manual: true };
   markPendingPct(newPct);
+  syncProjectionToGrid(newPct); // staged — the bottom-right APPLY bar writes it
   renderRcTable();
 }
 window.editGmPrice = editGmPrice;
@@ -4992,70 +5718,10 @@ function resetGmSim() {
 }
 window.resetGmSim = resetGmSim;
 
-async function confirmGmSim() {
-  const sim = rcCtx.placed;
-  const r = rcCtx.data;
-  if (!sim || !r) return;
-  const btn = $('rcConfirmBtn');
-  btn.disabled = true;
-  btn.textContent = 'APPLYING…';
-  const cell = state.cellMap.get(key(rcCtx.day, rcCtx.dur));
-  const body = {
-    station: state.station, day: rcCtx.day, duration: rcCtx.dur,
-    month: state.month, year: state.year, pct: sim.newPct,
-    active: true, vendors: [state.vendor],
-  };
-  try {
-    let result;
-    if (cell) {
-      result = await api(`/api/rule/${cell.ruleid}`, { method: 'PUT', body: { ...body, prevPct: cell.pct } });
-      state.cellMap.set(key(rcCtx.day, rcCtx.dur), { ...cell, pct: sim.newPct });
-    } else {
-      result = await api('/api/rule', { method: 'POST', body });
-      state.cellMap.set(key(rcCtx.day, rcCtx.dur), {
-        day: rcCtx.day, dur: rcCtx.dur, ruleid: result.ruleid,
-        name: result.detail.rulename, pct: sim.newPct, active: true,
-        numDaysOp: opForDur(rcCtx.dur), opMismatch: false, vendors: [state.vendor], updated: '',
-      });
-    }
-    refreshCell(rcCtx.day, rcCtx.dur);
-    toast(
-      `DPS updated: ${String(rcCtx.day).padStart(2, '0')}.${state.month} · ${rcCtx.dur}D → ${sim.newPct}%` +
-      (result.verified === false ? ' (verification mismatch!)' : ' ✓ verified'),
-      result.verified === false ? 'warn' : undefined
-    );
-    // our cached rentalcars data for this day is now stale — drop it and
-    // start the live-sync watcher that rechecks until rentalcars serves it
-    fetch('/api/rc-invalidate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ station: state.station, year: state.year, month: state.month, day: rcCtx.day }),
-    }).catch(() => {});
-    // sim.curPct is the rule that produced the price rentalcars is still
-    // serving — the reference gmServedBase needs to tell "not caught up yet"
-    // from "this target never described the cell"
-    startRcSync(rcCtx.day, rcCtx.dur, sim.target, sim.newPct, sim.curPct);
-    // Berkay, 2026-08-29: a price change walks the analysis ONE HOUR toward
-    // 19:00 (wrapping on the ring). rentalcars caches search GENERATIONS per
-    // exact (date, hour) — both our snapshot for the old hour and the
-    // operator's own browser tab predate the change, but a NEW hour is a new
-    // search that nobody can answer stale. The applied projection is re-laid
-    // onto the fresh ladder, so GM still shows at the just-applied price:
-    // competitors live at the new hour, no "wait 2/5/10 min".
-    rcCtx.appliedPct = sim.newPct;
-    rcCtx.stepOnOpen = true; // every OPEN ON RENTALCARS click steps too, see below
-    rcHour = rcHourAt(rcHour, 1);
-    renderRcHour();
-    await runRcAnalysis({ fresh: true });
-    projectPlacement(sim.newPct, true);
-    refreshLogs();
-  } catch (e) {
-    toast('Apply failed: ' + e.message, 'error');
-    btn.disabled = false;
-    btn.innerHTML = t('confirm_fmx');
-  }
-}
-window.confirmGmSim = confirmGmSim;
+// confirmGmSim is retired (Berkay, 2026-08-30): every projection stages
+// itself and the ONLY write path is the bottom-right APPLY TO DPS bar — its
+// handler starts the live-sync check for the panel's cell, steps the hour,
+// re-queries fresh and re-lays the applied projection (see applyBtn).
 
 // R6: closing while an un-applied placement/projection is staged asks first —
 // an applied projection (already written to DPS) closes without a prompt.
@@ -5070,31 +5736,17 @@ async function closeRcModal() {
     syncProjectionToGrid(null);
   }
   $('rcModal').classList.add('hidden');
+  $('gridSplitter').classList.add('hidden');
+  if (rcCtx) refreshCell(rcCtx.day, rcCtx.dur); // drop the active-cell ring
 }
-$('rcClose').onclick = closeRcModal;
-$('rcModal').addEventListener('click', (e) => {
-  if (e.target === $('rcModal')) closeRcModal();
-});
+// Both side panes are PERMANENT on desktop (Berkay, 2026-08-30: "her daim
+// açık kalacak, sadece büyütme küçültme") — no close buttons, no backdrop
+// close; ensureSidePanes() opens them with the grid and re-targets them on a
+// month/station switch. closeRcModal/rcWebHide stay for the mobile overlay.
 
-// After a CONFIRM, every OPEN ON RENTALCARS click first walks the ring one
-// hour toward 19:00 (Berkay, 2026-08-29). rentalcars serves session-cached
-// GENERATIONS per exact search, so re-opening the SAME hour in the operator's
-// browser can keep showing the pre-change price no matter how fresh our data
-// is — a stepped hour is a brand-new search their cache cannot answer. The
-// href is rewritten synchronously so THIS click already opens the stepped
-// hour; the modal then follows to the same hour and re-lays the applied
-// projection. Plain opens before any apply do not step.
-$('rcOpen').addEventListener('click', () => {
-  if (!rcCtx || !rcCtx.stepOnOpen) return;
-  rcHour = rcHourAt(rcHour, 1);
-  renderRcHour();
-  const [hh, mm] = currentRcTime();
-  $('rcOpen').href = rentalcarsUrl(rcCtx.day, rcCtx.dur, hh, mm) || '#';
-  setTimeout(async () => {
-    await runRcAnalysis({ fresh: true });
-    if (rcCtx && rcCtx.appliedPct != null) projectPlacement(rcCtx.appliedPct, true);
-  }, 0);
-});
+// OPEN ON RENTALCARS is gone (Berkay, 2026-08-30) — the grid's right-click
+// live window replaced it; the panel keeps only REFRESH, which still steps
+// the hour before re-asking (see refreshRcAnalysis).
 
 // ---------- rentalcars live-sync: verify an applied price is actually served ----------
 
@@ -5104,39 +5756,61 @@ const syncKeyOf = (day, dur) => `${state.station}:${state.year}:${state.month}:$
 
 function startRcSync(day, dur, target, appliedPct, prevPct) {
   const k = syncKeyOf(day, dur);
-  // prevPct is what the cell charged BEFORE this apply: it is how gmServedBase
-  // later tells "rentalcars has not caught up yet" (served == previous rule)
-  // apart from "this target never described the cell" (served == neither).
+  const old = rcSync.get(k);
+  // Anchors: the OVERALL-cheapest GM as served at apply time. Verification must
+  // compare the same car it anchored on — sim.target may be a per-car price
+  // from a category placement (an SUV at 150 while the overall GM serves 90),
+  // and comparing that against "whatever car is cheapest later" expired every
+  // category apply as never-landed. ratio = what the applied rule does to any
+  // served GM price, so anchor x ratio is the expected post-apply serve.
+  const data = rcCtx && rcCtx.data;
+  const gmRow = ((data && data.top) || []).find((x) => /green motion/i.test(x.supplier || ''));
   rcSync.set(k, {
     day, dur, target, appliedPct: appliedPct ?? null, prevPct: prevPct ?? null,
+    // the cell this sync verifies — the recheck must query IT, not whatever
+    // station/month the operator happens to be looking at minutes later
+    station: state.station, year: state.year, month: state.month,
+    allServed: data && data.gmPrice != null ? data.gmPrice : null,
+    allBefore: gmRow && typeof gmRow.before === 'number' ? gmRow.before : null,
+    ratio: (1 + (appliedPct ?? 0) / 100) / (1 + (prevPct ?? 0) / 100),
+    // a replaced still-pending apply WAS written to DPS and may land for a few
+    // minutes before this one — its price must read as "not yet", not "never"
+    alsoPcts: old && !old.live && !old.expired && old.appliedPct != null
+      ? [old.appliedPct].concat(old.alsoPcts || []).slice(0, 3)
+      : [],
     live: false, expired: false, tries: 0, checking: false,
   });
   // rentalcars refreshes its quote cache on its own schedule — recheck at 2/5/10 min
   for (const delay of [2, 5, 10]) setTimeout(() => checkRcSync(k, false), delay * 60 * 1000);
 }
 
+/** does this sync describe the cell the operator is currently looking at? */
+const syncSameCell = (s) =>
+  (s.station ?? state.station) === state.station &&
+  (s.year ?? state.year) === state.year &&
+  (s.month ?? state.month) === state.month;
+
 async function checkRcSync(k, manual) {
   const s = rcSync.get(k);
-  if (!s || s.live || s.checking) return;
+  if (!s || s.live || s.expired || s.checking) return;
   s.checking = true;
   if (manual) renderRcTableIfOpen(s);
   try {
+    // the SYNC's cell, never live state: a station/month switch inside the
+    // 10-minute window used to verify another cell's price against this target
+    const st = s.station ?? state.station, yr = s.year ?? state.year, mo = s.month ?? state.month;
     const r = await api(
-      `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${s.day}&duration=${s.dur}&${RC_CANON}&fresh=1`
+      `/api/rc-top?station=${st}&year=${yr}&month=${mo}&day=${s.day}&duration=${s.dur}&${RC_CANON}&fresh=1`
     );
     s.tries++;
-    // The applied price can come back on EITHER basis: rentalcars hands out its
-    // -12% campaign per request, so the same live price reads 106.55 or 121.08
-    // depending on the roll. A 2.5% tolerance against one basis therefore
-    // reported "not live yet" for a price that was already live. Accept the
-    // target on whichever basis this response arrived in.
-    const gmRow = (r.top || []).find((x) => /green motion/i.test(x.supplier || ''));
-    const bases = [r.gmPrice, gmRow && gmRow.price, gmRow && gmRow.before].filter((v) => typeof v === 'number');
-    if (bases.some((v) => Math.abs(v - s.target) / s.target < 0.025)) {
+    const { cls } = s.allServed != null
+      ? syncClassify(s, r)
+      : { cls: [r.gmPrice].filter((v) => v != null).some((v) => Math.abs(v - s.target) / s.target < 0.025) ? 'live' : 'prev' };
+    if (cls === 'live') {
       s.live = true;
       s.liveRank = r.gmRank;
-      toast(`rentalcars LIVE ✓ ${String(s.day).padStart(2, '0')}.${state.month} · ${s.dur}D now #${r.gmRank} (${r.gmPrice.toFixed(2)} ${r.currency})`);
-      if (rcMonth.dur === s.dur) {
+      toast(`rentalcars LIVE ✓ ${String(s.day).padStart(2, '0')}.${mo} · ${s.dur}D now #${r.gmRank} (${r.gmPrice.toFixed(2)} ${r.currency})`);
+      if (syncSameCell(s) && rcMonth.dur === s.dur) {
         rcMonth.days.set(s.day, {
           day: s.day, rank: r.gmRank, price: r.gmPrice, total: r.total,
           currency: r.currency, top1: r.top[0] ? { supplier: r.top[0].supplier, price: r.top[0].price, logo: r.top[0].logo } : null,
@@ -5144,15 +5818,30 @@ async function checkRcSync(k, manual) {
         renderRankStrip();
         renderDashTiles();
       }
-      if (rcCtx && rcCtx.day === s.day && rcCtx.dur === s.dur) {
+      if (syncSameCell(s) && rcCtx && rcCtx.day === s.day && rcCtx.dur === s.dur) {
         rcCtx.data = r; // live now — the projection overlay is no longer needed
         rcBuildView(); // keep the category-scoped view in sync with fresh data
         if (rcCtx.placed && rcCtx.placed.proj) rcCtx.placed = null;
+        rcCtx.appliedPct = null; // REFRESH stops re-laying: the market serves it
       }
+      // Berkay, 2026-08-30: the landing is confirmed at a SECOND, random hour
+      // too — rentalcars caches per (date, hour), so one hour agreeing could
+      // still be one cached generation talking to itself
+      confirmSecondHour(s);
+    } else if (cls === 'genlive') {
+      // matches the target only through the concurrent-generation offset:
+      // looks live, not provable — neither a confirmation nor a strike
+      if (manual) toast(`GM serves ${r.gmPrice != null ? r.gmPrice.toFixed(2) : '—'} — within the other price generation of target ${s.target.toFixed(2)}; waiting for a settling draw.`);
+    } else if (cls === 'ambiguous') {
+      // the change is smaller than rentalcars' 2.5% quote noise: this draw can
+      // never prove it landed. Declaring live here once showed the untouched
+      // OLD ladder as the verified applied state.
+      if (s.tries >= 3) s.expired = true;
+      if (manual) toast(`the applied change is smaller than rentalcars' quote noise — cannot be verified against the live quote (GM ${r.gmPrice != null ? r.gmPrice.toFixed(2) : '—'}).`, 'warn');
     } else {
-      // the last scheduled recheck has run and the target never arrived: stop
-      // treating it as "about to land". It must not go on seeding bases for
-      // projections hours later — see gmServedBase.
+      // 'prev' / 'silent' / 'contradict': the last scheduled recheck has run
+      // and the target never arrived — stop treating it as "about to land".
+      // It must not go on seeding bases for projections hours later.
       if (s.tries >= 3) s.expired = true;
       if (manual) {
         toast(`rentalcars still serves the old quote (GM ${r.gmPrice != null ? r.gmPrice.toFixed(2) : '—'}, target ${s.target.toFixed(2)}) — their cache refreshes within minutes.`, 'warn');
@@ -5163,8 +5852,39 @@ async function checkRcSync(k, manual) {
   renderRcTableIfOpen(s);
 }
 
+/** After the canonical hour confirms LIVE, ask ONE more random hour on the
+ *  ring. Each (date, hour) is its own rentalcars search key with its own
+ *  cache, so a second hour agreeing is genuinely independent evidence that
+ *  the applied price is what shoppers get — not one generation echoing. */
+async function confirmSecondHour(s) {
+  if (s.hour2) return; // one confirmation per sync
+  const pool = RC_HOURS.filter((h) => h !== RC_START_HOUR);
+  const h = pool[Math.floor(Math.random() * pool.length)];
+  s.hour2 = { hh: h, state: 'checking' };
+  renderRcTableIfOpen(s);
+  try {
+    const st = s.station ?? state.station, yr = s.year ?? state.year, mo = s.month ?? state.month;
+    const r = await api(
+      `/api/rc-top?station=${st}&year=${yr}&month=${mo}&day=${s.day}&duration=${s.dur}&hh=${rcPad(h)}&mm=00&fresh=1&samples=2`
+    );
+    const { cls } = s.allServed != null
+      ? syncClassify(s, r)
+      : { cls: [r.gmPrice].filter((v) => v != null).some((v) => Math.abs(v - s.target) / s.target < 0.025) ? 'live' : 'prev' };
+    // live/genlive agree; ambiguous/silent prove nothing either way — only a
+    // draw that positively serves the OLD rule is worth an operator's glance
+    s.hour2 = {
+      hh: h,
+      state: cls === 'live' || cls === 'genlive' || cls === 'ambiguous' || cls === 'silent' ? 'ok' : 'diff',
+      price: r.gmPrice != null ? r.gmPrice : null,
+    };
+  } catch (_) {
+    s.hour2 = null; // a failed query is no verdict — allow a retry next check
+  }
+  renderRcTableIfOpen(s);
+}
+
 function renderRcTableIfOpen(s) {
-  if (rcCtx && rcCtx.day === s.day && rcCtx.dur === s.dur && !$('rcModal').classList.contains('hidden')) {
+  if (syncSameCell(s) && rcCtx && rcCtx.day === s.day && rcCtx.dur === s.dur && !$('rcModal').classList.contains('hidden')) {
     renderRcTable();
   }
 }
@@ -5607,7 +6327,7 @@ $('sweepScanBtn').onclick = async () => {
       try {
         // pricing decisions ride on these numbers — 30-minute tolerance, not 6h
         const r = await api(
-          `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${day}&duration=${dur}&${RC_CANON}&ttlMin=30`
+          `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${day}&duration=${dur}&${RC_CANON}&fresh=1&samples=2`
         );
         const others = r.top.filter((x) => !/green motion/i.test(x.supplier));
         if (r.gmPrice == null) { skipped++; return; }
@@ -5897,7 +6617,7 @@ async function runScan(scope) {
           // pricing decisions ride on these numbers, so the cache tolerance is
           // 30 minutes here — not the grid's lazy 6 hours
           const r = await api(
-            `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${day}&duration=${dur}&${RC_CANON}&ttlMin=30`
+            `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${day}&duration=${dur}&${RC_CANON}&fresh=1&samples=2`
           );
           if (r.gmPrice == null) continue;
           const k = key(day, dur);

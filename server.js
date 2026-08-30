@@ -1027,6 +1027,18 @@ app.post('/api/presence', (req, res) => {
   res.json({ ok: true, others });
 });
 
+// Event-loop stall telemetry: a blocked loop is the one failure Cloud Run
+// reports only as opaque 429 bursts. lagMaxMs says whether the process itself
+// froze (big stringify, giant cheerio parse, GC pause) or the platform did.
+const { monitorEventLoopDelay } = require('perf_hooks');
+const loopLag = monitorEventLoopDelay({ resolution: 100 });
+loopLag.enable();
+let loopLagMaxSinceRead = 0;
+setInterval(() => {
+  loopLagMaxSinceRead = Math.max(loopLagMaxSinceRead, loopLag.max / 1e6);
+  loopLag.reset();
+}, 5000).unref();
+
 app.get('/api/watch-status', (req, res) => {
   pruneWorkers();
   const relays = [...relayState.workers.entries()]
@@ -1047,6 +1059,9 @@ app.get('/api/watch-status', (req, res) => {
     relayOnline: relayOnline(),
     relayLastSeen: relayState.lastSeen ? new Date(relayState.lastSeen).toISOString() : null,
     relays,
+    // worst single event-loop stall since the last read of this endpoint —
+    // >1000 here during a 429 burst means the process froze, not the platform
+    loopLagMaxMs: (() => { const v = Math.round(Math.max(loopLagMaxSinceRead, loopLag.max / 1e6)); loopLagMaxSinceRead = 0; loopLag.reset(); return v; })(),
     // a station reset or copy outlives any page refresh — the client shows
     // this instead of a grid that cannot load while the job runs
     purge: (() => {
@@ -1627,7 +1642,13 @@ let rcCache = {};
 // blocked event loop — fired 32x/min during a month sweep, and every stall the
 // relay hit made it re-send the same 2MB body, which persisted again.
 function saveRcCache() {
-  store.set('rc', rcCache, { debounceMs: 30000 });
+  // In the cloud this file lives in /tmp, which dies WITH the instance — the
+  // write can never help a successor, yet stringifying a full cache (hundreds
+  // of ~50KB snapshots after a scan day) blocks the event loop for seconds,
+  // and a blocked loop is exactly when Cloud Run answers everyone else with
+  // 429 "no available instance" (measured 2026-08-29 evening: recurring
+  // 20-40s reject bursts). Persist only where it can outlive the process.
+  if (!store.IS_CLOUD) store.set('rc', rcCache, { debounceMs: 30000 });
 }
 
 // relay bridge: rentalcars answers datacenter IPs (Google Cloud included) with
@@ -1845,41 +1866,84 @@ function rcGmMark(d) {
  *  high. The campaign answer IS what the reservation we compete for sees; the
  *  clean answer is the minority/stale segment.
  *
- *  So a campaign-bearing answer wins and STOPS the sampling (the common case
- *  costs one call — ~6 of 7 draws carry a running campaign). Only when every
- *  draw comes back clean is the campaign considered genuinely off, and then
- *  the fullest clean catalogue is kept. This is what keeps REFRESH
- *  deterministic: the ladder can no longer flip on a re-roll — the odds of all
- *  5 draws landing clean while a campaign runs are ~(1/7)^5.
+ *  So a campaign-bearing answer wins over clean draws. Only when every draw
+ *  comes back clean is the campaign considered genuinely off, and then the
+ *  fullest clean catalogue is kept.
+ *
+ *  A SECOND independent lottery exists on top of the shape: rentalcars serves
+ *  two price GENERATIONS concurrently, ~2-3% apart, per request — measured
+ *  2026-08-29 twice, each time in the same minute: 13:00/15:00 answers three
+ *  seconds apart carried GM list 186.36 and 190.77, and at 16:08 the console
+ *  drew list 197.34 while the operator's browser was served 192.00 (exactly
+ *  ×1.0278, Unirent moving the OPPOSITE way). So a single campaign draw is not
+ *  an answer yet: the sampler takes ONE confirmation draw. Tiers agreeing
+ *  (≤1%) settle it at two calls; tiers disagreeing mean both generations are
+ *  live RIGHT NOW — then the draw matching the PREVIOUS snapshot's tier wins
+ *  (continuity; a real rule change makes both draws agree on the new tier
+ *  once rentalcars finishes propagating), else the cheaper one (conservative),
+ *  and the footer's `GM ±x%` marker shows the true spread so a mismatch with
+ *  any one browser reads as "the market is split", not "the console is wrong".
  *
  *  Do NOT flip this back toward the clean answer (tried 2026-08-29, reverted
  *  the same day: two REFRESHes in a row showed a ladder neither incognito nor
  *  booking.com showed). And do NOT merge the shapes: the clean shape's extra
  *  rows are duplicate trims except ~1 vehicle, and a merged offer count
- *  matches nothing the site ever displays — a 1:1 incognito check must keep
- *  matching to the cent. Only the analysis modal's FRESH path samples at all;
- *  grid scans and sweeps stay at exactly one call per cell.
+ *  matches nothing the site ever displays. Only the analysis modal's FRESH
+ *  path samples at all; grid scans and sweeps stay at one call per cell.
  */
-async function rcSampled(fetchOne, want) {
+
+/** GM's cheapest LIST price — the struck number when a campaign runs, the
+ *  plain price otherwise. Identifies which price GENERATION a draw carries,
+ *  independent of its campaign presentation. */
+function rcGmList(d) {
+  const gm = ((d && d.top) || []).filter((x) => /green motion/i.test(x.supplier || ''));
+  return gm.length ? Math.min(...gm.map((x) => (x.before != null ? x.before : x.price))) : null;
+}
+
+/** same generation = GM list prices within 1% (sub-franc wobble is ~0.3%,
+ *  the concurrent generations sit 2-3% apart) */
+const rcSameTier = (a, b) => a != null && b != null && Math.abs(a - b) / Math.max(a, b) <= 0.01;
+
+async function rcSampled(fetchOne, want, prevList) {
   const taken = [];
+  const campaign = [];
   let firstErr = null;
   for (let i = 0; i < want; i++) {
     try {
       taken.push(await fetchOne());
     } catch (e) {
-      if (!taken.length) { firstErr = e; break; }
+      if (!taken.length) { firstErr = e; }
       break; // a failed extra sample never fails a query that already answered
     }
-    if (rcHasCampaign(taken[taken.length - 1])) break; // the customer's view — done
+    const d = taken[taken.length - 1];
+    if (rcHasCampaign(d)) {
+      campaign.push(d);
+      if (campaign.length >= 2) break; // one confirmation draw is enough
+    } else if (!campaign.length && taken.length >= 2) {
+      // two agreeing clean draws settle a campaign-free market too — without
+      // this, a month with no campaign (December, the promo-free lab) paid
+      // all five draws on EVERY fresh query, 15-22s per refresh measured
+      // 2026-08-30 morning. Cost of the shortcut: while a campaign runs, two
+      // clean same-tier draws in a row (~1.7% of refreshes) end a query early
+      // in the clean shape; the next refresh corrects it, and the two-column
+      // display keeps even that state honest (LIST == CUSTOMER, no badge).
+      const prev = taken[taken.length - 2];
+      if (!rcHasCampaign(prev) && rcSameTier(rcGmList(d), rcGmList(prev))) break;
+    }
   }
   if (!taken.length) throw firstErr || new FmxError('RC_FETCH_FAILED', 502);
 
-  // a campaign-bearing draw wins outright; among clean-only draws the fullest
-  // catalogue wins (more rows = the better picture of a campaign-free market)
-  const withCampaign = taken.filter(rcHasCampaign);
-  const winner = (withCampaign.length ? withCampaign : taken)
-    .slice()
-    .sort((a, b) => (b.total || 0) - (a.total || 0))[0];
+  let winner;
+  if (campaign.length >= 2 && !rcSameTier(rcGmList(campaign[0]), rcGmList(campaign[1]))) {
+    // both generations are live right now: continuity first, then conservative
+    winner =
+      campaign.find((d) => rcSameTier(rcGmList(d), prevList)) ||
+      campaign.slice().sort((a, b) => (rcGmMark(a) ?? Infinity) - (rcGmMark(b) ?? Infinity))[0];
+  } else {
+    // agreeing campaign draws (keep the first), or no campaign at all — then
+    // the fullest clean catalogue is the best picture of a campaign-free market
+    winner = campaign[0] || taken.slice().sort((a, b) => (b.total || 0) - (a.total || 0))[0];
+  }
 
   const marks = taken.map(rcGmMark).filter((v) => typeof v === 'number');
   const lo = marks.length ? Math.min(...marks) : 0;
@@ -1926,7 +1990,8 @@ async function rcQuery({ station, year, month, day, duration, hh, mm, ttlMs, sam
   const want = Math.min(Math.max(Number(samples) || 1, 1), 5);
   let data;
   try {
-    data = await rcSampled(fetchOne, want);
+    // the previous snapshot's tier (even if expired) breaks generation ties
+    data = await rcSampled(fetchOne, want, hit ? rcGmList(hit.data) : null);
   } catch (err) {
     // fall back to the last snapshot rather than a dead modal
     if (hit) return { ...hit.data, cachedAt: hit.ts, stale: true };
@@ -1959,7 +2024,10 @@ async function rcQuery({ station, year, month, day, duration, hh, mm, ttlMs, sam
 // were never touched again but stayed resident forever — unbounded heap growth
 // (the 621MiB OOM) and an ever-fatter stringify. Two rules now bound it:
 // yesterday is deleted outright, and a hard cap evicts the oldest entries.
-const RC_CACHE_MAX = 1000;
+// 300, not 1000: a scan day fills this with ~50KB snapshots, and on a 1GiB
+// single instance the difference between a ~15MB and a ~50MB cache is the
+// difference between smooth GC and stop-the-world pauses that read as 429s
+const RC_CACHE_MAX = 300;
 let rcPruneCount = 0;
 
 function pruneRcCache() {
@@ -2231,6 +2299,11 @@ function shapeCells(rules, getDetail, year, month, dupes, wantLane, allIds) {
         // the rulename, so without this every rewrite strips the category name
         // the operator created the rule with.
         label: ruleLabel(d.rulename),
+        // '=' or '>=': an update also rewrites the operator, and the open
+        // bucket can legally sit BELOW 14 (a 1..10 sweep writes '>= 10') — a
+        // caller re-pricing that rule must restate '>=' or it silently
+        // unprices every longer rental. See applyProposalSet.
+        op: d.numDaysOp,
       });
   }
   return cells;
@@ -3862,6 +3935,9 @@ async function autoScan(budgetMs) {
         r = await rcQuery({
           station: t.station, year: t.year, month: t.month, day: t.day,
           duration: t.duration, hh: RC_HOUR, mm: '00', ttlMs: AUTOSCAN_TTL_MS,
+          // proposals become PRICES: a single draw can catch the wrong shape or
+          // generation (~2-12% off) — one confirmation draw is cheap insurance
+          samples: 2,
         });
       } catch (e) {
         if (e.message === 'RC_UNAVAILABLE') break; // relay offline — stop, keep the cursor
@@ -4222,15 +4298,22 @@ async function applyProposalSet(set, by) {
       const liveCell = cg.cells.get(ckey);
       if (liveCell && liveCell.active === false) throw new FmxError('RULE_INACTIVE', 409);
       const cell = cg.cells.get(ckey);
-      // the proposal may be up to 72h old: re-derive the percent from the
-      // stored category factor against the rule as it stands right now, so a
-      // rule edited since the scan is not clobbered with a stale number
-      const liveBase = cell ? Number(cell.pct) : 0;
-      let pct = Number(it.newPct);
-      if (isFinite(Number(it.factor)) && Number(it.factor) > 0) {
-        pct = Math.round(((1 + liveBase / 100) * Number(it.factor) - 1) * 10000) / 100;
-        pct = Math.max(-95, Math.min(100, pct));
+      // The proposal may be up to 72h old and its stored factor is anchored to
+      // the DISPLAYED price the SCAN-TIME rule (it.curPct) produced. Plugging
+      // the CURRENT rule pct into that formula wrote a price off the band by
+      // exactly (1+livePct)/(1+curPct) — a rule edited from -20 to -10 turned a
+      // "land at 97" proposal into a 109.13 write, ABOVE the 100 anchor. A rule
+      // that changed (or vanished) since the scan means the snapshot no longer
+      // describes the market: skip the cell so the receipt says re-scan it,
+      // never replay a stale factor onto a basis it was not computed from.
+      const drift = cell
+        ? Math.abs(Number(cell.pct) - Number(it.curPct))
+        : (Number(it.curPct) !== 0 && it.curPct != null ? Infinity : 0);
+      if (isFinite(Number(it.curPct)) && drift > 0.005) {
+        throw new FmxError('RULE_CHANGED_SINCE_SCAN', 409);
       }
+      // rule unchanged: the stored newPct IS the band-target pct
+      const pct = Math.max(-95, Math.min(100, Number(it.newPct)));
       base.after = pct;
       const args = {
         day: it.day, month: it.month, year: it.year, duration: it.duration,
@@ -4245,6 +4328,11 @@ async function applyProposalSet(set, by) {
         // operator's whole per-category setup, erased by a price nudge.
         vehicleIds: (cell && cell.groupIds && cell.groupIds.length) ? cell.groupIds : null,
         groupLabel: (cell && cell.label) || null,
+        // ...and coverage includes the OPERATOR: a swept day's longest rule is
+        // the open bucket ('>= 10' after a 1..10 sweep). Omitting this rewrote
+        // it as '= 10', silently unpricing 11-13 day rentals (+25% jump), and
+        // verifyDetail could not catch it because it expects what it was sent.
+        openDuration: cell && cell.op === '>=' ? it.duration : undefined,
       };
       base.vendor = args.vendors.join(',');
       if (cell) {

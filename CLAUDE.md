@@ -1,5 +1,20 @@
 # GM Pricing Console
 
+## The three price planes (measured 2026-08-30, all three for the same search minutes apart)
+
+1. **FMX retail** = Price Override `Day1_base × days` × (1 + weekly-rule %) [× promo when a
+   promotion window covers the pickup]. One percent per (day, duration), all vendors, all groups.
+2. **GM's own site** (greenmotion.com → api.greenmotion.com, engine = FMX) shows FMX retail TO
+   THE CENT — 9 vehicle groups implied the identical USD/CHF rate to five decimals. A hand check
+   against FMX math always matches here.
+3. **rentalcars** shows FMX retail × **~1.037–1.051** (their own margin, two concurrent tiers
+   ~1.3–2.8% apart, rounded to whole francs) — plus their per-session −12% campaign lottery.
+
+The console's pct math anchors on SERVED prices (plane 3), so its targets already contain the
+uplift and land exactly when the landing draw keeps the tier (139.94 → 139.95 verified). A
+"console pct doesn't match FMX hand math" report is a cross-plane comparison, not a bug: the
+~5% gap IS rentalcars' margin. Never "fix" the pct math to remove it.
+
 ## Before touching pricing on a "wrong price" report
 
 If anyone reports the console's competitor analysis disagreeing with rentalcars.com, run the
@@ -31,17 +46,34 @@ modal footer prints the hour that actually answered.
 rentalcars serves divided by the cell's rule. Right after an apply that is wrong — rentalcars
 still serves the PREVIOUS rule — so a pending apply (`rcSync`) may supply the base instead.
 
-That proxy must keep earning it. `syncExplainsMarket` requires the served price to be either the
-target (it landed) or what `prevPct` produced (not landed yet), on the campaign or the list
-basis; otherwise the sync is marked `expired` and the market wins. Without that check a target
-that never lands is never retired and seeds a base forever: measured 2026-08-29 (01 Sep, 1D), a
-stuck 122.06 at -14% held a base of 141.93 while rentalcars served GM at 74, so every new
-percentage projected GM to #107 at 117.80 when the site had it #4 at 65.
+That proxy must keep earning it. `syncClassify` judges a pending apply against the FULL ladder
+(never a category view — the anchors are the overall-cheapest GM as served at apply time,
+`allServed`/`allBefore`, times `ratio` = (1+applied)/(1+prev)): `live` hands the base back to
+the market; `prev` divides the CURRENT view's served price by whichever rule provably produced
+it (`servedUnderPct` — prevPct or a replaced-but-written intermediate from `alsoPcts`);
+`ambiguous` (change smaller than the 2.5% quote noise) never confirms live; `genlive` (matches
+only through the 2.4-2.7% concurrent-generation offset) is neither confirmation nor strike;
+`contradict` retires the sync. Campaign-free draws are also tested ×`RC_CAMPAIGN_RATE` (0.88):
+anchors are customer-basis, clean draws serve the list basis.
 
-`test/rc-projection.test.js` pins this. Two rules follow: `startRcSync` must always be passed
-`prevPct` (use `sim.curPct` — the rule that produced the served price), and `checkRcSync` marks
-`expired` once its last scheduled recheck fails. An expired sync also hides the "DPS APPLIED"
-bar, which would otherwise claim something the market disproves.
+Hard-won rules pinned by `test/rc-projection.test.js` (19 checks — the 2026-08-29 evening audit
+found and fixed all of these):
+- EVERY path that turns a target price into a pct (`placeGm`, `editGmPrice`, `placeFleet`,
+  `rcProjFactor`, `projectPlacement`) goes through `gmServedBase` — an inline
+  `gmPrice/(1+cellMap.pct)` invents a base during the post-confirm window (a click promising
+  59.70 wrote a pct that landed GM at 52.24).
+- `startRcSync` gets `sim.servedPct ?? sim.curPct` as prevPct (during a chained apply curPct is
+  a pct rentalcars never served) and snapshots its own station/year/month — `checkRcSync`
+  queries THAT cell, never live state (a station switch mid-window once verified another
+  station's price against a Zurich target).
+- `checkRcSync` marks `expired` once its last scheduled recheck fails; an expired sync also
+  hides the "DPS APPLIED" bar. The stuck-target regression stays pinned: a 122.06 target held a
+  141.93 base while the site served GM at 74, projecting #107/117.80 when the site had #4/65.
+- Server side, from the same audit: `applyProposalSet` refuses a cell whose rule changed since
+  the scan (`RULE_CHANGED_SINCE_SCAN`) instead of replaying the factor onto the wrong basis,
+  and restates `openDuration` so it cannot flip a `>=` bucket to `=`; `rcUrl` computes the
+  drop-off in calendar days (ms arithmetic lost a day across DST); `rcParse` drops 0-priced
+  phantom rows.
 
 ## Never widen a rule by accident
 
@@ -91,19 +123,54 @@ Out Of Hours Rules and Seasonal Rules are all empty for Zurich Airport (verified
 on 2026-08-29), so GM has no hour-dependent pricing of its own.
 
 Stability therefore comes from two places, neither of which rewrites a price:
-1. **Sampling** — a FRESH analysis query asks up to 5 times and keeps the FIRST campaign-bearing
-   draw (`rcSampled`); only an all-clean draw set (campaign genuinely off) keeps the fullest
-   clean catalogue. Settled live 2026-08-29 with eleven side-by-side page-loads: every fresh
-   session — incognito, fresh tabs, and a LOGGED-IN booking.com account — showed the -12%
-   campaign at identical prices; only one stale-cookie session (also priced ×1.05 high) was
-   clean. So the campaign answer is the customer's view, a REFRESH cannot flip the ladder on a
-   re-roll (~(1/7)^5), and the common case still costs ~1 call. Do not re-prefer the clean shape
-   and do not merge the shapes — a 1:1 incognito check must keep matching to the cent. Grid
-   scans and sweeps still cost one call per cell (plus one campaign-restoring retry on a
-   contradiction with the previous snapshot).
+1. **Sampling** — a FRESH analysis query asks up to 5 times (`rcSampled`): campaign-bearing
+   draws beat clean ones (settled live 2026-08-29, eleven side-by-side page-loads: every fresh
+   session including a logged-in booking.com account showed the -12%; only one stale-cookie
+   session was clean), and only an all-clean draw set keeps the fullest clean catalogue. On top
+   of the shape, rentalcars serves two price GENERATIONS concurrently (~2-3% apart, per request
+   — measured twice on 2026-08-29, incl. console 197.34 vs the operator's browser 192.00 in the
+   same minute), so one campaign draw takes ONE confirmation draw: agreeing tiers settle at two
+   calls; split tiers prefer the previous snapshot's tier (continuity), else the cheaper draw,
+   and the footer's `GM ±x%` shows the split honestly. Do not re-prefer the clean shape and do
+   not merge the shapes. Grid scans and sweeps still cost one call per cell (plus one
+   campaign-restoring retry on a contradiction with the previous snapshot).
 2. **Snapshots** — the answer is pinned in the operator's own browser (`RC_SNAP_KEY`, 12h, LRU 60)
    as well as the server cache, so a recycled Cloud Run instance cannot re-roll the dice. Only
    REFRESH drops a snapshot. The footer shows `GM ±x%` when the samples disagreed.
+
+## The docked competitor panel (2026-08-30)
+
+On desktop the analysis is not a floating modal any more: `#rcModal` (same element and ids) is
+docked to the RIGHT of the grid inside `#view-grid`, behind a draggable splitter (`rcDockW.v1`).
+One click on a grid cell loads that cell's day into the panel without changing anything;
+double-click opens the cell's % editor with −/+ steppers whose every tick live-projects the
+panel's ladder. While a projection is on screen the panel shows the projected ladder AND the
+served ladder (muted, below) — both states, Berkay's explicit ask. When pricing starts on a
+panel whose data is >10 min old, `ensureFreshBase` re-asks rentalcars once in the background
+and re-lays the same pct on the live ladder. An APPLY that writes the panel's cell auto-starts
+the live-sync check, and a sync that confirms LIVE re-verifies at one extra RANDOM hour
+(`confirmSecondHour`). ≤780px keeps the full-screen overlay.
+
+LIVE DATA EVERYWHERE (2026-08-30, supersedes the snapshot pin): the panel queries `fresh=1` on
+every open — the 6h pinned-snapshot serving path is retired; the sampler's stability work
+(campaign confirm, generation continuity, two-agreeing-clean) is what makes that viable, so do
+not resurrect the pin. Snapshots remain only as an offline fallback (marked stale). SCAN and
+TOP-10 SWEEP also price from `fresh=1`. Both side panes are PERMANENT on desktop: the grid
+auto-opens them on the first BOOKABLE day (09:00 pickup still in the future) via
+`ensureSidePanes` and re-targets on month/station switch; only resizing is allowed. The APPLY
+bar always reserves its space (`.applybar.hidden` keeps display:flex + visibility:hidden) so
+its appearance never shifts the grid mid-click.
+
+The panel has NO confirm and NO open button (2026-08-30): every projection stages itself and
+the bottom-right APPLY TO DPS bar is the only write path. Grid right-click shows rentalcars
+EMBEDDED in the page (`#rcWeb`, between grid and panel — grid | rcWeb | panel with two
+draggable splitters): the real page cannot be iframed (X-Frame-Options: SAMEORIGIN, measured),
+so the pane renders the full ladder rentalcars serves, queried FRESH at the shown hour; each
+right-click steps the hour forward, ↗ opens the real page, ≤780px falls back to a tab. An
+APPLY refreshes every open market view ("booking gibi"): the panel re-queries fresh, and
+`rcLiveFollowUp` drives the pane onto the applied cell at two further hours (~90s apart). The
+panel's cell wears a solid accent ring on the grid (`cell-active`), the pane's cell a blue
+inner ring (`cell-live`).
 
 ## The pickup hour (2026-08-29)
 
