@@ -214,7 +214,10 @@ const I18N = {
     rules_confirm: '{n} rule(s) will be DELETED from DPS. Are you sure?',
     rules_deleted: '{n} rule(s) deleted — the grid is re-syncing.',
     rules_too_many: 'More than 500 rules selected — narrow the range.',
-    sel_scan: 'SCAN SELECTION',
+    sel_scan: 'CHECK RANKS',
+    sel_price: 'PRICE THIS AREA',
+    scan_busy: 'Another pricing operation is already running — wait for it to finish.',
+    sel_price_confirm: 'Re-price {n} rule(s) in {range} against the live competitor field? Proposals are staged in orange — nothing is written until APPLY TO DPS.',
     sel_scanning: 'Scanning {n} selected cell(s) live…',
     sel_scanned: '{n} cell(s) scanned — {bad} sent to multi-hour confirmation.',
     sel_scan_cap: 'Selection capped at 40 cells per scan.',
@@ -566,7 +569,10 @@ const I18N = {
     rules_confirm: '{n} Regel(n) werden aus DPS GELÖSCHT. Sicher?',
     rules_deleted: '{n} Regel(n) gelöscht — das Raster synchronisiert sich neu.',
     rules_too_many: 'Mehr als 500 Regeln ausgewählt — Bereich verkleinern.',
-    sel_scan: 'AUSWAHL SCANNEN',
+    sel_scan: 'RÄNGE PRÜFEN',
+    sel_price: 'BEREICH BEPREISEN',
+    scan_busy: 'Es läuft bereits ein Bepreisungsvorgang — bitte abwarten.',
+    sel_price_confirm: '{n} Regel(n) in {range} gegen das Live-Konkurrenzfeld neu bepreisen? Vorschläge werden orange vorgemerkt — geschrieben wird erst mit APPLY TO DPS.',
     sel_scanning: '{n} ausgewählte Zelle(n) werden live geprüft…',
     sel_scanned: '{n} Zelle(n) geprüft — {bad} in die Mehr-Stunden-Bestätigung.',
     sel_scan_cap: 'Auswahl pro Scan auf 40 Zellen begrenzt.',
@@ -918,7 +924,10 @@ const I18N = {
     rules_confirm: "{n} kural DPS'ten SİLİNECEK. Emin misin?",
     rules_deleted: '{n} kural silindi — grid yeniden eşitleniyor.',
     rules_too_many: "500'den fazla kural seçildi — aralığı daralt.",
-    sel_scan: 'SEÇİMİ TARA',
+    sel_scan: 'SIRALARI KONTROL ET',
+    sel_price: 'BU ALANI FİYATLA',
+    scan_busy: 'Zaten bir fiyatlama işlemi sürüyor — bitmesini bekle.',
+    sel_price_confirm: '{range} aralığındaki {n} kural canlı rakip alanına göre yeniden fiyatlansın mı? Öneriler turuncu olarak hazırlanır — APPLY TO DPS demeden hiçbir şey yazılmaz.',
     sel_scanning: '{n} seçili hücre canlı taranıyor…',
     sel_scanned: '{n} hücre tarandı — {bad} tanesi çok-saatli teyide alındı.',
     sel_scan_cap: 'Tarama başına seçim 40 hücreyle sınırlı.',
@@ -3190,6 +3199,23 @@ async function scanSelection(cells) {
   toast(t('sel_scanned', { n: done, bad }), bad ? 'warn' : undefined);
 }
 
+/** Run the band SCAN over a drag-selected rectangle and stage its proposals.
+ *  Cells with no weekly rule are skipped by the scan itself (there is nothing
+ *  to re-price), so the count shown is the rules the rectangle actually
+ *  covers. Everything lands as orange staged proposals — nothing is written
+ *  until APPLY TO DPS. */
+async function priceSelection(days, durs) {
+  if (state.applying || scan.running) { toast(t('scan_busy'), 'warn'); return; }
+  if (!state.entry) { toast(t('t_load_grid_first'), 'warn'); return; }
+  const ruled = [];
+  for (const d of days) for (const du of durs) if (state.cellMap.has(`${d}:${du}`)) ruled.push([d, du]);
+  if (!ruled.length) { toast(t('sel_scan_unruled'), 'warn'); return; }
+  const label = `${String(days[0]).padStart(2, '0')}–${String(days[days.length - 1]).padStart(2, '0')} ${MONTHS_SHORT[state.month - 1]} · ` +
+    `${durs[0]}–${durs[durs.length - 1]}D`;
+  if (!(await confirmBox(t('sel_price_confirm', { n: ruled.length, range: label })))) return;
+  await runScan({ mode: 'category', days, durs });
+}
+
 const gridSel = { active: false, moved: false, a: null, b: null, justSelected: false };
 
 function gridSelCells() {
@@ -3229,11 +3255,19 @@ function gridSelPrompt(x, y) {
   if (old) old.remove();
   const box = document.createElement('div');
   box.id = 'gridSelBox';
+  // Berkay, 2026-08-31: the drag selection is where re-pricing happens now —
+  // the base rates moved, so every rule percentage produces a different shelf
+  // price and the band has to be re-solved cell by cell. PRICE runs the real
+  // category SCAN over exactly this rectangle (orange proposals, APPLY writes
+  // them); CHECK only reads ranks and raises attention flags.
   box.innerHTML =
     `<span class="gridsel-n">${t('sel_cells', { n: cells.length })}</span>` +
     `<input class="gridsel-input" value="-" spellcheck="false">` +
     `<span class="gridsel-hint">${t('sel_hint')}</span>` +
-    `<button class="btn btn-ghost btn-xs gridsel-scan">${t('sel_scan')}</button>`;
+    `<span class="gridsel-acts">` +
+      `<button class="btn btn-primary btn-xs gridsel-price">${t('sel_price')}</button>` +
+      `<button class="btn btn-ghost btn-xs gridsel-scan">${t('sel_scan')}</button>` +
+    `</span>`;
   document.body.appendChild(box);
   const pad = 12;
   box.style.left = Math.min(x + pad, window.innerWidth - box.offsetWidth - pad) + 'px';
@@ -3244,6 +3278,16 @@ function gridSelPrompt(x, y) {
     const cs = gridSelCells();
     gridSelClear();
     scanSelection(cs);
+  };
+  // …and the pricing pass: the SAME band SCAN the toolbar runs, scoped to the
+  // rectangle. A drag rectangle IS days x durations, which is exactly the
+  // scope shape runScan already takes.
+  box.querySelector('.gridsel-price').onclick = () => {
+    const cs = gridSelCells();
+    const days = [...new Set(cs.map((c) => c.day))].sort((a, b) => a - b);
+    const durs = [...new Set(cs.map((c) => c.dur))].sort((a, b) => a - b);
+    gridSelClear();
+    priceSelection(days, durs);
   };
   const input = box.querySelector('input');
   input.focus();

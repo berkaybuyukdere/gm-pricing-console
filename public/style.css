@@ -954,8 +954,9 @@ body.dock-resizing { cursor: col-resize; user-select: none; }
 .modal.modal-bulk { width: min(720px, calc(100vw - 24px)); }
 .modal-bulk .modal-body { overflow-y: auto; max-height: calc(90vh - 140px); }
 
-/* the selection box's SCAN action sits under the % input */
-.gridsel-scan { margin-top: 6px; }
+/* the selection box's actions sit under the % input, price first */
+.gridsel-acts { display: flex; gap: 6px; margin-top: 8px; }
+.gridsel-acts .btn { flex: 1; white-space: nowrap; }
 
 /* the panel's duration row + % chips are a PREVIEW — visually alive, inert */
 #rcDurs.rc-inert button { pointer-events: none; cursor: default; }
