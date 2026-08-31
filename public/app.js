@@ -71,6 +71,13 @@ const I18N = {
     grid_purge_running: 'A station reset is still running — the numbers you see in DPS are it working through the list. The grid loads itself when it finishes (checking again in 20s).',
     conflict_cell_tip: 'Two rules cover the same vehicles here ({ids}). Click to fix: pick the rule that stays, the rest are deleted.',
     conflict_fix_q: 'Conflict on {d} — which rule should KEEP this cell?',
+    conflict_all_q: '{n} conflicted cell(s) — one rule stays per cell, the rest are deleted. Which one stays?',
+    conflict_all_old: 'KEEP THE OLDEST (recommended after a copy)',
+    conflict_all_old_d: 'The cell\'s ORIGINAL rule stays; later duplicates (a COPY TO lands as the newest) are deleted.',
+    conflict_all_new: 'KEEP THE NEWEST',
+    conflict_all_new_d: 'The most recently created rule stays; the older ones are deleted.',
+    conflict_all_confirm: '{n} rule(s) across {cells} cell(s) will be DELETED from DPS. Are you sure?',
+    conflict_all_done: '{n} rule(s) deleted — the grid is re-syncing.',
     conflict_keep: 'KEEP #{id}',
     conflict_inactive: 'inactive',
     conflict_fix_confirm: 'Delete the other {n} rule(s) and keep #{id}?',
@@ -416,6 +423,13 @@ const I18N = {
     grid_purge_running: 'Ein Stations-Reset läuft noch — das Grid lädt sich selbst, sobald er fertig ist (nächster Versuch in 20s).',
     conflict_cell_tip: 'Zwei Regeln decken hier dieselben Fahrzeuge ab ({ids}). Klicken zum Beheben: eine Regel bleibt, der Rest wird gelöscht.',
     conflict_fix_q: 'Konflikt am {d} — welche Regel soll die Zelle BEHALTEN?',
+    conflict_all_q: '{n} Zellen mit Konflikt — pro Zelle bleibt EINE Regel, der Rest wird gelöscht. Welche bleibt?',
+    conflict_all_old: 'DIE ÄLTESTE BEHALTEN (nach einem Copy empfohlen)',
+    conflict_all_old_d: 'Die URSPRÜNGLICHE Regel der Zelle bleibt; spätere Duplikate (ein COPY TO landet als neueste) werden gelöscht.',
+    conflict_all_new: 'DIE NEUESTE BEHALTEN',
+    conflict_all_new_d: 'Die zuletzt erstellte Regel bleibt; die älteren werden gelöscht.',
+    conflict_all_confirm: '{n} Regel(n) in {cells} Zelle(n) werden aus DPS GELÖSCHT. Sicher?',
+    conflict_all_done: '{n} Regel(n) gelöscht — das Raster synchronisiert sich neu.',
     conflict_keep: '#{id} BEHALTEN',
     conflict_inactive: 'inaktiv',
     conflict_fix_confirm: 'Die anderen {n} Regel(n) löschen und #{id} behalten?',
@@ -761,6 +775,13 @@ const I18N = {
     grid_purge_running: 'İstasyon sıfırlama hâlâ çalışıyor — DPS\'te gördüğün sayılar listeyi silerken azalıyor. Bitince grid kendiliğinden yüklenecek (20 sn\'de bir kontrol ediliyor).',
     conflict_cell_tip: 'Burada iki kural aynı araçları kapsıyor ({ids}). Düzeltmek için tıkla: kalacak kuralı seç, diğerleri silinir.',
     conflict_fix_q: '{d} çakışması — bu hücreyi hangi kural TUTSUN?',
+    conflict_all_q: '{n} çakışan hücre — her hücrede BİR kural kalacak, diğerleri silinecek. Hangisi kalsın?',
+    conflict_all_old: 'EN ESKİYİ TUT (kopya sonrası önerilen)',
+    conflict_all_old_d: 'Hücrenin ASIL kuralı kalır; sonradan gelen kopyalar (COPY TO en yeni olarak iner) silinir.',
+    conflict_all_new: 'EN YENİYİ TUT',
+    conflict_all_new_d: 'En son oluşturulan kural kalır, eskiler silinir.',
+    conflict_all_confirm: "{cells} hücrede {n} kural DPS'ten SİLİNECEK. Emin misin?",
+    conflict_all_done: '{n} kural silindi — grid yeniden eşitleniyor.',
     conflict_keep: '#{id} KALSIN',
     conflict_inactive: 'pasif',
     conflict_fix_confirm: 'Diğer {n} kural silinip #{id} kalsın mı?',
@@ -4898,6 +4919,49 @@ function attachGridTip() {
 /** Fix a CONFLICT cell in place: the operator picks the rule that keeps the
  *  cell, everything else covering the same vehicles on it is deleted. This is
  *  the "click it and repair it" path — no trip into DPS needed. */
+/** ONE click on the CONFLICTS chip fixes ALL of them (Berkay, 2026-08-31:
+ *  71 conflicts after the killed COPY TO): per cell one rule is kept and the
+ *  rest are deleted in a single bulk request. The keep-strategy is a choice —
+ *  DPS ruleids are sequential, so OLDEST (min id) = the cell's original rule
+ *  and NEWEST (max id) = the latest write (a copy lands as the newest). */
+async function resolveAllConflicts() {
+  if (state.applying) return;
+  const e = state.entry;
+  if (!e || !state.conflictSet.size) return;
+  const cells = [...state.conflictSet]
+    .map((k) => ({ k, cf: e.conflictMap.get(k) }))
+    .filter((x) => x.cf && Array.isArray(x.cf.ruleids) && x.cf.ruleids.length > 1);
+  if (!cells.length) return;
+  const strat = await choiceBox(t('conflict_all_q', { n: cells.length }), [
+    { value: 'old', title: t('conflict_all_old'), desc: t('conflict_all_old_d') },
+    { value: 'new', title: t('conflict_all_new'), desc: t('conflict_all_new_d') },
+  ]);
+  if (!strat) return;
+  const doomed = [];
+  for (const { cf } of cells) {
+    const ids = [...new Set(cf.ruleids.map(Number))].sort((a, b) => a - b);
+    const keep = strat === 'old' ? ids[0] : ids[ids.length - 1];
+    for (const id of ids) if (id !== keep) doomed.push(id);
+  }
+  if (!(await confirmBox(t('conflict_all_confirm', { cells: cells.length, n: doomed.length })))) return;
+  flagsPause(); // ranks are provisional while the cleanup lands
+  try {
+    const r = await api('/api/rules-delete', { method: 'POST', body: { station: state.station, ruleids: doomed } });
+    toast(t('conflict_all_done', { n: r.deleted }));
+  } catch (err) {
+    toast('Resolve failed: ' + err.message, 'error');
+  }
+  // re-sync from the supplier system: the kept rules own their cells now —
+  // and if a cell carried MORE than two rules, the fresh sync surfaces the
+  // remainder as a (much smaller) conflict count for a second click
+  state.monthCache.delete(cacheKey());
+  loadGrid();
+  refreshLogs();
+  flagsResume(60 * 1000);
+}
+$('conflictChip').onclick = resolveAllConflicts;
+$('conflictChip').title = 'Click: resolve ALL conflicts (keep one rule per cell)';
+
 async function resolveConflict(day, dur) {
   const k = key(day, dur);
   const cf = state.entry && state.entry.conflictMap.get(k);

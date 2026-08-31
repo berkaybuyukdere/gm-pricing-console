@@ -960,6 +960,9 @@ body.dock-resizing { cursor: col-resize; user-select: none; }
 /* the panel's duration row + % chips are a PREVIEW — visually alive, inert */
 #rcDurs.rc-inert button { pointer-events: none; cursor: default; }
 
+/* the CONFLICTS chip is a button now: one click resolves all of them */
+#conflictChip { cursor: pointer; }
+
 /* the weekly-rules delete list */
 .rules-table tbody tr { cursor: pointer; user-select: none; }
 .rules-table tbody tr.rules-sel { background: var(--warn-dim); outline: 1px solid var(--warn); outline-offset: -1px; }
