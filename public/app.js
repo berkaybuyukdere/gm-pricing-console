@@ -224,6 +224,12 @@ const I18N = {
     undo_column: 'column fill ({dur}D)',
     undo_cell: 'cell {d} · {dur}D',
     undo_scan: 'competitor analysis',
+    verify_scheduled: 'Back-check queued for {n} cell(s) — running in ~{min} min, once rentalcars has propagated.',
+    verify_running: 'CHECKING {done}/{total}',
+    verify_done: '{good}/{total} landed in the band · {above} still above target · {below} under the floor · {silent} not listed',
+    verify_above: 'Missed the band: GM {gm}, target was {want} — served rank {rank}',
+    verify_below: 'Under the floor: GM {gm}, floor {floor}',
+    verify_gone: 'Green Motion is not listed at all in this market',
     scan_busy: 'Another pricing operation is already running — wait for it to finish.',
     sel_price_confirm: 'Re-price {n} rule(s) in {range} against the live competitor field? Proposals are staged in orange — nothing is written until APPLY TO DPS.',
     sel_scanning: 'Scanning {n} selected cell(s) live…',
@@ -587,6 +593,12 @@ const I18N = {
     undo_column: 'Spalte ({dur}T)',
     undo_cell: 'Zelle {d} · {dur}T',
     undo_scan: 'Konkurrenzanalyse',
+    verify_scheduled: 'Nachkontrolle für {n} Zelle(n) eingeplant — in ca. {min} Min., sobald rentalcars propagiert hat.',
+    verify_running: 'PRÜFUNG {done}/{total}',
+    verify_done: '{good}/{total} im Band gelandet · {above} noch über dem Ziel · {below} unter dem Boden · {silent} nicht gelistet',
+    verify_above: 'Band verfehlt: GM {gm}, Ziel war {want} — ausgelieferter Rang {rank}',
+    verify_below: 'Unter dem Boden: GM {gm}, Boden {floor}',
+    verify_gone: 'Green Motion ist in diesem Markt gar nicht gelistet',
     scan_busy: 'Es läuft bereits ein Bepreisungsvorgang — bitte abwarten.',
     sel_price_confirm: '{n} Regel(n) in {range} gegen das Live-Konkurrenzfeld neu bepreisen? Vorschläge werden orange vorgemerkt — geschrieben wird erst mit APPLY TO DPS.',
     sel_scanning: '{n} ausgewählte Zelle(n) werden live geprüft…',
@@ -950,6 +962,12 @@ const I18N = {
     undo_column: 'kolon doldurma ({dur}G)',
     undo_cell: 'hücre {d} · {dur}G',
     undo_scan: 'rakip analizi',
+    verify_scheduled: '{n} hücre için arka kontrol sıraya alındı — rentalcars yayılımı için ~{min} dk sonra çalışacak.',
+    verify_running: 'KONTROL {done}/{total}',
+    verify_done: '{good}/{total} banda oturdu · {above} hâlâ hedefin üstünde · {below} tabanın altında · {silent} listede yok',
+    verify_above: 'Banda oturmadı: GM {gm}, hedef {want} idi — servis edilen sıra {rank}',
+    verify_below: 'Tabanın altında: GM {gm}, taban {floor}',
+    verify_gone: 'Green Motion bu pazarda hiç listelenmiyor',
     scan_busy: 'Zaten bir fiyatlama işlemi sürüyor — bitmesini bekle.',
     sel_price_confirm: '{range} aralığındaki {n} kural canlı rakip alanına göre yeniden fiyatlansın mı? Öneriler turuncu olarak hazırlanır — APPLY TO DPS demeden hiçbir şey yazılmaz.',
     sel_scanning: '{n} seçili hücre canlı taranıyor…',
@@ -3091,17 +3109,13 @@ const flagKey = (d, du) => `${state.station}:${state.year}:${state.month}:${d}:$
 const suspect = { busy: false, timer: null };
 
 function flagsPause() {
+  // Pausing STOPS new nominations; it must not erase the ones already on the
+  // board (Berkay, 2026-08-31: "3 tane şüphe var, birisini yaptığımda diğer
+  // 2'si kayboluyor"). A flag only ever leaves when that cell is dealt with —
+  // applied, re-scanned clean, or its rule deleted.
   suspect.busy = true;
   clearTimeout(suspect.timer);
   if (suspectEs) { suspectEs.close(); suspectEs = null; }
-  if (cellFlags.size) {
-    const had = [...cellFlags.keys()];
-    cellFlags.clear();
-    for (const k of had) {
-      const parts = k.split(':');
-      refreshCell(Number(parts[3]), Number(parts[4]));
-    }
-  }
 }
 
 function flagsResume(delayMs) {
@@ -3195,6 +3209,82 @@ async function confirmSuspect(day, dur, firstRank) {
     day, dur,
     confirmed ? t('suspect_reason', { bad, total: bad + good, ranks: ranks.join(' · ') }) : null
   );
+}
+
+// ---------- the back-check after a competitor analysis (Berkay, 2026-08-31) ----------
+// "Rakip analizi yapıldıktan sonra, arkadan birisi de gerçekten doğru mu diye
+// check etmesi lazım." Every APPLY schedules one: after rentalcars has had
+// time to propagate, each written cell is re-queried and judged against the
+// band it was supposed to land in — cheapest GM car at or under the cheapest
+// competitor's 97, and never below the 95 / 10 CHF floor. Cells that missed
+// keep an amber flag with the reason; the run ends in a plain-language
+// summary. This is a READ-ONLY audit: it never writes a price.
+const VERIFY_DELAY_MS = 8 * 60 * 1000; // propagation window (measured 2-10 min)
+const VERIFY_MAX_CELLS = 60;
+const verifyJob = { timer: null, running: false, cells: [] };
+
+function scheduleApplyVerify(cells) {
+  if (!cells.length || !stationHasRc()) return;
+  clearTimeout(verifyJob.timer);
+  // cells carry their own station/month: the operator may well have moved on
+  // by the time this fires, and a check must never judge another grid
+  const tagged = cells.slice(0, VERIFY_MAX_CELLS).map((c) => ({
+    day: c.day, dur: c.dur, station: state.station, year: state.year, month: state.month,
+  }));
+  verifyJob.cells = tagged;
+  verifyJob.timer = setTimeout(runApplyVerify, VERIFY_DELAY_MS);
+  toast(t('verify_scheduled', { n: tagged.length, min: Math.round(VERIFY_DELAY_MS / 60000) }));
+}
+
+async function runApplyVerify() {
+  if (verifyJob.running || !verifyJob.cells.length) return;
+  verifyJob.running = true;
+  const cells = verifyJob.cells.slice();
+  verifyJob.cells = [];
+  let good = 0, above = 0, below = 0, silent = 0, failed = 0;
+  setSyncing(true, 0, cells.length);
+  try {
+    let done = 0;
+    for (const c of cells) {
+      done++;
+      $('syncChip').textContent = t('verify_running', { done, total: cells.length });
+      try {
+        const r = await api(
+          `/api/rc-top?station=${c.station}&year=${c.year}&month=${c.month}&day=${c.day}&duration=${c.dur}&${RC_CANON}&fresh=1&samples=2`
+        );
+        const comp = (r.top || []).filter((x) => !rcIsGm(x)).map((x) => x.price);
+        if (!comp.length) continue; // no field to judge against
+        const cheapest = Math.min(...comp);
+        const target = cheapest * 0.97;
+        const floor = Math.max(cheapest * 0.95, cheapest - 10);
+        const sameGrid = c.station === state.station && c.year === state.year && c.month === state.month;
+        const mark = (reason) => { if (sameGrid) setCellFlag(c.day, c.dur, reason); };
+        if (r.gmPrice == null) {
+          silent++;
+          mark(t('verify_gone'));
+        } else if (r.gmPrice > target * 1.005) {
+          above++;
+          mark(t('verify_above', { gm: r.gmPrice.toFixed(2), want: target.toFixed(2), rank: r.gmRank || '—' }));
+        } else if (r.gmPrice < floor * 0.995) {
+          below++;
+          mark(t('verify_below', { gm: r.gmPrice.toFixed(2), floor: floor.toFixed(2) }));
+        } else {
+          good++;
+          mark(null); // landed in the band — nothing to look at
+        }
+      } catch (_) { failed++; }
+    }
+  } finally {
+    setSyncing(false);
+    verifyJob.running = false;
+  }
+  const bad = above + below + silent;
+  toast(
+    t('verify_done', { good, total: good + bad, above, below, silent }) +
+      (failed ? ` · ${failed} ?` : ''),
+    bad ? 'warn' : undefined
+  );
+  flagsResume(60 * 1000);
 }
 
 /** Run the band SCAN over a drag-selected rectangle and stage its proposals.
@@ -3584,6 +3674,8 @@ $('applyBtn').onclick = async () => {
   // REVERT is the tool for that, and a stale stack would silently re-stage
   // values the operator already applied
   if (ok) stageHistory.length = 0;
+  // the back-check: did those writes actually land GM inside the band?
+  if (ok) scheduleApplyVerify(changes.filter((c) => c.pct !== null && okCells.has(key(c.day, c.dur))));
   renderApplyBar();
   toast(`Apply finished: ${ok} ok, ${fail} failed.`, fail ? 'warn' : undefined);
   // Berkay, 2026-08-30: an APPLY that wrote the cell the docked panel is
