@@ -215,7 +215,15 @@ const I18N = {
     rules_deleted: '{n} rule(s) deleted — the grid is re-syncing.',
     rules_too_many: 'More than 500 rules selected — narrow the range.',
     sel_scan: 'CHECK RANKS',
-    sel_price: 'PRICE THIS AREA',
+    sel_price: 'COMPETITOR ANALYSIS',
+    undo_btn: 'UNDO',
+    undo_tip: 'Undo: {what}',
+    undo_done: 'Undone: {what}',
+    undo_area: 'area fill ({n} cells)',
+    undo_row: 'row fill (day {d})',
+    undo_column: 'column fill ({dur}D)',
+    undo_cell: 'cell {d} · {dur}D',
+    undo_scan: 'competitor analysis',
     scan_busy: 'Another pricing operation is already running — wait for it to finish.',
     sel_price_confirm: 'Re-price {n} rule(s) in {range} against the live competitor field? Proposals are staged in orange — nothing is written until APPLY TO DPS.',
     sel_scanning: 'Scanning {n} selected cell(s) live…',
@@ -570,7 +578,15 @@ const I18N = {
     rules_deleted: '{n} Regel(n) gelöscht — das Raster synchronisiert sich neu.',
     rules_too_many: 'Mehr als 500 Regeln ausgewählt — Bereich verkleinern.',
     sel_scan: 'RÄNGE PRÜFEN',
-    sel_price: 'BEREICH BEPREISEN',
+    sel_price: 'KONKURRENZANALYSE',
+    undo_btn: 'RÜCKGÄNGIG',
+    undo_tip: 'Rückgängig: {what}',
+    undo_done: 'Rückgängig gemacht: {what}',
+    undo_area: 'Bereich ({n} Zellen)',
+    undo_row: 'Zeile (Tag {d})',
+    undo_column: 'Spalte ({dur}T)',
+    undo_cell: 'Zelle {d} · {dur}T',
+    undo_scan: 'Konkurrenzanalyse',
     scan_busy: 'Es läuft bereits ein Bepreisungsvorgang — bitte abwarten.',
     sel_price_confirm: '{n} Regel(n) in {range} gegen das Live-Konkurrenzfeld neu bepreisen? Vorschläge werden orange vorgemerkt — geschrieben wird erst mit APPLY TO DPS.',
     sel_scanning: '{n} ausgewählte Zelle(n) werden live geprüft…',
@@ -925,7 +941,15 @@ const I18N = {
     rules_deleted: '{n} kural silindi — grid yeniden eşitleniyor.',
     rules_too_many: "500'den fazla kural seçildi — aralığı daralt.",
     sel_scan: 'SIRALARI KONTROL ET',
-    sel_price: 'BU ALANI FİYATLA',
+    sel_price: 'RAKİP ANALİZİ',
+    undo_btn: 'GERİ AL',
+    undo_tip: 'Geri al: {what}',
+    undo_done: 'Geri alındı: {what}',
+    undo_area: 'alan doldurma ({n} hücre)',
+    undo_row: 'satır doldurma ({d}. gün)',
+    undo_column: 'kolon doldurma ({dur}G)',
+    undo_cell: 'hücre {d} · {dur}G',
+    undo_scan: 'rakip analizi',
     scan_busy: 'Zaten bir fiyatlama işlemi sürüyor — bitmesini bekle.',
     sel_price_confirm: '{range} aralığındaki {n} kural canlı rakip alanına göre yeniden fiyatlansın mı? Öneriler turuncu olarak hazırlanır — APPLY TO DPS demeden hiçbir şey yazılmaz.',
     sel_scanning: '{n} seçili hücre canlı taranıyor…',
@@ -2913,6 +2937,7 @@ function editCell(td, day, dur) {
     const raw = input.value.trim().replace(',', '.').replace(/^\+/, '');
     clearTimeout(previewTimer);
     if (raw === '-') { cancel(true); return; } // untouched pre-filled minus
+    pushStageUndo(t('undo_cell', { d: String(day).padStart(2, '0'), dur }));
     if (raw === '') {
       // empty: delete if a rule exists, otherwise unstage
       if (cell) state.staged.set(k, { pct: null });
@@ -3172,33 +3197,6 @@ async function confirmSuspect(day, dur, firstRank) {
   );
 }
 
-/** the selection-scan: analyze ONLY the drag-selected cells, fresh, and flag
- *  the ones whose ranking is off */
-async function scanSelection(cells) {
-  const ruled = cells.filter((c) => state.cellMap.has(`${c.day}:${c.dur}`));
-  for (const c of cells) if (!state.cellMap.has(`${c.day}:${c.dur}`)) setCellFlag(c.day, c.dur, null);
-  if (!ruled.length) { toast(t('sel_scan_unruled'), 'warn'); return; }
-  const todo = ruled.slice(0, 40);
-  if (ruled.length > todo.length) toast(t('sel_scan_cap'), 'warn');
-  toast(t('sel_scanning', { n: todo.length }));
-  let done = 0, bad = 0;
-  const t0 = new Date();
-  t0.setHours(0, 0, 0, 0);
-  for (const c of todo) {
-    if (new Date(state.year, state.month - 1, c.day) < t0) continue;
-    try {
-      const r = await api(
-        `/api/rc-top?station=${state.station}&year=${state.year}&month=${state.month}&day=${c.day}&duration=${c.dur}&${RC_CANON}&fresh=1&samples=2`
-      );
-      const ok = r.gmRank != null && r.gmRank <= 10;
-      if (ok) setCellFlag(c.day, c.dur, null);
-      else { queueSuspectConfirm(c.day, c.dur, r.gmRank); bad++; }
-      done++;
-    } catch (_) { /* one failed cell must not kill the pass */ }
-  }
-  toast(t('sel_scanned', { n: done, bad }), bad ? 'warn' : undefined);
-}
-
 /** Run the band SCAN over a drag-selected rectangle and stage its proposals.
  *  Cells with no weekly rule are skipped by the scan itself (there is nothing
  *  to re-price), so the count shown is the rules the rectangle actually
@@ -3266,22 +3264,14 @@ function gridSelPrompt(x, y) {
     `<span class="gridsel-hint">${t('sel_hint')}</span>` +
     `<span class="gridsel-acts">` +
       `<button class="btn btn-primary btn-xs gridsel-price">${t('sel_price')}</button>` +
-      `<button class="btn btn-ghost btn-xs gridsel-scan">${t('sel_scan')}</button>` +
     `</span>`;
   document.body.appendChild(box);
   const pad = 12;
   box.style.left = Math.min(x + pad, window.innerWidth - box.offsetWidth - pad) + 'px';
   box.style.top = Math.min(y + pad, window.innerHeight - box.offsetHeight - pad) + 'px';
-  // analyze ONLY the selected cells (Berkay, 2026-08-30) — flags the ones
-  // whose served ranking is off, without staging anything
-  box.querySelector('.gridsel-scan').onclick = () => {
-    const cs = gridSelCells();
-    gridSelClear();
-    scanSelection(cs);
-  };
-  // …and the pricing pass: the SAME band SCAN the toolbar runs, scoped to the
-  // rectangle. A drag rectangle IS days x durations, which is exactly the
-  // scope shape runScan already takes.
+  // The ONE action here is the competitor analysis (Berkay, 2026-08-31:
+  // "orada rakip analizi olacak, şüphe değil") — suspicion is a background
+  // job, never something the operator selects for.
   box.querySelector('.gridsel-price').onclick = () => {
     const cs = gridSelCells();
     const days = [...new Set(cs.map((c) => c.day))].sort((a, b) => a - b);
@@ -3300,6 +3290,7 @@ function gridSelPrompt(x, y) {
     const num = Number(raw);
     if (raw === '' || raw === '-' || !isFinite(num)) { gridSelClear(); return; }
     const pct = Math.max(-95, Math.min(100, Math.round(num * 100) / 100));
+    pushStageUndo(t('undo_area', { n: cells.length }));
     let staged = 0, conflicts = 0;
     for (const c of cells) {
       const k = key(c.day, c.dur);
@@ -3382,6 +3373,7 @@ async function fillColumn(dur) {
   if (raw === null || raw.trim() === '') return;
   const num = Number(raw.trim().replace(',', '.'));
   if (!isFinite(num)) { toast('Invalid number.', 'error'); return; }
+  pushStageUndo(t('undo_column', { dur }));
   for (let day = 1; day <= state.grid.daysInMonth; day++) {
     const k = key(day, dur);
     if (state.conflictSet.has(k)) continue;
@@ -3399,6 +3391,7 @@ async function fillRow(day) {
   if (raw === null || raw.trim() === '') return;
   const num = Number(raw.trim().replace(',', '.'));
   if (!isFinite(num)) { toast('Invalid number.', 'error'); return; }
+  pushStageUndo(t('undo_row', { d: String(day).padStart(2, '0') }));
   for (const dur of state.durations) {
     const k = key(day, dur);
     if (state.conflictSet.has(k)) continue;
@@ -3412,13 +3405,62 @@ async function fillRow(day) {
 
 // ---------- apply ----------
 
+// ---------- undo for staged operations (Berkay, 2026-08-31) ----------
+// "büyük alanı seçip yanlışlıkla yüzde yazıldı, undo olabilsin": every bulk
+// staging step (area fill, row/column fill, single edit, a whole competitor
+// analysis) snapshots the staged map BEFORE it mutates, so one click puts the
+// board back exactly as it was. This is pre-APPLY only — once a change is
+// written to DPS the Activity view's REVERT owns it, and the stack is cleared.
+const stageHistory = [];
+const STAGE_HISTORY_MAX = 25;
+
+function pushStageUndo(label) {
+  stageHistory.push({ label, snap: new Map([...state.staged].map(([k, v]) => [k, { ...v }])) });
+  if (stageHistory.length > STAGE_HISTORY_MAX) stageHistory.shift();
+}
+
+function undoStage() {
+  if (state.applying) return;
+  const prev = stageHistory.pop();
+  if (!prev) return;
+  // every cell that differs between now and the snapshot has to be repainted
+  const touched = new Set([...state.staged.keys(), ...prev.snap.keys()]);
+  state.staged.clear();
+  for (const [k, v] of prev.snap) state.staged.set(k, v);
+  for (const k of touched) {
+    const [d, du] = k.split(':').map(Number);
+    refreshCell(d, du);
+  }
+  // the docked panel may be simulating a cell whose staging just vanished
+  if (rcCtx && rcCtx.placed && !rcCtx.placed.applied) resetGmSim();
+  renderApplyBar();
+  toast(t('undo_done', { what: prev.label }));
+}
+
 function renderApplyBar() {
-  $('applyBar').classList.toggle('hidden', state.staged.size === 0);
+  // the bar keeps its reserved space; only its contents go quiet
+  $('applyBar').classList.toggle('hidden', state.staged.size === 0 && !stageHistory.length);
   $('stagedCount').textContent = state.staged.size;
-  $('applyBtn').disabled = state.applying;
-  $('discardBtn').disabled = state.applying;
+  $('applyBtn').disabled = state.applying || state.staged.size === 0;
+  $('discardBtn').disabled = state.applying || state.staged.size === 0;
+  const u = $('undoBtn');
+  if (u) {
+    u.disabled = state.applying || !stageHistory.length;
+    u.title = stageHistory.length ? t('undo_tip', { what: stageHistory[stageHistory.length - 1].label }) : '';
+  }
   if (state.entry) updateChips();
 }
+
+$('undoBtn').onclick = undoStage;
+// Ctrl/Cmd-Z on the grid does the same thing
+document.addEventListener('keydown', (e) => {
+  if (!(e.key === 'z' || e.key === 'Z') || !(e.ctrlKey || e.metaKey) || e.shiftKey) return;
+  if (state.view !== 'grid' || !stageHistory.length) return;
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return; // let the field own its own undo
+  e.preventDefault();
+  undoStage();
+});
 
 $('discardBtn').onclick = async () => {
   if (state.applying) return;
@@ -3435,6 +3477,8 @@ $('discardBtn').onclick = async () => {
   // the docked panel may be simulating one of the discarded cells — a ladder
   // still showing TARGET rows for a change that no longer exists would lie
   if (rcCtx && rcCtx.placed && !rcCtx.placed.applied) resetGmSim();
+  stageHistory.length = 0;
+  renderApplyBar();
   flagsResume(60 * 1000); // nothing staged any more — suspicion may re-arm
 };
 
@@ -3536,6 +3580,10 @@ $('applyBtn').onclick = async () => {
   }
 
   state.applying = false;
+  // what is written to DPS is no longer undoable here — the Activity view's
+  // REVERT is the tool for that, and a stale stack would silently re-stage
+  // values the operator already applied
+  if (ok) stageHistory.length = 0;
   renderApplyBar();
   toast(`Apply finished: ${ok} ok, ${fail} failed.`, fail ? 'warn' : undefined);
   // Berkay, 2026-08-30: an APPLY that wrote the cell the docked panel is
@@ -6930,6 +6978,7 @@ async function runScan(scope) {
   const SCAN_POOL = 3;
   const failedCells = []; // cells lost to non-transient errors — retried once at the end
   scan.running = true;
+  pushStageUndo(t('undo_scan')); // one undo step for the whole pass
   flagsPause(); // a scan mid-run repaints the board — no amber until it lands
   scan.cancel = false;
   scan.compare.clear(); // the popup only ever describes the run that just went out
