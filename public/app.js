@@ -7122,8 +7122,7 @@ async function runScan(scope) {
               if (!Array.isArray(x.categories)) continue;
               for (const c of x.categories) if (RC_CAT_MAP[c]) cats.add(RC_CAT_MAP[c]);
             }
-            let factor = null;
-            let floor = null; // highest per-category floor across the set
+            let factor = null; // tightest per-category target
             for (const cat of cats) {
               if (governSet && !governSet.has(cat)) continue; // not a category we price
               const rowsF = r.top.filter((x) => rowInCat(x, cat));
@@ -7134,21 +7133,45 @@ async function runScan(scope) {
               const cheapest = compF[0];
               const f = (cheapest * (1 - UNDERCUT_TARGET)) / gmF[0].price; // 97 per their 100
               if (isFinite(f) && f > 0 && (factor == null || f < factor)) factor = f;
-              // the band's floor: 95 per 100, and never >10 CHF under
-              const fl = Math.max(cheapest * (1 - MAX_UNDERCUT), cheapest - MAX_UNDERCUT_CHF) / gmF[0].price;
-              if (isFinite(fl) && fl > 0 && (floor == null || fl > floor)) floor = fl;
             }
             if (factor == null) continue;
-            if (floor != null && floor > factor) {
-              // Below the band — either one category's target would bury
-              // another, or GM is simply selling too cheap (the 40-vs-80 CHF
-              // days). Both are corrections that have to be WRITTEN, so the
-              // floor becomes the target — the one case where SCAN moves a
-              // price up.
-              factor = floor;
+            // THE BAND IS JUDGED ON THE OVERALL MARKET, NOT PER CATEGORY
+            // (Berkay, 2026-08-31 — measured). The old rule clamped the cell
+            // up to the HIGHEST per-category floor, so a single category where
+            // GM already led took the whole cell hostage: after the base rates
+            // dropped, GM's wagons undercut the wagon field everywhere, that
+            // category's floor went ABOVE 1, and the scan started writing
+            // RAISES across October (17 Oct 2D: market asked 0.776, the clamp
+            // applied 1.087 — GM sat at rank 13-36 all month).
+            //
+            // What the doctrine actually says: the CHEAPEST Green Motion car
+            // sits just under the CHEAPEST competitor — target 97 per 100,
+            // never below 95 per 100 or 10 CHF under. One percent cannot hold
+            // every category inside its own band, and pretending otherwise is
+            // what broke the month.
+            const compAll = r.top.filter((x) => !/green motion/i.test(x.supplier)).map((x) => x.price);
+            if (!compAll.length) continue;
+            const cheapAll = Math.min(...compAll);
+            const bandTop = cheapAll * (1 - UNDERCUT_TARGET);
+            const bandFloor = Math.max(cheapAll * (1 - MAX_UNDERCUT), cheapAll - MAX_UNDERCUT_CHF);
+            // already sitting in the band: nothing to write, and above all no
+            // raise — this is the case that used to push rank-1 cells out
+            if (r.gmPrice >= bandFloor && r.gmPrice <= bandTop) continue;
+            const targetFactor = bandTop / r.gmPrice;
+            const floorFactor = bandFloor / r.gmPrice;
+            if (r.gmPrice > bandTop) {
+              // above the band: come down into it. The category targets still
+              // choose HOW deep inside the band to land, they just can never
+              // push the cheapest car out of it.
+              factor = Math.min(Math.max(factor, floorFactor), targetFactor);
+            } else {
+              // genuinely underselling (the 40-vs-80 CHF days) — the one case
+              // where SCAN moves a price UP
+              factor = floorFactor;
               cellFloored = true;
               floored++;
-            } else if (Math.abs(factor - 1) < 0.005) continue; // already in the band
+            }
+            if (Math.abs(factor - 1) < 0.005) continue; // nothing worth writing
             // p' = p * factor  =>  (1 + new/100) = (1 + cur/100) * factor
             newPct = Math.round(((1 + curPct / 100) * factor - 1) * 10000) / 100;
           } else {
