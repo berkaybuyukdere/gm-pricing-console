@@ -236,7 +236,9 @@ f77748c (every price-judging path on the limit), **`console-00106-wes` = b5a1c30
 d6d9542 = tag `relay-first-2026-09-03` (cloud rc queries go relay-first — the
 fix for the 2026-09-03 rc-top 502 outage; **any rollback must land on or after
 this one**, the earlier revisions carry the direct-first bug that the /tmp
-cache was hiding). Fast rollback
+cache was hiding), `console-00110-dos` = cf76ebd = tag `waf-breaker-2026-09-03`
+(WAF challenge recognised, 5-minute breaker, no client retries on refusals —
+**current**). Fast rollback
 (~30 s, traffic only): `gcloud run services update-traffic console --region
 europe-west6 --project sentinelpricing --to-revisions console-00102-qok=100`.
 Full rollback: `git checkout rollback-pre-band-2026-09-03 && npx firebase deploy
@@ -292,8 +294,19 @@ the chip says so. Every relay rejection is logged with the status and the first
 80 bytes of the body. The client never retries a refusal (`RC_CHALLENGED`,
 `RC_RELAY_CHALLENGE|BLOCKED_n|EMPTY`) — it reads the body once, eases the
 loops, and the panel says "rentalcars is challenging the relay — holding off".
-Pinned by `test/rc-breaker.test.js`. Whether silence lifts the challenge, and
-how fast, is measured after each incident — do not assume.
+Pinned by `test/rc-breaker.test.js`. Silence did NOT lift the challenge within
+25 minutes on 2026-09-03. What did: a browser on the relay's machine passes the
+challenge and holds an `aws-waf-token` cookie; a plain fetch that sends that
+cookie is served again (measured: 202 → 200, 240 rows, 2.3 s). The relay reads
+`waf-token.txt` beside `relay.js` and attaches it to every rentalcars fetch,
+and logs any non-200/`x-amzn-waf-action` answer — the same patch lives in the
+installed relay (`~/GMPricingRelay/relay.js`, written by the installer; backup
+`relay.js.bak-2026-09-03`), in `relay-clients/install-mac.sh` (the source the
+installer writes) and in the repo's `relay.js` (`npm run relay`). Refresh the
+token from a browser (`document.cookie` → `aws-waf-token`) when the relay log
+shows 202/challenge; its lifetime is being measured. The durable version — the
+relay refreshing its own token through a headless Chrome — is the next step if
+the lifetime turns out short.
 
 ## Why sync was slow
 

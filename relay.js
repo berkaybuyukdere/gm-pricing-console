@@ -49,8 +49,22 @@ function startRelay(cfg, log = console.log) {
       } else if (new URL(job.url).hostname !== 'www.rentalcars.com') {
         body = { id: job.id, ok: false, error: 'BAD_URL' }; // only rentalcars is ever fetched
       } else {
-        const r = await fetch(job.url, { headers: job.headers, signal: AbortSignal.timeout(25000) });
-        body = { id: job.id, ok: true, status: r.status, body: await r.text() }; // 4xx/5xx flow through as status
+        // rentalcars fronts the search API with AWS WAF; a rate rule answers 202 +
+        // `x-amzn-waf-action: challenge` (2026-09-03). A browser on this machine
+        // passes that challenge and holds an `aws-waf-token` cookie; with that
+        // cookie a plain fetch is served again (measured: 202 -> 200, 240 rows).
+        // The token lives in waf-token.txt beside this file; refresh it from a
+        // browser when the log shows 202/challenge again.
+        const headers = { ...job.headers };
+        try {
+          const tok = fs.readFileSync(path.join(__dirname, 'waf-token.txt'), 'utf8').trim();
+          if (tok) headers.Cookie = 'aws-waf-token=' + tok;
+        } catch {}
+        const r = await fetch(job.url, { headers, signal: AbortSignal.timeout(25000) });
+        const text = await r.text();
+        const waf = r.headers.get('x-amzn-waf-action');
+        if (r.status !== 200 || waf) log(`[relay] rentalcars answered ${r.status}${waf ? ' waf=' + waf : ''} bytes=${text.length}`);
+        body = { id: job.id, ok: true, status: r.status, body: text }; // 4xx/5xx flow through as status
       }
     } catch (e) {
       body = { id: job.id, ok: false, error: e.message };
