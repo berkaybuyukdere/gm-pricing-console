@@ -319,6 +319,24 @@
           </div>
         </div>
         <div class="dash-row">
+          <div class="card card-grow" id="setBandCard">
+            <div class="card-title"><span data-i18n="set_band">PRICING BAND</span>
+              <span class="rank-controls">
+                <button class="btn btn-ghost btn-xs hidden" id="setBandReset" data-i18n="set_band_reset">MEASURED DEFAULTS</button>
+                <button class="btn btn-ghost btn-xs hidden" id="setBandSave" data-i18n="save">SAVE</button>
+              </span>
+            </div>
+            <div class="set-hint" data-i18n="set_band_hint">Francs our cheapest car sits under the cheapest competitor, per rental length. However many of our cars fit under them, fit. Empty = the measured default.</div>
+            <div class="band-grid" id="setBandGrid"></div>
+            <div class="set-row">
+              <span class="set-label" data-i18n="set_band_guard">LOW-PRICE GUARD</span>
+              <span class="band-guard"><input type="number" id="setBandGuard" class="field-input band-input" min="10" max="30" step="1"> %</span>
+            </div>
+            <div class="set-hint" data-i18n="set_band_guard_hint">A backstop for cheap fields only: our cheapest car never goes more than this far under, whatever the francs say. It bites under ~67 CHF and nowhere else.</div>
+            <div class="set-hint" id="setBandHint"></div>
+          </div>
+        </div>
+        <div class="dash-row">
           <div class="card card-grow" id="setFranchiseCard">
             <div class="card-title"><span data-i18n="set_franchises">FRANCHISES</span>
               <span class="rank-controls">

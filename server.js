@@ -3689,21 +3689,40 @@ const AUTOSCAN = {
   freshBudget: 40,      // rc queries that actually go out, per run
   minChangePct: 1.5,
   ratingWarn: 8.2,      // rentalcars' "8.0+" filter cliff, with a safety margin
-  // THE PRICING BAND (Berkay, 2026-08-28): sit JUST under the cheapest
-  // competitor — "if the cheapest firm is at 100 CHF, be at 95-97, never 70".
-  // The target is cheapest x (1 - undercutTarget) = 97 per 100; the floor is
-  // cheapest x (1 - maxUndercut) = 95 per 100, AND never more than
-  // maxUndercutChf francs under the cheapest (which is what binds on long,
-  // expensive rentals: at 400 CHF the floor is 390, not 380).
+  // THE PRICING BAND (Berkay, 2026-09-02 — supersedes the 97/95-per-100 band):
+  // our CHEAPEST car sits a fixed number of FRANCS under the cheapest
+  // competitor, and however many of our cars fit under them, fit.
+  //
+  // The old band put 3% on our cheapest car and let the base-rate ladder carry
+  // the fleet upward, so against a 100 CHF field we sat at 97/99/100/100/101/
+  // 102/106 — three cars under out of seven. Worse, the floor was computed PER
+  // CATEGORY, so when the binding category was some other one our cheapest car
+  // could sit 20 CHF under the field. Both anchors are market-wide now.
+  //
+  // THE GAP IS PER RENTAL LENGTH, AND MEASURED — not modelled. A flat figure
+  // is ~15% of a one-day field and ~2% of a fourteen-day one. On 2026-09-03 a
+  // read-only sweep of 98 ZRH cells (4-17 Sep, 09:00, seven durations) showed
+  // the served ladder keeps one shape at every length (our 5th car / our 1st
+  // ~ 1.07-1.10), so "five of our cars under the field" costs ~8% of the field
+  // price, and the field price grows with the length. These are the medians
+  // that put FIVE of our cars under the cheapest competitor, measured for
+  // 1/2/3/5/7/10/14 and interpolated between; 3 days is the 10 CHF Berkay
+  // asked for. Simulated back over every measured cell: 5 [3..6] cars under
+  // at every duration, 7-9.5% of the field. The linear 4+2d guess it replaced
+  // fell to 3 cars at 14 days. An operator's own table is stored per tenant
+  // (autoState().gapChfByDur) and overrides these entry by entry.
+  gapChfByDur: { 1: 4, 2: 8, 3: 10, 4: 13, 5: 15, 6: 17, 7: 19, 8: 21, 9: 24, 10: 26, 11: 30, 12: 33, 13: 37, 14: 40 },
+  gapBandChf: 1,  // the slack either side that stops a cell being rewritten over a franc
+  // A flat franc gap on a cheap enough field IS the giveaway the franc rule
+  // guards against (10 off a 40 CHF field is a quarter of the price), so a
+  // percentage still backstops the bottom. It only bites under ~67 CHF.
+  lowPriceGuard: 0.15,
   //
   // All of this runs on the prices rentalcars actually DISPLAYS — when a
   // campaign discount (the session-targeted -12%) is active, the API's `price`
   // already carries it, and an FMX % change scales the displayed price
   // proportionally. So "win after the discount" is inherent to the math, not a
   // special case.
-  undercutTarget: 0.03,
-  maxUndercut: 0.05,
-  maxUndercutChf: 10,
   // which display categories the factor is allowed to chase. null = all of them;
   // an operator picks their own in the console and it is stored per tenant.
   categories: null,
@@ -3755,13 +3774,31 @@ function autoCategories() {
   return clean.length ? clean : AUTOSCAN.categories;
 }
 
-/** The live margin floor. Read through the durable state, not a module field:
- *  an operator's setting has to survive the next cold start. */
-function autoMaxUndercut() {
-  const v = Number(autoState().maxUndercut);
-  // the band changed meaning on 2026-08-28 (0.40 rank-guard -> 0.05 "95 per
-  // 100"); a stored value from the old world must not survive into the new one
-  return isFinite(v) && v >= 0 && v <= 0.2 ? v : AUTOSCAN.maxUndercut;
+/** The live gap table: the operator's per-duration francs over the measured
+ *  defaults, entry by entry, so a half-filled table still prices every column.
+ *  Read through the durable state so it survives the next cold start. */
+function autoGapTable() {
+  const own = autoState().gapChfByDur;
+  const out = { ...AUTOSCAN.gapChfByDur };
+  if (own && typeof own === 'object') {
+    for (let d = 1; d <= 14; d++) {
+      const v = Number(own[d]);
+      if (isFinite(v) && v >= 0 && v <= 200) out[d] = v;
+    }
+  }
+  return out;
+}
+
+/** The live low-price backstop. Read through the durable state, not a module
+ *  field: an operator's setting has to survive the next cold start. */
+function autoLowGuard() {
+  const st = autoState();
+  const v = Number(st.lowPriceGuard != null ? st.lowPriceGuard : st.maxUndercut);
+  // the band has changed meaning twice (0.40 rank-guard -> 0.05 "95 per 100"
+  // -> a franc gap with a percentage backstop). A stored 0.05 belongs to the
+  // middle world and is far too tight to be a backstop, so only a value in the
+  // new range is honoured.
+  return isFinite(v) && v >= 0.1 && v <= 0.3 ? v : AUTOSCAN.lowPriceGuard;
 }
 function proposalSets() {
   if (!Array.isArray(watchBase.__proposals)) watchBase.__proposals = [];
@@ -3814,66 +3851,87 @@ const propSame = (a, b) => {
 };
 
 /**
- * THE CATEGORY FACTOR (canonical, 2026-08-28):
- *   for each display category c where GM has >=1 offer AND >=1 competitor:
- *     cheapest_c = the cheapest COMPETITOR price in c (displayed price — any
- *                  active campaign discount is already inside it)
- *     gmCheap_c  = cheapest GM offer price in c (same basis)
- *     target_c   = cheapest_c * (1 - undercutTarget)      // 97 per 100
- *     floor_c    = max(cheapest_c * (1 - maxUndercut),    // 95 per 100
- *                      cheapest_c - maxUndercutChf)       // never >10 CHF under
- *     f_c        = target_c / gmCheap_c
- *   factor = min(f_c), clamped up to max(floor_c / gmCheap_c).
+ * THE BAND, ANCHORED IN FRANCS ON OUR CHEAPEST CAR (Berkay, 2026-09-02).
  *
- * The goal is "just under the cheapest firm" — 95-97 against their 100 — not
- * deep undercutting. factor > 1 means GM is selling for LESS than the band and
- * the price should come UP; factor < 1 means GM is above the cheapest seller
- * and comes down to just under them.
+ *   cheapest  = the cheapest COMPETITOR price in scope (displayed price — any
+ *               active campaign discount is already inside it)
+ *   gmCheap   = our cheapest offer in scope, same basis
+ *   gap       = gapChfByDur[rentalDays]     // measured per length, operator-editable
+ *   floor     = max(cheapest - gap, cheapest * (1 - lowPriceGuard))
+ *   top       = max(cheapest - (gap - gapBandChf), floor)
+ *   factor    = target / gmCheap, target inside [floor, top]
+ *
+ * One FMX % scales every GM car together, so placing the CHEAPEST one fixes
+ * the whole block; how many of our cars end up under the field is an OUTCOME
+ * of how wide that station's base-rate ladder is, not a setting.
+ *
+ * Both anchors are market-wide. The previous version took min(target_c) over
+ * display categories and clamped up to max(floor_c): each category guarded
+ * only ITSELF, so whenever the binding category was some other one our overall
+ * cheapest car could sit far below the overall cheapest competitor — the 20
+ * CHF gaps Berkay reported. `categories` now only narrows WHICH rows count;
+ * both anchors then come from the same narrowed set, because anchoring our
+ * cheapest SUV on a mini's field price would be a catastrophe, not a discount.
+ *
+ * factor > 1 means we are selling for LESS than the band and the price should
+ * come UP; factor < 1 means we are above the field and come down to just under.
  */
 function categoryFactor(r, targetRank, opts = {}) {
   const only = Array.isArray(opts.categories) && opts.categories.length
     ? new Set(opts.categories)
     : null;
-  const undercutTarget = isFinite(opts.undercutTarget) ? Number(opts.undercutTarget) : AUTOSCAN.undercutTarget;
-  const maxUndercut = isFinite(opts.maxUndercut) ? Number(opts.maxUndercut) : AUTOSCAN.maxUndercut;
-  const maxChf = isFinite(opts.maxUndercutChf) ? Number(opts.maxUndercutChf) : AUTOSCAN.maxUndercutChf;
-  const found = [];
-  let factor = null;
-  let floor = null; // the highest per-category floor; nothing may go under it
+  const days = Math.min(Math.max(Math.round(Number(opts.duration) || 1), 1), 14);
+  const table = opts.gapChfByDur && typeof opts.gapChfByDur === 'object' ? opts.gapChfByDur : AUTOSCAN.gapChfByDur;
+  const gap = isFinite(opts.gapChf)
+    ? Number(opts.gapChf)
+    : Number(table[days] != null ? table[days] : AUTOSCAN.gapChfByDur[days]);
+  const guard = isFinite(opts.lowPriceGuard) ? Number(opts.lowPriceGuard) : AUTOSCAN.lowPriceGuard;
+  const slack = isFinite(opts.gapBandChf) ? Number(opts.gapBandChf) : AUTOSCAN.gapBandChf;
+
+  const inScope = (x) => {
+    if (!only) return true;
+    for (const cat of only) if (rcRowInCat(x, cat)) return true;
+    return false;
+  };
+  const rows = (r.top || []).filter(inScope);
+  const comp = rows.filter((x) => !rcIsGm(x)).map((x) => x.price);
+  const gmRows = rows.filter(rcIsGm);
+  if (!comp.length || !gmRows.length) return null; // we are absent here, or alone at the top
+
+  const cheapest = Math.min(...comp);
+  const gmCheap = Math.min(...gmRows.map((x) => x.price));
+  if (!isFinite(cheapest) || !isFinite(gmCheap) || gmCheap <= 0) return null;
+
+  const floor = Math.max(cheapest - gap, cheapest * (1 - guard));
+  const top = Math.max(cheapest - (gap - slack), floor);
+  const target = Math.min(Math.max(cheapest - gap + slack / 2, floor), top);
+
+  // already sitting in the band: nothing to write, and above all no raise
+  const inBand = gmCheap >= floor && gmCheap <= top;
+  let factor = inBand ? 1 : target / gmCheap;
+  if (!isFinite(factor) || factor <= 0) return null;
+  const clamped = gmCheap < floor; // was underselling — this is a correction UP
+
+  // per-category rank bookkeeping for the report, unchanged in shape
+  const cats = [];
   for (const cat of RC_CAT_KEYS) {
-    if (only && !only.has(cat)) continue; // a category the operator does not price
-    const rows = (r.top || []).filter((x) => rcRowInCat(x, cat)); // already price-sorted
-    if (!rows.length) continue;
-    const gm = rows.filter(rcIsGm);
-    const comp = rows.filter((x) => !rcIsGm(x)).map((x) => x.price);
-    if (!gm.length || !comp.length) continue; // GM absent here, or alone at the top
-    const cheapest = comp[0];
-    const gmCheap = gm[0].price;
-    const f = (cheapest * (1 - undercutTarget)) / gmCheap;
-    if (!isFinite(f) || f <= 0) continue;
-    found.push({ cat, rows, anchor: cheapest, gmPrice: gmCheap, rankNow: rows.findIndex(rcIsGm) + 1 });
-    if (factor == null || f < factor) factor = f;
-    // this category's own floor: 95 per 100, and never more than maxChf francs
-    // under — the franc bound is what actually bites on long, expensive rentals
-    const fl = Math.max(cheapest * (1 - maxUndercut), cheapest - maxChf) / gmCheap;
-    if (isFinite(fl) && fl > 0 && (floor == null || fl > floor)) floor = fl;
-  }
-  if (factor == null) return null;
-  // min(f_c) alone optimises the WORST category and pays for it everywhere
-  // else. When one category's target would push another under its own floor,
-  // the floor wins: fleet-wide margin is not spent rescuing one category.
-  const clamped = floor != null && floor > factor;
-  if (clamped) factor = floor;
-  // rankAfter: where GM lands in each category once every GM row is scaled
-  const cats = found.map((c) => {
-    const scaled = c.rows
+    if (only && !only.has(cat)) continue;
+    const rowsC = (r.top || []).filter((x) => rcRowInCat(x, cat));
+    if (!rowsC.length) continue;
+    const gmC = rowsC.filter(rcIsGm);
+    const compC = rowsC.filter((x) => !rcIsGm(x));
+    if (!gmC.length || !compC.length) continue;
+    const scaled = rowsC
       .map((x) => (rcIsGm(x) ? { ...x, price: x.price * factor } : x))
       .sort((a, b) => a.price - b.price);
-    return {
-      cat: c.cat, rankNow: c.rankNow, rankAfter: scaled.findIndex(rcIsGm) + 1,
-      gmPrice: round2(c.gmPrice), anchor: round2(c.anchor),
-    };
-  });
+    cats.push({
+      cat,
+      rankNow: rowsC.findIndex(rcIsGm) + 1,
+      rankAfter: scaled.findIndex(rcIsGm) + 1,
+      gmPrice: round2(gmC[0].price),
+      anchor: round2(compC[0].price),
+    });
+  }
   return { factor, cats, clamped };
 }
 
@@ -4042,9 +4100,9 @@ async function autoScan(budgetMs) {
       if (gmRow && gmRow.rating != null) ratings[t.station] = Number(gmRow.rating);
       const cf = categoryFactor(r, AUTOSCAN.targetRank, {
         categories: autoCategories(),
-        undercutTarget: AUTOSCAN.undercutTarget,
-        maxUndercut: autoMaxUndercut(),
-        maxUndercutChf: AUTOSCAN.maxUndercutChf,
+        duration: t.duration,          // the gap is per rental length
+        gapChfByDur: autoGapTable(),
+        lowPriceGuard: autoLowGuard(),
       });
       if (!cf) continue; // no category has both a GM offer and a competitor
       const ckey = `${t.day}:${t.duration}`;
@@ -4275,7 +4333,7 @@ function autoScanMailHtml(set) {
     ? `${set.items.length} fiyat önerisi hazır`
     : `${missing.length} gün/sürede GM listelenmiyor`;
   const intro = set.items.length
-    ? `Saatlik otomatik tarama önümüzdeki ${AUTOSCAN_HORIZON_DAYS} günü (bugünden ${horizonEnd()} tarihine kadar; yakın günler her kiralama süresiyle, uzak günler seyrek örneklemle) tarıyor ve her kategoride en ucuz rakibin hemen altında (hedef %3, en fazla %5 / 10 CHF) kalmak için fiyatın hareket etmesi gereken ${set.items.length} gün/süre kombinasyonu buldu. Aşağıdaki tablolar hangi günde ne yapılması gerektiğini gösterir; hepsini birden onaylamak için tablonun altındaki düğmeyi kullanabilir, tek tek bakmak istersen Konsolu açabilirsin.`
+    ? `Saatlik otomatik tarama önümüzdeki ${AUTOSCAN_HORIZON_DAYS} günü (bugünden ${horizonEnd()} tarihine kadar; yakın günler her kiralama süresiyle, uzak günler seyrek örneklemle) tarıyor ve en ucuz aracımızı en ucuz rakibin hemen altına oturtmak için (kiralama süresine göre ölçülmüş frank farkı; 3 günde ${autoGapTable()[3]} CHF, 7 günde ${autoGapTable()[7]} CHF) fiyatın hareket etmesi gereken ${set.items.length} gün/süre kombinasyonu buldu. Aşağıdaki tablolar hangi günde ne yapılması gerektiğini gösterir; hepsini birden onaylamak için tablonun altındaki düğmeyi kullanabilir, tek tek bakmak istersen Konsolu açabilirsin.`
     : `Saatlik otomatik tarama fiyat değişikliği gerektiren bir gün bulamadı, ancak aşağıdaki gün/sürelerde rakipler satarken GM rentalcars'ta hiç listelenmiyor — bu doğrudan rezervasyon kaybıdır ve fiyat kuralıyla çözülmez.`;
   return alertMailHtml(title, sections, intro, extra);
 }
@@ -4688,7 +4746,11 @@ app.get(
     res.json({
       all: RC_CAT_KEYS,
       selected: autoCategories() || [], // [] = every category
-      maxUndercut: autoMaxUndercut(),
+      lowPriceGuard: autoLowGuard(),
+      gapChfByDur: autoGapTable(),          // effective: the operator's over the defaults
+      own: autoState().gapChfByDur || {},   // only what the operator actually set
+      gapDefaults: AUTOSCAN.gapChfByDur,
+      gapBandChf: AUTOSCAN.gapBandChf,
       targetRank: AUTOSCAN.targetRank,
     });
   })
@@ -4704,10 +4766,27 @@ app.post(
     if (list.length && !clean.length) throw new FmxError('BAD_CATEGORY', 400);
     // empty list = govern every category, the engine's original behaviour
     autoState().categories = clean;
-    if (body.maxUndercut != null) {
-      const mu = Number(body.maxUndercut);
-      if (!isFinite(mu) || mu < 0 || mu > 0.2) throw new FmxError('BAD_UNDERCUT', 400);
-      autoState().maxUndercut = mu;
+    // the low-price backstop, not a target: below ~67 CHF it is what stops a
+    // flat franc gap turning into a quarter off the price
+    if (body.lowPriceGuard != null) {
+      const g = Number(body.lowPriceGuard);
+      if (!isFinite(g) || g < 0.1 || g > 0.3) throw new FmxError('BAD_UNDERCUT', 400);
+      autoState().lowPriceGuard = g;
+    }
+    // the per-duration gap table: francs under the cheapest competitor for our
+    // cheapest car. Entries are stored one by one; a missing or empty entry
+    // falls back to the measured default for that duration.
+    if (body.gapChfByDur != null) {
+      if (typeof body.gapChfByDur !== 'object') throw new FmxError('BAD_GAP', 400);
+      const tbl = {};
+      for (let d = 1; d <= 14; d++) {
+        const raw = body.gapChfByDur[d];
+        if (raw == null || raw === '') continue;
+        const v = Number(raw);
+        if (!isFinite(v) || v < 0 || v > 200) throw new FmxError('BAD_GAP', 400);
+        tbl[d] = Math.round(v * 10) / 10;
+      }
+      autoState().gapChfByDur = tbl;
     }
     saveWatchBase();
     addLog({
@@ -4716,7 +4795,7 @@ app.post(
       before: null, after: null, ok: true,
       file: clean.length ? clean.join(', ') : 'TÜM KATEGORİLER',
     });
-    res.json({ ok: true, selected: clean, maxUndercut: autoMaxUndercut() });
+    res.json({ ok: true, selected: clean, lowPriceGuard: autoLowGuard(), gapChfByDur: autoGapTable() });
   })
 );
 

@@ -83,19 +83,64 @@ rule name. Any code path calling `fmx.updateRule` must restate `vehicleIds` and
 rule with its category name stripped. `PUT /api/rule/:id` now inherits both from
 the live rule when the body omits them; an explicit `vehicleIds` array still wins.
 
-## The pricing band (2026-08-28 — CURRENT)
+## The pricing band (2026-09-02 — CURRENT, measured 2026-09-03)
 
-Sit JUST under the cheapest competitor: target = cheapest x 0.97, floor =
-max(cheapest x 0.95, cheapest - 10 CHF) per category; min(targets) clamped up to
-max(floors). Berkay's words: "if they are at 100, be at 95-97 — never 70." SCAN
-writes upward corrections when a price is under the band. All math runs on
-DISPLAYED prices, so campaign discounts are inherently accounted for.
+Our CHEAPEST car sits a fixed number of FRANCS under the cheapest competitor —
+francs PER RENTAL LENGTH — and however many of our cars fit under them, fit:
 
-Deliberate rollbacks — do not resurrect: weekly rules always cover ALL vehicle
-groups (picker retired), the lane bar is off (the lane model stays), and SCAN
-asks no questions (all categories, only cells with weekly rules, 30-min cache).
-Station maintenance (RESET / COPY TO…) lives on the grid topbar, admin-only;
-the purge deletes 100 rules per FMX request.
+    gap    = gapChfByDur[days]           # measured, operator-editable, per tenant
+    floor  = max(cheapest - gap, cheapest x 0.85)
+    top    = max(cheapest - (gap - 1), floor)
+    target = the middle; SCAN and the panel both use bandFor() / categoryFactor()
+
+One FMX % scales every GM car together, so placing the cheapest one fixes the
+whole block. **How many of our cars land under the field is an OUTCOME** of the
+served ladder's width that day, never a setting. Berkay chose that explicitly
+("sabit degil — tabana kadar kac arac sigarsa").
+
+**The table is measured, not modelled.** 2026-09-03, read-only sweep of 98 ZRH
+cells (4-17 Sep, 09:00, 1/2/3/5/7/10/14 days) straight from rentalcars via
+`lib/rc.js` on the operator's machine — no Cloud Run load. Findings that set it:
+- The served ladder keeps ONE shape at every length (our 5th car / our 1st is
+  1.07-1.10), so "five of our cars under the field" costs ~8% of the field, and
+  the field price grows with the length. A flat franc figure is 15% of a 1-day
+  field and 2% of a 14-day one — it held 10 cars under on day-1 (a giveaway)
+  and collapsed to 1 on 5+ days.
+- Medians that put five of our cars under: 1d 4 · 2d 8 · **3d 10** · 5d 15 ·
+  7d 19 · 10d 26 · 14d 40 CHF, interpolated between. Simulated back over every
+  measured cell: 5 [3..6] cars under at every length, 7-9.5% of the field. The
+  linear 4+2d guess it replaced fell to 3 cars at 14 days.
+- What was live that day was inconsistent in BOTH directions: 14 of 77 listed
+  cells were NOT #1 (0.3-8 CHF above the field), while 7 Sep 14d sat 83 CHF
+  under with the first six ranks ours. And GM was absent from rentalcars on
+  4-6 Sep at every length — a listing problem, not a pricing one.
+- Raw sweep: `test/fixtures/zrh-sweep-2026-09-03.jsonl`; the band test replays
+  it (every cell lands in band, never fewer than two cars under, 3+ on 95%+).
+
+Where it lives: `server.js` (`AUTOSCAN.gapChfByDur`, `autoGapTable()`,
+`categoryFactor`, GET/POST `/api/autoscan/categories`), `public/app.js`
+(`GAP_DEFAULTS`, `BAND`, `bandFor()`, `loadPricingBand()` at boot, SCAN, the
+panel's band line + `snapToBand()`, the Settings card `renderBandCard`).
+
+**The panel says what SCAN would do** (2026-09-02): a band line under the sim
+bar — cheapest competitor, this length's target gap, floor-top, where we sit,
+and a verdict chip (BANTTA / PAHALI / ÇOK UCUZ); a projection adds "cars under
+the field b0 → b1 · gap g0 → g1"; the projected ladder shows the whole block
+through the first competitor; BANDA OTUR projects exactly what SCAN would write
+for the cell. The grid's double-click editor already re-projects per tick
+(`gridLivePreview`).
+
+Two things the previous (97/95-per-100) band got wrong, both measured:
+- It put 3% on our cheapest car and let the ladder carry the rest upward, so
+  against a 100 CHF field we sat 97/99/100/100/101/102/106 — three under of 7.
+- Its floor was PER CATEGORY and each category guarded only itself, so when the
+  binding category was another one our overall cheapest car could sit 20 CHF
+  under. **Both anchors are market-wide now**; `categories` only narrows WHICH
+  rows count, and both anchors then come from that same set.
+
+The 15% `lowPriceGuard` backstops the bottom and only bites under ~67 CHF.
+`autoLowGuard()` refuses a stored value outside [0.10, 0.30] so a 0.05 from the
+middle world cannot survive. Pinned by `test/margin-floor.test.js` (15 checks).
 
 ## Tests
 

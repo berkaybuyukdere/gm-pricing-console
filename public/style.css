@@ -3296,3 +3296,48 @@ select.usr-role:disabled { opacity: 0.55; cursor: not-allowed; }
 }
 .rc-hour-step:hover { opacity: 1; border-color: var(--accent); }
 .rc-hour-step:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* ---------- the pricing band line in the analysis panel (2026-09-02) ---------- */
+.rc-band { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rc-band-chip {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.rc-band-chip.rc-band-in { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.rc-band-chip.rc-band-out { border-color: var(--warn); color: var(--warn); background: var(--warn-dim); }
+.rc-band-chip.rc-band-none { border-color: var(--error); color: var(--error); background: var(--error-dim); }
+.rc-band-actions { display: flex; justify-content: flex-end; padding: 0 0 8px; }
+
+/* ---------- settings: the per-duration gap table (2026-09-02) ---------- */
+.band-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px 8px;
+  margin: 10px 0 12px;
+}
+.band-cell { display: flex; flex-direction: column; gap: 3px; }
+.band-cell label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: var(--text-mute);
+}
+.band-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  text-align: right;
+}
+.band-cell .band-pct {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-mute);
+  text-align: right;
+}
+.band-guard { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 12px; }
+.band-guard .band-input { width: 72px; }
+@media (max-width: 1100px) { .band-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
