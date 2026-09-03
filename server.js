@@ -1762,7 +1762,17 @@ app.post('/api/relay/result', (req, res) => {
   if (!job) return res.json({ ok: false, note: 'unknown or expired job' });
   relayState.jobs.delete(id);
   clearTimeout(job.timer);
+  // every rejection below is logged with what the relay actually saw — on
+  // 2026-09-03 hundreds of them went by as bare 502s and nobody could tell a
+  // WAF challenge from a parse error
+  const relayNote = (why) => {
+    const now = Date.now();
+    if (now - (relayState.lastNote || 0) < 5000) return;
+    relayState.lastNote = now;
+    console.warn(`[relay] job rejected: ${why} status=${status} bytes=${body ? String(body).length : 0} head=${JSON.stringify(String(body || '').slice(0, 80))}`);
+  };
   if (!ok) {
+    relayNote('worker: ' + (error || 'FAILED'));
     job.reject(new FmxError('RC_RELAY_' + (error || 'FAILED'), 502));
   } else if (data !== undefined) {
     // legacy relay: parsed on the worker — the weakest accepted shape defines
@@ -1777,9 +1787,14 @@ app.post('/api/relay/result', (req, res) => {
   } else {
     // raw relay: the worker fetched but never parsed — classify + parse here
     const st = Number(status);
-    if (st === 403 || st === 405 || st === 429) {
-      job.reject(new FmxError('RC_RELAY_BLOCKED_' + st, 502)); // relay IP refused too
+    const kind = rcRefusalKind(st, body);
+    if (kind) {
+      // the relay's IP is being refused — every further query only prolongs it
+      rcTripBreaker(kind, `relay status=${st}`);
+      relayNote(kind);
+      job.reject(new FmxError('RC_RELAY_' + kind, 502));
     } else if (st !== 200) {
+      relayNote('HTTP ' + st);
       job.reject(new FmxError('RC_RELAY_BAD_RESULT', 502));
     } else {
       let parsed = null;
@@ -1789,7 +1804,7 @@ app.post('/api/relay/result', (req, res) => {
       } catch {}
       const good = job.parse ? Array.isArray(parsed) : !!parsed && Array.isArray(parsed.top);
       if (good) job.resolve(parsed);
-      else job.reject(new FmxError('RC_RELAY_BAD_RESULT', 502));
+      else { relayNote('unparsable 200'); job.reject(new FmxError('RC_RELAY_BAD_RESULT', 502)); }
     }
   }
   res.json({ ok: true });
@@ -1964,6 +1979,48 @@ async function rcSampled(fetchOne, want, prevList) {
   return winner;
 }
 
+// ---------- rentalcars refusals and the circuit breaker (2026-09-03) ----------
+// rentalcars fronts its search API with AWS WAF. When an IP exceeds a rate
+// rule the edge answers HTTP 202 with an EMPTY body and `x-amzn-waf-action:
+// challenge` — a JavaScript challenge only a browser can pass. Measured on the
+// relay's own IP at 11:54 UTC after a morning in which the console had pushed
+// 100+ queries a minute through it: every fetch came back 202/empty in 60 ms,
+// the server turned each into a 502, the client retried, the relay kept
+// fetching, and the IP never went quiet enough for the challenge to lift.
+//
+// So a refusal now trips a breaker: for RC_BREAKER_MS no rentalcars query is
+// dispatched at all — fresh callers get the stale snapshot when there is one
+// and a clear RC_CHALLENGED (503, Retry-After) when there is not. Silence is
+// the only thing that lifts the challenge.
+const RC_BREAKER_MS = 5 * 60 * 1000;
+const rcBreaker = { until: 0, kind: null, trips: 0, lastNote: 0 };
+
+/** What a rentalcars answer means, from its status and body alone. */
+function rcRefusalKind(status, body) {
+  const st = Number(status);
+  if (st === 202 && !(body && String(body).trim())) return 'CHALLENGE'; // AWS WAF challenge
+  if (st === 403 || st === 405 || st === 429) return 'BLOCKED_' + st;
+  if (st === 200 && !(body && String(body).trim())) return 'EMPTY';
+  return null;
+}
+
+function rcTripBreaker(kind, detail) {
+  const now = Date.now();
+  rcBreaker.until = now + RC_BREAKER_MS;
+  rcBreaker.kind = kind;
+  rcBreaker.trips++;
+  if (now - rcBreaker.lastNote > 30 * 1000) {
+    rcBreaker.lastNote = now;
+    console.warn(`[rc] breaker tripped (${kind}) — no rentalcars queries for ${RC_BREAKER_MS / 1000}s; ${detail || ''}`);
+  }
+}
+const rcBreakerOpen = () => Date.now() < rcBreaker.until;
+const rcBreakerError = () => {
+  const e = new FmxError('RC_CHALLENGED', 503);
+  e.retryAfter = Math.max(5, Math.ceil((rcBreaker.until - Date.now()) / 1000));
+  return e;
+};
+
 // one line per minute at most: the direct path's failure reason belongs in the
 // logs (it was invisible on 2026-09-03), but a scan must not write 300 of them
 let rcDirectNoteAt = 0;
@@ -1982,6 +2039,12 @@ async function rcQuery({ station, year, month, day, duration, hh, mm, ttlMs, sam
   const cacheKey = `${station}:${year}-${month}-${day}:${hh}${mm}:${duration}`;
   const hit = rcCache[cacheKey];
   if (hit && Date.now() - hit.ts < ttlMs) return { ...hit.data, cachedAt: hit.ts };
+  // the breaker: while rentalcars is refusing the relay's IP, asking again only
+  // keeps the refusal alive. Serve what we have, say why when we have nothing.
+  if (rcBreakerOpen()) {
+    if (hit) return { ...hit.data, cachedAt: hit.ts, stale: true, challenged: true };
+    throw rcBreakerError();
+  }
 
   const args = { station, year, month, day, duration, hh, mm };
   // In the cloud the relay IS the path (rentalcars refuses datacenter egress);
@@ -1999,6 +2062,9 @@ async function rcQuery({ station, year, month, day, duration, hh, mm, ttlMs, sam
     try {
       return await rcFetch(args); // direct — always works from residential IPs
     } catch (e) {
+      if (e && (e.blocked || /Unexpected end of JSON/.test(String(e.message)))) {
+        rcTripBreaker(e.blocked ? 'BLOCKED_' + e.status : 'CHALLENGE', 'direct: ' + e.message);
+      }
       if (store.IS_CLOUD && relayOnline()) {
         rcDirectFailureNote(e);
         const d = await relayDispatch(args);
@@ -2171,6 +2237,9 @@ app.get('/api/capacity', (req, res) => {
     usedThisMinute: mine.length,
     perMinute: rcGuard.perMinute,
     busy: rcGuard.live >= rcGuard.max,
+    // rentalcars refusing the relay's IP: how long the console is holding off
+    challenged: rcBreakerOpen() ? Math.ceil((rcBreaker.until - Date.now()) / 1000) : 0,
+    challengeKind: rcBreakerOpen() ? rcBreaker.kind : null,
   });
 });
 

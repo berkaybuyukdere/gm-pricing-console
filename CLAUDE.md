@@ -270,6 +270,31 @@ four times and the failure went to 100%. A direct-fetch failure is now logged
 (`[rc] direct fetch failed …`, at most once a minute) so it can never be
 invisible again, and the pane fails together with the panel.
 
+## rentalcars WAF challenge and the circuit breaker (2026-09-03)
+
+rentalcars fronts `/api/search-results` with AWS WAF. Over a rate rule the
+CloudFront edge answers **HTTP 202, empty body, `x-amzn-waf-action:
+challenge`** — a JavaScript challenge only a browser can pass; a plain fetch
+gets it forever until the IP goes quiet. Measured on the relay's own IP at
+11:54 UTC, after a morning in which the console had pushed 100+ queries a
+minute through the relay (client retrying 502s five times, `samples=5` per
+panel open, the month stream, the tick). The relay logged every job "ok" (it
+forwards any status), the server turned each 202 into a 502 in 60 ms, the
+client retried, and the IP never went quiet. Diagnose it with one raw fetch:
+`node -e` around `rcUrl()` + `fetch()` and look at `status` + `x-amzn-waf-action`.
+
+Now: `rcRefusalKind(status, body)` names a refusal (202+empty = CHALLENGE,
+403/405/429 = BLOCKED_n, 200+empty = EMPTY); any refusal, direct or relayed,
+trips `rcBreaker` for 5 minutes — no rentalcars query is dispatched, fresh
+callers get the stale snapshot where one exists and `RC_CHALLENGED` (503,
+Retry-After) where none does; `/api/capacity` reports `challenged` seconds and
+the chip says so. Every relay rejection is logged with the status and the first
+80 bytes of the body. The client never retries a refusal (`RC_CHALLENGED`,
+`RC_RELAY_CHALLENGE|BLOCKED_n|EMPTY`) — it reads the body once, eases the
+loops, and the panel says "rentalcars is challenging the relay — holding off".
+Pinned by `test/rc-breaker.test.js`. Whether silence lifts the challenge, and
+how fast, is measured after each incident — do not assume.
+
 ## Why sync was slow
 
 `updateRule` re-reads each rule to verify the write, but caches it with no "Date Updated"

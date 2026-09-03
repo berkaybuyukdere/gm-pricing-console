@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node server.js",
     "relay": "node relay.js",
-    "test": "node test/i18n.test.js && node test/open-duration.test.js && node test/capacity.test.js && node test/rc-parse.test.js && node test/margin-floor.test.js && node test/mail-optout.test.js && node test/station-discovery.test.js && node test/api-retry.test.js && node test/horizon.test.js && node test/lanes.test.js && node test/rule-coverage.test.js && node test/bulk-resume.test.js && node test/detail-restamp.test.js && node test/pickup-ring.test.js && node test/rc-sampling.test.js && node test/rc-projection.test.js"
+    "test": "node test/i18n.test.js && node test/open-duration.test.js && node test/capacity.test.js && node test/rc-parse.test.js && node test/margin-floor.test.js && node test/mail-optout.test.js && node test/station-discovery.test.js && node test/api-retry.test.js && node test/horizon.test.js && node test/lanes.test.js && node test/rule-coverage.test.js && node test/bulk-resume.test.js && node test/detail-restamp.test.js && node test/pickup-ring.test.js && node test/rc-sampling.test.js && node test/rc-projection.test.js && node test/rc-breaker.test.js"
   },
   "dependencies": {
     "@google-cloud/firestore": "^7.10.0",
