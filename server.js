@@ -1964,6 +1964,16 @@ async function rcSampled(fetchOne, want, prevList) {
   return winner;
 }
 
+// one line per minute at most: the direct path's failure reason belongs in the
+// logs (it was invisible on 2026-09-03), but a scan must not write 300 of them
+let rcDirectNoteAt = 0;
+function rcDirectFailureNote(e) {
+  const now = Date.now();
+  if (now - rcDirectNoteAt < 60 * 1000) return;
+  rcDirectNoteAt = now;
+  console.warn(`[rc] direct fetch failed: ${e && e.message} status=${e && e.status} blocked=${!!(e && e.blocked)} relayOnline=${relayOnline()}`);
+}
+
 async function rcQuery({ station, year, month, day, duration, hh, mm, ttlMs, samples }) {
   if (!stationRc(station)) throw new FmxError('BAD_STATION', 400);
   // hh/mm are part of the key: the modal rotates pickup times, and a 19:00
@@ -1974,21 +1984,32 @@ async function rcQuery({ station, year, month, day, duration, hh, mm, ttlMs, sam
   if (hit && Date.now() - hit.ts < ttlMs) return { ...hit.data, cachedAt: hit.ts };
 
   const args = { station, year, month, day, duration, hh, mm };
-  let viaRelay = false;
-  // one attempt, down whichever path this deployment can actually reach
+  // In the cloud the relay IS the path (rentalcars refuses datacenter egress);
+  // direct is only for the operator's own machine. Until 2026-09-03 the cloud
+  // still tried direct first and handed the query to the relay ONLY when the
+  // refusal came back as a 403/405/429 (`blocked`). When rentalcars started
+  // dropping the connection instead — a plain `fetch failed`, no status — the
+  // relay was skipped and every fresh query died in 20 ms as a 502; the /tmp
+  // cache hid it until four deploys in an hour wiped that cache. Now: relay
+  // first when it is online; direct only as the last resort; whatever the
+  // direct failure looks like, an online relay gets the query.
+  let viaRelay = store.IS_CLOUD && relayOnline();
   const fetchOne = async () => {
     if (viaRelay) return relayDispatch(args);
     try {
       return await rcFetch(args); // direct — always works from residential IPs
     } catch (e) {
-      if (!(e.blocked && store.IS_CLOUD)) {
-        throw new FmxError(e.message || 'RC_FETCH_FAILED', 502);
+      if (store.IS_CLOUD && relayOnline()) {
+        rcDirectFailureNote(e);
+        const d = await relayDispatch(args);
+        viaRelay = true;
+        return d;
       }
-      // cloud egress refused — hand the query to the operator-side relay
-      if (!relayOnline()) throw new FmxError('RC_UNAVAILABLE', 503);
-      const d = await relayDispatch(args);
-      viaRelay = true;
-      return d;
+      rcDirectFailureNote(e);
+      // no relay to fall back on: say which it was, so the operator can tell
+      // "rentalcars refused the cloud" from "the relay is not running"
+      if (store.IS_CLOUD) throw new FmxError('RC_UNAVAILABLE', 503);
+      throw new FmxError(e.message || 'RC_FETCH_FAILED', 502);
     }
   };
 
