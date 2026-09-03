@@ -306,9 +306,10 @@ installed relay (`~/GMPricingRelay/relay.js`, written by the installer; backup
 `relay.js.bak-2026-09-03`), in `relay-clients/install-mac.sh` (the source the
 installer writes) and in the repo's `relay.js` (`npm run relay`). Refresh the
 token from a browser (`document.cookie` → `aws-waf-token`) when the relay log
-shows 202/challenge; its lifetime is being measured. The durable version — the
-relay refreshing its own token through a headless Chrome — is the next step if
-the lifetime turns out short.
+shows 202/challenge; its lifetime was measured on 2026-09-03: one fetch every 2 minutes for 60
+minutes, all 200 — the token holds for at least an hour, so a hand refresh is
+workable. The durable version — the relay refreshing its own token through a
+headless Chrome — stays the next step, not an urgent one.
 
 **Two relays poll the console** (2026-09-03): the Mac (`node`, named by its
 user agent) and a Windows PowerShell one on another machine (`x-relay-name`).
