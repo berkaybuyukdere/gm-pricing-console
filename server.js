@@ -3710,19 +3710,18 @@ const AUTOSCAN = {
   // CATEGORY, so when the binding category was some other one our cheapest car
   // could sit 20 CHF under the field. Both anchors are market-wide now.
   //
-  // THE GAP IS PER RENTAL LENGTH, AND MEASURED — not modelled. A flat figure
-  // is ~15% of a one-day field and ~2% of a fourteen-day one. On 2026-09-03 a
-  // read-only sweep of 98 ZRH cells (4-17 Sep, 09:00, seven durations) showed
-  // the served ladder keeps one shape at every length (our 5th car / our 1st
-  // ~ 1.07-1.10), so "five of our cars under the field" costs ~8% of the field
-  // price, and the field price grows with the length. These are the LIMITS —
-  // the deepest our cheapest car may sit under the field at each length. They
-  // come from the medians that put five of our cars under (measured for
-  // 1/2/3/5/7/10/14, interpolated between; 3 days is the 10 CHF Berkay named):
-  // a sensible ceiling on depth, never a place to aim for. An operator's own
-  // table is stored per tenant (autoState().gapChfByDur) and overrides these
-  // entry by entry.
-  gapChfByDur: { 1: 4, 2: 8, 3: 10, 4: 13, 5: 15, 6: 17, 7: 19, 8: 21, 9: 24, 10: 26, 11: 30, 12: 33, 13: 37, 14: 40 },
+  // THE LIMIT: 10 CHF AT EVERY LENGTH (Berkay, 2026-09-03: "her gunluk islemde
+  // max 10 CHF ucuz olsun, maximum!"). The table stays per length because the
+  // operator may still shape it in Settings, but the default is flat.
+  //
+  // For the record, the 2026-09-03 sweep of 98 ZRH cells measured what it
+  // would cost to put FIVE of our cars under the field at each length — 1d 4,
+  // 2d 8, 3d 10, 5d 15, 7d 19, 10d 26, 14d 40 CHF — and that table shipped for
+  // an hour. Berkay rejected it on sight: 20 CHF under a 209 CHF field at 8
+  // days is a giveaway, however many cars it buys. The car count is nobody's
+  // goal; the limit is. An operator's own table is stored per tenant
+  // (autoState().gapChfByDur) and overrides these entry by entry.
+  gapChfByDur: { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10, 6: 10, 7: 10, 8: 10, 9: 10, 10: 10, 11: 10, 12: 10, 13: 10, 14: 10 },
   gapBandChf: 1,  // a breached limit is corrected to this far INSIDE it, not onto the edge
   // "just under the field" when a cell is not #1: half a percent, never less
   // than half a franc — the smallest move that makes us the cheapest
@@ -4356,7 +4355,7 @@ function autoScanMailHtml(set) {
     ? `${set.items.length} fiyat önerisi hazır`
     : `${missing.length} gün/sürede GM listelenmiyor`;
   const intro = set.items.length
-    ? `Saatlik otomatik tarama önümüzdeki ${AUTOSCAN_HORIZON_DAYS} günü (bugünden ${horizonEnd()} tarihine kadar; yakın günler her kiralama süresiyle, uzak günler seyrek örneklemle) tarıyor ve en ucuz aracımızı en ucuz rakibin hemen altına oturtmak için (#1 olup en ucuz rakibin en fazla süreye göre belirlenen kadar altında kalmak; sınır 3 günde ${autoGapTable()[3]} CHF, 7 günde ${autoGapTable()[7]} CHF) fiyatın hareket etmesi gereken ${set.items.length} gün/süre kombinasyonu buldu. Aşağıdaki tablolar hangi günde ne yapılması gerektiğini gösterir; hepsini birden onaylamak için tablonun altındaki düğmeyi kullanabilir, tek tek bakmak istersen Konsolu açabilirsin.`
+    ? `Saatlik otomatik tarama önümüzdeki ${AUTOSCAN_HORIZON_DAYS} günü (bugünden ${horizonEnd()} tarihine kadar; yakın günler her kiralama süresiyle, uzak günler seyrek örneklemle) tarıyor ve en ucuz aracımızı en ucuz rakibin hemen altına oturtmak için (#1 olup en ucuz rakibin en fazla ${autoGapTable()[3]} CHF altında kalmak — her sürede) fiyatın hareket etmesi gereken ${set.items.length} gün/süre kombinasyonu buldu. Aşağıdaki tablolar hangi günde ne yapılması gerektiğini gösterir; hepsini birden onaylamak için tablonun altındaki düğmeyi kullanabilir, tek tek bakmak istersen Konsolu açabilirsin.`
     : `Saatlik otomatik tarama fiyat değişikliği gerektiren bir gün bulamadı, ancak aşağıdaki gün/sürelerde rakipler satarken GM rentalcars'ta hiç listelenmiyor — bu doğrudan rezervasyon kaybıdır ve fiyat kuralıyla çözülmez.`;
   return alertMailHtml(title, sections, intro, extra);
 }

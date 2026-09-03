@@ -99,7 +99,7 @@ const I18N = {
     set_band_guard_hint: 'A backstop for cheap fields only: our cheapest car never goes more than this far under, whatever the francs say. It bites under ~67 CHF and nowhere else.',
     set_band_saved: 'Pricing band saved — the next SCAN and the hourly auto-scan use it.',
     set_band_bad: 'Every gap must be 0–200 CHF and the guard 10–30%.',
-    set_band_meta: 'Measured 2026-09-03 on 98 ZRH cells. Percentages below are of a typical field price at that length — a ceiling on depth, never a target.',
+    set_band_meta: 'Default: at most 10 CHF under at every length. Percentages below are of a typical field price at that length (measured 2026-09-03) — a ceiling on depth, never a target.',
     block_line: 'cars under the field {b0} → <b>{b1}</b> · gap {g0} → <b>{g1} CHF</b>',
     btn_snap_band: 'SNAP TO BAND', snap_band_tip: 'Exactly what SCAN would do to this cell: nothing if we are #1 inside the limit; the smallest move to just under the field if we are not #1; a pull back up if we are past the limit.',
     snap_band_already: 'Already #1 and inside the limit — nothing to change.',
@@ -481,7 +481,7 @@ const I18N = {
     set_band_guard_hint: 'Nur ein Fangnetz für billige Felder: unser günstigstes Fahrzeug geht nie weiter darunter, was auch immer die Franken sagen. Greift unter ~67 CHF und sonst nirgends.',
     set_band_saved: 'Preisband gespeichert — der nächste SCAN und der stündliche Auto-Scan verwenden es.',
     set_band_bad: 'Jeder Abstand muss 0–200 CHF betragen, die Untergrenze 10–30 %.',
-    set_band_meta: 'Gemessen am 03.09.2026 an 98 ZRH-Zellen. Prozente beziehen sich auf einen typischen Feldpreis dieser Dauer — eine Obergrenze für die Tiefe, nie ein Ziel.',
+    set_band_meta: 'Standard: höchstens 10 CHF darunter, bei jeder Dauer. Prozente beziehen sich auf einen typischen Feldpreis dieser Dauer (gemessen 03.09.2026) — eine Obergrenze für die Tiefe, nie ein Ziel.',
     block_line: 'Fahrzeuge unter dem Feld {b0} → <b>{b1}</b> · Abstand {g0} → <b>{g1} CHF</b>',
     btn_snap_band: 'INS BAND SETZEN', snap_band_tip: 'Genau das, was SCAN mit dieser Zelle täte: nichts, wenn wir #1 innerhalb des Limits sind; der kleinste Schritt knapp unter das Feld, wenn nicht #1; zurück nach oben, wenn das Limit verletzt ist.',
     snap_band_already: 'Bereits #1 und innerhalb des Limits — nichts zu ändern.',
@@ -863,7 +863,7 @@ const I18N = {
     set_band_guard_hint: 'Yalnızca ucuz alanlar için bir fren: frank ne derse desin en ucuz aracımız bundan daha derine inmez. ~67 CHF altında devreye girer, başka yerde değil.',
     set_band_saved: 'Fiyat bandı kaydedildi — bir sonraki TARAMA ve saatlik oto-tarama bunu kullanır.',
     set_band_bad: 'Her fark 0–200 CHF, emniyet %10–30 arasında olmalı.',
-    set_band_meta: '3 Eylül 2026’da 98 ZRH hücresinde ölçüldü. Yüzdeler o süredeki tipik alan fiyatına göredir — derinliğe tavan, hedef değil.',
+    set_band_meta: 'Varsayılan: her sürede en fazla 10 CHF altı. Yüzdeler o süredeki tipik alan fiyatına göredir (3 Eylül 2026 ölçümü) — derinliğe tavan, hedef değil.',
     block_line: 'altta kalan araç {b0} → <b>{b1}</b> · fark {g0} → <b>{g1} CHF</b>',
     btn_snap_band: 'BANDA OTUR', snap_band_tip: 'TARAMA’nın bu hücreye yapacağının aynısı: #1 ve sınırın içindeysek hiçbir şey; #1 değilsek rakibin hemen altına en küçük hareket; sınırı aştıysak yukarı çekme.',
     snap_band_already: 'Zaten #1 ve sınırın içinde — değişecek bir şey yok.',
@@ -7183,9 +7183,10 @@ function scanCatCompare(r, factor, targetRank) {
  * is left alone; a cell that is not #1 comes down to JUST under the field, the
  * smallest move; a cell that breached the limit is pulled back UP to it. One
  * helper feeds SCAN and the analysis panel so the two can never disagree. The
- * table is the tenant's own (loaded at boot); these defaults are the
- * 2026-09-03 ZRH measurement. Same numbers as AUTOSCAN.gapChfByDur. */
-const GAP_DEFAULTS = { 1: 4, 2: 8, 3: 10, 4: 13, 5: 15, 6: 17, 7: 19, 8: 21, 9: 24, 10: 26, 11: 30, 12: 33, 13: 37, 14: 40 };
+ * table is the tenant's own (loaded at boot); the default is a flat 10 CHF at
+ * every length — Berkay, 2026-09-03: "her gunluk islemde max 10 CHF ucuz
+ * olsun, maximum!" Same numbers as AUTOSCAN.gapChfByDur. */
+const GAP_DEFAULTS = { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10, 6: 10, 7: 10, 8: 10, 9: 10, 10: 10, 11: 10, 12: 10, 13: 10, 14: 10 };
 const BAND = { gapChfByDur: null, lowPriceGuard: 0.15, gapBandChf: 1, justUnderPct: 0.005, justUnderMinChf: 0.5 };
 
 function gapChfFor(dur) {

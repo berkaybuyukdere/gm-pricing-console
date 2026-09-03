@@ -4,7 +4,7 @@
  * Be #1, but NEVER more than a fixed number of francs under the cheapest
  * competitor. The franc figure is a LIMIT, not a target:
  *
- *   limit = gapChfByDur[rentalDays]   // measured 2026-09-03; 3 days -> 10 CHF
+ *   limit = gapChfByDur[rentalDays]   // default 10 CHF at every length (Berkay)
  *   floor = max(cheapest - limit, cheapest * (1 - lowPriceGuard))
  *   band  = [floor, cheapest)
  *
@@ -72,16 +72,20 @@ r = place([gm(85), other('Alamo', 100), other('Hertz', 110)], { duration: 3 });
 ck(`85 against their 100 (limit ${limit(3)}) comes UP to ${100 - limit(3) + AUTOSCAN.gapBandChf} (got ${r.after.toFixed(2)})`,
   near(r.after, 100 - limit(3) + AUTOSCAN.gapBandChf) && r.clamped === true, r.after.toFixed(2));
 
-// --- the limit GROWS with the rental length; a breach at each length is
-// corrected to that length's own floor, so a 1-day cell and a 14-day cell that
-// both sit 50 under land in different places
+// --- the limit is read per length from the table (the operator may shape it);
+// the default is 10 CHF at EVERY length — "her gunluk islemde max 10 CHF"
+ck('the default limit is 10 CHF at every length', [1, 3, 7, 14].every((d) => limit(d) === 10), JSON.stringify(AUTOSCAN.gapChfByDur));
 const d1 = place([gm(50), other('A', 100), other('B', 115)], { duration: 1 });
 const d14 = place([gm(350), other('A', 400), other('B', 460)], { duration: 14 });
 ck(`1 day: 50 under is pulled up to ${100 - limit(1) + 1} (got ${d1.after.toFixed(2)})`, near(d1.after, 100 - limit(1) + 1), d1.after.toFixed(2));
 ck(`14 days: 50 under is pulled up to ${400 - limit(14) + 1} (got ${d14.after.toFixed(2)})`, near(d14.after, 400 - limit(14) + 1), d14.after.toFixed(2));
-// ...and 30 under on a 14-day field is INSIDE its 40 CHF limit: untouched
-r = place([gm(370), other('A', 400), other('B', 460)], { duration: 14 });
-ck('14 days: 30 under is inside the 40 CHF limit and left alone', r.factor === 1, String(r.factor));
+// Berkay's 26 Oct 8D case: 20.48 under a 209.61 field is PAST a 10 CHF limit
+r = place([gm(189.13), gm(192.91), other('Dollar', 209.61), other('Dollar', 211.66)], { duration: 8 });
+ck(`26 Oct 8D: 20.48 under is a breach, pulled up to ${(209.61 - 10 + 1).toFixed(2)} (got ${r.after.toFixed(2)})`,
+  near(r.after, 209.61 - 10 + 1) && r.clamped === true, r.after.toFixed(2));
+// ...and 8 under on a 14-day field is inside the limit: untouched
+r = place([gm(392), other('A', 400), other('B', 460)], { duration: 14 });
+ck('14 days: 8 under is inside the 10 CHF limit and left alone', r.factor === 1, String(r.factor));
 
 // --- a flat franc limit on a cheap field IS a giveaway; the percentage backstops it
 r = place([gm(25), other('A', 40), other('B', 48)], { duration: 14 });

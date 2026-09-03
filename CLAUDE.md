@@ -88,7 +88,7 @@ the live rule when the body omits them; an explicit `vehicleIds` array still win
 Be #1, but **never more than a fixed number of francs under** the cheapest
 competitor — francs PER RENTAL LENGTH. The figure is a **limit, not a target**:
 
-    limit  = gapChfByDur[days]           # measured, operator-editable, per tenant
+    limit  = gapChfByDur[days]           # default 10 CHF at EVERY length; operator-editable, per tenant
     floor  = max(cheapest - limit, cheapest x 0.85)
     band   = [floor, cheapest)           # under the field, inside the limit
 
@@ -106,18 +106,20 @@ field and inside the limit. Server `raiseThreshold` is 0.02 (was 0.08): a
 raise now only ever means the limit was breached, and 8% tolerance would have
 let a cell sit 8% under it for good.
 
-**The limits are measured, not modelled.** 2026-09-03, read-only sweep of 98
-ZRH cells (4-17 Sep, 09:00, 1/2/3/5/7/10/14 days) straight from rentalcars via
-`lib/rc.js` on the operator's machine — no Cloud Run load:
-- Medians: 1d 4 · 2d 8 · **3d 10** · 5d 15 · 7d 19 · 10d 26 · 14d 40 CHF,
-  interpolated between (the depth at which five of our cars would fit under —
-  a sensible ceiling, never a place to aim for; 3d = 10 is Berkay's figure).
+**The limit is Berkay's: 10 CHF at every length** ("her günlük işlemde max
+10 CHF ucuz olsun, maximum!", 2026-09-03). It is NOT measured. The 2026-09-03
+read-only sweep of 98 ZRH cells (4-17 Sep, 09:00, 1/2/3/5/7/10/14 days, via
+`lib/rc.js` on the operator's machine, no Cloud Run load) measured something
+else — what it would COST to put five of our cars under the field: 1d 4 · 2d
+8 · 3d 10 · 5d 15 · 7d 19 · 10d 26 · 14d 40 CHF. That table shipped for an
+hour as the limit and was rejected on sight (20 CHF under a 209 CHF field at
+8 days). Keep the numbers as a reference for what depth buys; never as a limit:
 - The served ladder keeps ONE shape at every length (our 5th car / our 1st is
   1.07-1.10) and the field price grows with the length, which is why a flat
   franc figure is wrong: 15% of a 1-day field, 2% of a 14-day one.
-- Replayed under the limit rule: of 77 listed cells, 52 were already in band
-  (untouched), 14 were not #1 (moved by ≤1.65 CHF), 11 had breached the limit
-  (raised). And GM was absent from rentalcars on 4-6 Sep at every length — a
+- Replayed under a flat 10 CHF limit the same 77 listed cells split into
+  in-band (untouched), not-#1 (moved by the smallest step) and breached
+  (raised) — `test/margin-floor.test.js` prints the split on every run. And GM was absent from rentalcars on 4-6 Sep at every length — a
   listing problem, not a pricing one.
 - Raw sweep: `test/fixtures/zrh-sweep-2026-09-03.jsonl`; the band test replays it.
 
