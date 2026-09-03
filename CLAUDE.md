@@ -230,7 +230,9 @@ wrong, superseded the same day) → **tag `band-limit-2026-09-03`** (the franc
 figure as a LIMIT, current).
 Cloud Run revisions (service `console`, europe-west6): `console-00102-qok` =
 26e8ca1 (pre-franc), `console-00103-kiy` = 2ee697a (target-cut — never route
-traffic here), `console-00104-bix` = ebee216 (limit, current). Fast rollback
+traffic here), `console-00104-bix` = ebee216 (limit, measured table), `console-00105-wih` =
+f77748c (every price-judging path on the limit), **`console-00106-wes` = b5a1c30
+= tag `band-limit-10chf-2026-09-03` (flat 10 CHF limit — current)**. Fast rollback
 (~30 s, traffic only): `gcloud run services update-traffic console --region
 europe-west6 --project sentinelpricing --to-revisions console-00102-qok=100`.
 Full rollback: `git checkout rollback-pre-band-2026-09-03 && npx firebase deploy
