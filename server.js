@@ -1672,7 +1672,28 @@ const relayState = {
   jobs: new Map(),    // id -> { args, url, headers, meta, resolve, reject, timer }
   backlog: [],        // job ids not yet handed to a worker
   pollers: [],        // parked /relay/poll responses waiting for a job
+  // worker key -> untilMs. A worker whose IP rentalcars is refusing (WAF
+  // challenge / block) gets no jobs for RC_BREAKER_MS; the others carry on.
+  // Measured 2026-09-03: two relays were online — the Mac one carrying a
+  // browser's aws-waf-token (served) and a Windows PowerShell one without
+  // (202 on every fetch) — and one 202 from the second tripped the GLOBAL
+  // breaker, so nobody got answers although one worker could deliver them.
+  quarantine: new Map(),
+  seen: new Map(),    // worker key -> lastSeenMs, every worker (named or not)
 };
+/** who a relay request comes from: its name header, else its user agent */
+const relayWorkerKey = (req) => {
+  const n = req.headers['x-relay-name'];
+  if (n != null) return 'name:' + String(n).replace(/[^A-Za-z0-9 ._-]/g, '').slice(0, 64);
+  return 'ua:' + String(req.headers['user-agent'] || 'unknown').slice(0, 80);
+};
+const relayQuarantined = (key) => (relayState.quarantine.get(key) || 0) > Date.now();
+/** is any worker online that is NOT quarantined? */
+function relayHealthyWorkerOnline() {
+  const cut = Date.now() - 75 * 1000;
+  for (const [k, ts] of relayState.seen) if (ts >= cut && !relayQuarantined(k)) return true;
+  return false;
+}
 const relayOnline = () => Date.now() - relayState.lastSeen < 75 * 1000;
 
 const pruneWorkers = () => {
@@ -1686,6 +1707,11 @@ const pruneWorkers = () => {
 // enters the list (a missing header must not surface as the name "undefined").
 function relayRegister(req) {
   relayState.lastSeen = Date.now();
+  relayState.seen.set(relayWorkerKey(req), Date.now());
+  if (relayState.seen.size > 40) { // bounded, like everything else here
+    const cut = Date.now() - 10 * 60 * 1000;
+    for (const [k, ts] of relayState.seen) if (ts < cut) relayState.seen.delete(k);
+  }
   if (req.headers['x-relay-name'] == null) return;
   const name =
     String(req.headers['x-relay-name']).replace(/[^A-Za-z0-9 ._-]/g, '').slice(0, 64) || 'unnamed';
@@ -1695,12 +1721,20 @@ function relayRegister(req) {
 }
 
 function relayHandOut() {
-  while (relayState.pollers.length && relayState.backlog.length) {
-    const p = relayState.pollers.shift();
+  while (relayState.backlog.length) {
+    // a quarantined worker is left parked (its poll times out to "no job" as
+    // usual); the job goes to the first worker rentalcars is still serving.
+    // With nothing but quarantined workers parked, the job waits in the
+    // backlog for a healthy poll or its own 90s timer — never to a worker
+    // that will only hand back another 202.
+    const i = relayState.pollers.findIndex((p) => !relayQuarantined(p.worker));
+    if (i < 0) return;
+    const p = relayState.pollers.splice(i, 1)[0];
     clearTimeout(p.timer);
     const id = relayState.backlog.shift();
     const job = relayState.jobs.get(id);
     if (!job) continue;
+    job.worker = p.worker;
     // url/headers drive the raw relays; args keep an old relay binary working
     p.res.json({ job: { id, url: job.url, headers: job.headers, args: job.args } });
   }
@@ -1743,7 +1777,7 @@ const RELAY_POLL_PARK_MS = 32 * 1000;
 app.get('/api/relay/poll', (req, res) => {
   if (!requireSecret(req, res, RELAY_SECRET, 'x-relay-secret')) return;
   relayRegister(req);
-  const p = { res };
+  const p = { res, worker: relayWorkerKey(req) };
   p.timer = setTimeout(() => {
     const i = relayState.pollers.indexOf(p);
     if (i >= 0) relayState.pollers.splice(i, 1);
@@ -1761,7 +1795,9 @@ app.post('/api/relay/result', (req, res) => {
   const job = relayState.jobs.get(id);
   if (!job) return res.json({ ok: false, note: 'unknown or expired job' });
   relayState.jobs.delete(id);
-  clearTimeout(job.timer);
+  // the 90s timer keeps running for a job that is about to be requeued — it
+  // is cleared only on the paths that settle the job below
+  const settle = () => clearTimeout(job.timer);
   // every rejection below is logged with what the relay actually saw — on
   // 2026-09-03 hundreds of them went by as bare 502s and nobody could tell a
   // WAF challenge from a parse error
@@ -1773,7 +1809,7 @@ app.post('/api/relay/result', (req, res) => {
   };
   if (!ok) {
     relayNote('worker: ' + (error || 'FAILED'));
-    job.reject(new FmxError('RC_RELAY_' + (error || 'FAILED'), 502));
+    settle(); job.reject(new FmxError('RC_RELAY_' + (error || 'FAILED'), 502));
   } else if (data !== undefined) {
     // legacy relay: parsed on the worker — the weakest accepted shape defines
     // what reaches .toFixed downstream, so prices must be real numbers. Only
@@ -1782,20 +1818,31 @@ app.post('/api/relay/result', (req, res) => {
       !job.parse && data && Array.isArray(data.top) &&
       data.top.every((r) => r && Number.isFinite(r.price)) &&
       (data.gmPrice == null || Number.isFinite(data.gmPrice))
-    ) job.resolve(data);
-    else job.reject(new FmxError('RC_RELAY_BAD_RESULT', 502));
+    ) { settle(); job.resolve(data); }
+    else { settle(); job.reject(new FmxError('RC_RELAY_BAD_RESULT', 502)); }
   } else {
     // raw relay: the worker fetched but never parsed — classify + parse here
     const st = Number(status);
     const kind = rcRefusalKind(st, body);
     if (kind) {
-      // the relay's IP is being refused — every further query only prolongs it
-      rcTripBreaker(kind, `relay status=${st}`);
-      relayNote(kind);
-      job.reject(new FmxError('RC_RELAY_' + kind, 502));
+      // THIS worker's IP is being refused: quarantine it, and let another
+      // worker have the job once. Only when no healthy worker is online does
+      // the refusal mean rentalcars is closed to us altogether.
+      const who = job.worker || relayWorkerKey(req);
+      relayState.quarantine.set(who, Date.now() + RC_BREAKER_MS);
+      relayNote(`${kind} from ${who} — quarantined ${RC_BREAKER_MS / 1000}s`);
+      if (!job.retried && relayHealthyWorkerOnline()) {
+        job.retried = true;
+        relayState.jobs.set(id, job);
+        relayState.backlog.unshift(id);
+        relayHandOut();
+        return res.json({ ok: true, requeued: true });
+      }
+      rcTripBreaker(kind, `relay status=${st} worker=${who}, no healthy worker online`);
+      settle(); job.reject(new FmxError('RC_RELAY_' + kind, 502));
     } else if (st !== 200) {
       relayNote('HTTP ' + st);
-      job.reject(new FmxError('RC_RELAY_BAD_RESULT', 502));
+      settle(); job.reject(new FmxError('RC_RELAY_BAD_RESULT', 502));
     } else {
       let parsed = null;
       try {
@@ -1803,8 +1850,8 @@ app.post('/api/relay/result', (req, res) => {
         parsed = job.parse ? job.parse(raw) : rcParse(raw, job.meta);
       } catch {}
       const good = job.parse ? Array.isArray(parsed) : !!parsed && Array.isArray(parsed.top);
-      if (good) job.resolve(parsed);
-      else { relayNote('unparsable 200'); job.reject(new FmxError('RC_RELAY_BAD_RESULT', 502)); }
+      if (good) { settle(); job.resolve(parsed); }
+      else { relayNote('unparsable 200'); settle(); job.reject(new FmxError('RC_RELAY_BAD_RESULT', 502)); }
     }
   }
   res.json({ ok: true });
@@ -2056,7 +2103,7 @@ async function rcQuery({ station, year, month, day, duration, hh, mm, ttlMs, sam
   // cache hid it until four deploys in an hour wiped that cache. Now: relay
   // first when it is online; direct only as the last resort; whatever the
   // direct failure looks like, an online relay gets the query.
-  let viaRelay = store.IS_CLOUD && relayOnline();
+  let viaRelay = store.IS_CLOUD && relayOnline() && relayHealthyWorkerOnline();
   const fetchOne = async () => {
     if (viaRelay) return relayDispatch(args);
     try {
