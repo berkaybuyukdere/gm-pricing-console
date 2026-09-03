@@ -226,7 +226,12 @@ cell wears a solid accent ring on the grid (`cell-active`), the pane's cell a bl
 2026-09-03) → 2ee697a = tag `band-2026-09-03` (the franc figure as a TARGET —
 wrong, superseded the same day) → **tag `band-limit-2026-09-03`** (the franc
 figure as a LIMIT, current).
-Roll back with `git checkout rollback-pre-band-2026-09-03 && npx firebase deploy
+Cloud Run revisions (service `console`, europe-west6): `console-00102-qok` =
+26e8ca1 (pre-franc), `console-00103-kiy` = 2ee697a (target-cut — never route
+traffic here), `console-00104-bix` = ebee216 (limit, current). Fast rollback
+(~30 s, traffic only): `gcloud run services update-traffic console --region
+europe-west6 --project sentinelpricing --to-revisions console-00102-qok=100`.
+Full rollback: `git checkout rollback-pre-band-2026-09-03 && npx firebase deploy
 --only functions --project sentinelpricing` — the function serves the client
 bundle too, so one deploy moves both.
 
