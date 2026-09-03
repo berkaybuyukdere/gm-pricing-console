@@ -1,17 +1,20 @@
 /**
- * THE PRICING BAND (Berkay, 2026-09-02 — supersedes the 97/95-per-100 band).
+ * THE PRICING BAND (Berkay, 2026-09-02/03 — supersedes the 97/95-per-100 band).
  *
- * Our CHEAPEST car sits a fixed number of FRANCS under the cheapest
- * competitor, and however many of our cars fit under them, fit:
+ * Be #1, but NEVER more than a fixed number of francs under the cheapest
+ * competitor. The franc figure is a LIMIT, not a target:
  *
- *   gap   = gapChfByDur[rentalDays]   // measured 2026-09-03; 3 days -> 10 CHF
- *   floor = max(cheapest - gap, cheapest * (1 - lowPriceGuard))
- *   top   = max(cheapest - (gap - gapBandChf), floor)
+ *   limit = gapChfByDur[rentalDays]   // measured 2026-09-03; 3 days -> 10 CHF
+ *   floor = max(cheapest - limit, cheapest * (1 - lowPriceGuard))
+ *   band  = [floor, cheapest)
  *
- * One FMX % scales every GM car together, so placing the cheapest one fixes
- * the whole block; how many of our cars land under the field is an OUTCOME of
- * how wide that station's base-rate ladder is, not a setting. All math runs on
- * DISPLAYED prices, so an active campaign discount is already inside it.
+ *   in the band       -> nothing (factor 1)
+ *   not #1            -> down to JUST under the field (smallest move)
+ *   past the limit    -> UP to just inside it
+ *
+ * "kac araba girdigi umrumda degil, onemli olan limiti asan ucuzlukta
+ * olmamak." The number of our cars under the field is asserted nowhere here.
+ * All math runs on DISPLAYED prices, so an active campaign discount is inside.
  *
  * Pure-function checks on categoryFactor, lifted out of server.js.
  *
@@ -40,48 +43,51 @@ const ck = (n, c, d) => { if (c) { console.log('PASS ', n); pass++; } else { con
 const gm = (price, cats) => ({ supplier: 'Green Motion', price, categories: cats || ['economy'], carClass: '' });
 const other = (supplier, price, cats) => ({ supplier, price, categories: cats || ['economy'], carClass: '' });
 const mk = (rows) => ({ top: [...rows].sort((a, b) => a.price - b.price) });
-const gap = (d) => AUTOSCAN.gapChfByDur[d];
+const limit = (d) => AUTOSCAN.gapChfByDur[d];
+const justUnder = (C) => Math.max(C * AUTOSCAN.justUnderPct, AUTOSCAN.justUnderMinChf);
 const place = (rows, opts) => {
   const r = categoryFactor(mk(rows), 1, opts);
   const cheap = Math.min(...rows.filter((x) => /green motion/i.test(x.supplier)).map((x) => x.price));
   return r && { ...r, after: cheap * r.factor };
 };
+const near = (a, b) => Math.abs(a - b) < 0.01;
 
-// --- Berkay's own drawing: the field at 100, a 3-day rental, we land at 90-91
-let r = place([gm(120), other('Alamo', 100), other('Hertz', 110), other('Sixt', 115)], { duration: 3 });
-ck(`their 100 over 3 days puts us ${gap(3)} CHF under (got ${r.after.toFixed(2)})`,
-  Math.abs(r.after - 90.5) < 0.01, r.after.toFixed(2));
+// --- Berkay's 09 Oct 4D case, the one that exposed the target mistake: we sit
+// 5.16 CHF under a 134.70 field with a 13 CHF limit -> that is INSIDE. Leave it.
+let r = place([gm(129.54), gm(132.13), other('Dollar', 134.70), other('Dollar', 134.70)], { duration: 4 });
+ck(`5.16 under with a ${limit(4)} CHF limit is left alone (factor ${r.factor})`, r.factor === 1, String(r.factor));
 
-// --- the whole point of the rewrite: the BLOCK lands under the field, not one car.
-// ZRH's own ladder: UP 150 / T 153 / A 154 / J 155 / C 156 / Y 157 / R 164.
-const ZRH = [150, 153, 154, 155, 156, 157, 164].map((b) => b / 150);
-r = place([...ZRH.map((k) => gm(120 * k)), other('Alamo', 100), other('Hertz', 110)], { duration: 3 });
-const under = ZRH.map((k) => 120 * k * r.factor).filter((p) => p < 100).length;
-ck(`the ZRH ladder puts ${under} of 7 cars under the field (old band managed 3)`,
-  under >= 6, `${under}`);
+// --- not #1: come down to JUST under the field, never to the bottom of the band
+r = place([gm(120), other('Alamo', 100), other('Hertz', 110), other('Sixt', 115)], { duration: 3 });
+ck(`120 against their 100 comes down to just under (got ${r.after.toFixed(2)}, want ${(100 - justUnder(100)).toFixed(2)})`,
+  near(r.after, 100 - justUnder(100)), r.after.toFixed(2));
+ck('...and nowhere near the limit', 100 - r.after < limit(3) / 2, r.after.toFixed(2));
 
-// --- the gap GROWS with the rental length, or a flat figure collapses the block
-const short = place([gm(130), other('A', 100), other('B', 115)], { duration: 1 });
-const long = place([gm(520), other('A', 400), other('B', 460)], { duration: 14 });
-ck(`1 day is ${gap(1)} CHF under (got ${(100 - short.after).toFixed(2)})`,
-  Math.abs(100 - short.after - (gap(1) - AUTOSCAN.gapBandChf / 2)) < 0.01, short.after.toFixed(2));
-ck(`14 days is ${gap(14)} CHF under (got ${(400 - long.after).toFixed(2)})`,
-  Math.abs(400 - long.after - (gap(14) - AUTOSCAN.gapBandChf / 2)) < 0.01, long.after.toFixed(2));
+// --- a tie with the cheapest competitor is not #1 either
+r = place([gm(100), other('Alamo', 100), other('Hertz', 110)], { duration: 3 });
+ck(`a tie at 100 is broken downward (got ${r.after.toFixed(2)})`, r.after < 100, r.after.toFixed(2));
 
-// --- a flat franc gap on a cheap field IS a giveaway; the percentage backstops it
-r = place([gm(60), other('A', 40), other('B', 48)], { duration: 14 });
+// --- past the limit: pulled back UP to just inside it — the one case that raises
+r = place([gm(85), other('Alamo', 100), other('Hertz', 110)], { duration: 3 });
+ck(`85 against their 100 (limit ${limit(3)}) comes UP to ${100 - limit(3) + AUTOSCAN.gapBandChf} (got ${r.after.toFixed(2)})`,
+  near(r.after, 100 - limit(3) + AUTOSCAN.gapBandChf) && r.clamped === true, r.after.toFixed(2));
+
+// --- the limit GROWS with the rental length; a breach at each length is
+// corrected to that length's own floor, so a 1-day cell and a 14-day cell that
+// both sit 50 under land in different places
+const d1 = place([gm(50), other('A', 100), other('B', 115)], { duration: 1 });
+const d14 = place([gm(350), other('A', 400), other('B', 460)], { duration: 14 });
+ck(`1 day: 50 under is pulled up to ${100 - limit(1) + 1} (got ${d1.after.toFixed(2)})`, near(d1.after, 100 - limit(1) + 1), d1.after.toFixed(2));
+ck(`14 days: 50 under is pulled up to ${400 - limit(14) + 1} (got ${d14.after.toFixed(2)})`, near(d14.after, 400 - limit(14) + 1), d14.after.toFixed(2));
+// ...and 30 under on a 14-day field is INSIDE its 40 CHF limit: untouched
+r = place([gm(370), other('A', 400), other('B', 460)], { duration: 14 });
+ck('14 days: 30 under is inside the 40 CHF limit and left alone', r.factor === 1, String(r.factor));
+
+// --- a flat franc limit on a cheap field IS a giveaway; the percentage backstops it
+r = place([gm(25), other('A', 40), other('B', 48)], { duration: 14 });
 const guardFloor = 40 * (1 - AUTOSCAN.lowPriceGuard);
-ck(`a 40 CHF field never gives away ${gap(14)} CHF — the ${Math.round(AUTOSCAN.lowPriceGuard * 100)}% guard holds at ${guardFloor} (got ${r.after.toFixed(2)})`,
-  Math.abs(r.after - guardFloor) < 0.01, r.after.toFixed(2));
-
-// --- already in the band: no write, and above all no raise
-r = place([gm(90.5), other('A', 100), other('B', 110)], { duration: 3 });
-ck('a car already in the band is left alone (factor === 1)', r.factor === 1, String(r.factor));
-
-// --- genuinely underselling: the one case that moves a price UP
-r = place([gm(70), other('A', 100), other('B', 110)], { duration: 3 });
-ck(`70 against their 100 is corrected UP into the band (got ${r.after.toFixed(2)})`,
-  r.after > 70 && Math.abs(r.after - 90.5) < 0.01 && r.clamped === true, r.after.toFixed(2));
+ck(`a 40 CHF field never allows ${limit(14)} under — the ${Math.round(AUTOSCAN.lowPriceGuard * 100)}% guard holds at ${guardFloor} (got ${r.after.toFixed(2)})`,
+  near(r.after, guardFloor + AUTOSCAN.gapBandChf), r.after.toFixed(2));
 
 // --- the 20 CHF gaps: a guard that only watched ITS OWN category let the
 // overall-cheapest car sink. Both anchors are market-wide now.
@@ -89,8 +95,7 @@ r = place([
   gm(60, ['economy']), gm(300, ['suvs']),
   other('Alamo', 100, ['economy']), other('Hertz', 400, ['suvs']),
 ], { duration: 3 });
-ck(`our cheapest car never sinks below the market floor (got ${r.after.toFixed(2)}, floor 90)`,
-  r.after >= 90 - 0.01, r.after.toFixed(2));
+ck(`our cheapest car never sits past the market limit (got ${r.after.toFixed(2)}, floor 90)`, r.after >= 90 - 0.01, r.after.toFixed(2));
 
 // --- scoping: when a lane governs categories, BOTH anchors come from them
 r = place([
@@ -98,50 +103,39 @@ r = place([
   other('Alamo', 100, ['economy']), other('Hertz', 400, ['suvs']),
 ], { duration: 3, categories: ['SUV'] });
 ck(`an SUV lane anchors on the SUV field, not the economy one (got ${(500 * r.factor).toFixed(2)})`,
-  Math.abs(500 * r.factor - 390.5) < 0.01, (500 * r.factor).toFixed(2));
+  near(500 * r.factor, 400 - justUnder(400)), (500 * r.factor).toFixed(2));
 
 // --- no competitor, or no car of ours, in scope -> no opinion
-ck('no competitor in scope yields no factor',
-  categoryFactor(mk([gm(100)]), 1, { duration: 3 }) === null, 'expected null');
-ck('no car of ours in scope yields no factor',
-  categoryFactor(mk([other('Alamo', 100)]), 1, { duration: 3 }) === null, 'expected null');
-
+ck('no competitor in scope yields no factor', categoryFactor(mk([gm(100)]), 1, { duration: 3 }) === null, 'expected null');
+ck('no car of ours in scope yields no factor', categoryFactor(mk([other('Alamo', 100)]), 1, { duration: 3 }) === null, 'expected null');
 
 // --- the doctrine against the MEASURED market: 98 ZRH cells, 4-17 Sep 2026,
 // 09:00 pickup, read on 2026-09-03 (test/fixtures/zrh-sweep-2026-09-03.jsonl).
-// With the default table, every cell where we are listed must end with our
-// cheapest car inside the band and at least THREE of our cars under the field.
+// Every listed cell must end inside its band; a cell already inside must not be
+// touched; a cell that was not #1 must move by the smallest amount.
 {
   const fx = path.join(__dirname, 'fixtures', 'zrh-sweep-2026-09-03.jsonl');
   const cells = fs.readFileSync(fx, 'utf8').trim().split('\n').map(JSON.parse)
     .filter((c) => !c.error && c.gm && c.gm.length && c.comp && c.comp.length);
-  const isGm = (s) => /green motion/i.test(s);
-  let inBand = 0, under3 = 0, underMin = Infinity, gaps = [];
+  let inBand = 0, untouched = 0, wasIn = 0, downs = 0, ups = 0, worstDown = 0;
   for (const c of cells) {
     const r = { top: c.top.map((x) => ({ supplier: x.s, price: x.p, categories: x.c || [], carClass: '' })) };
-    // the fixture's own ladder as parsed rows; rcRowInCat needs display keys
     const out = categoryFactor(r, 1, { duration: c.dur });
     if (!out) continue;
-    const f = out.factor;
-    const C = c.comp[0];
-    const ours = c.gm.map((p) => p * f);
-    const gap = AUTOSCAN.gapChfByDur[Math.min(c.dur, 14)];
-    const floor = Math.max(C - gap, C * (1 - AUTOSCAN.lowPriceGuard));
-    const top = Math.max(C - (gap - AUTOSCAN.gapBandChf), floor);
-    if (ours[0] >= floor - 0.01 && ours[0] <= top + 0.01) inBand++;
-    const u = ours.filter((p) => p < C).length;
-    if (u >= 3) under3++;
-    underMin = Math.min(underMin, u);
-    gaps.push((C - ours[0]) / C);
+    const C = c.comp[0], g0 = c.gm[0], after = g0 * out.factor;
+    const lim = AUTOSCAN.gapChfByDur[Math.min(c.dur, 14)];
+    const floor = Math.max(C - lim, C * (1 - AUTOSCAN.lowPriceGuard));
+    if (after >= floor - 0.01 && after < C) inBand++;
+    const was = g0 >= floor && g0 < C;
+    if (was) { wasIn++; if (out.factor === 1) untouched++; }
+    else if (g0 >= C) { downs++; worstDown = Math.max(worstDown, C - after); }
+    else ups++;
   }
-  ck(`measured ZRH: every listed cell lands in its band (${inBand}/${cells.length})`, inBand === cells.length, `${inBand}/${cells.length}`);
-  // the car count is an OUTCOME of that day's served ladder: two cells (11 Sep 2d,
-  // 12 Sep 1d) serve a ladder whose 3rd car sits 7% above the 1st, so only two
-  // fit under a 7-8 CHF gap. Never fewer than two; three or more almost always.
-  ck(`measured ZRH: never fewer than two of our cars under the field (min ${underMin})`, underMin >= 2, `min ${underMin}`);
-  ck(`measured ZRH: three or more of our cars under the field on 95%+ of cells (${under3}/${cells.length})`, under3 / cells.length >= 0.95, `${under3}/${cells.length}`);
-  const medGap = gaps.sort((a, b) => a - b)[Math.floor(gaps.length / 2)];
-  ck(`measured ZRH: the median gap is 7-10% of the field (${(medGap * 100).toFixed(1)}%)`, medGap >= 0.07 && medGap <= 0.10, (medGap * 100).toFixed(1));
+  ck(`measured ZRH: every listed cell ends inside its band (${inBand}/${cells.length})`, inBand === cells.length, `${inBand}/${cells.length}`);
+  ck(`measured ZRH: every cell already inside is left untouched (${untouched}/${wasIn})`, untouched === wasIn, `${untouched}/${wasIn}`);
+  ck(`measured ZRH: the ${downs} cells that were not #1 move by the smallest step (deepest landing ${worstDown.toFixed(2)} CHF under)`,
+    worstDown <= Math.max(0.5, 0.005 * 450) + 0.01, worstDown.toFixed(2));
+  console.log(`      (${wasIn} in band, ${downs} not #1, ${ups} past the limit — of ${cells.length})`);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

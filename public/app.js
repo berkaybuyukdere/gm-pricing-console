@@ -91,17 +91,18 @@ const I18N = {
     pickup_fallback: '19:00 was empty — nearest hour with offers',
     querying_at: 'Querying rentalcars for {time} pickup…',
     proj_tag: '(projected)',
-    band_line: 'Cheapest competitor <b>{c} {ccy}</b> · target gap <b>{gap} CHF</b> ({dur}) · band {lo}–{hi} · we are <b>{now} CHF under</b>',
+    band_line: 'Cheapest competitor <b>{c} {ccy}</b> · limit <b>{gap} CHF</b> under ({dur}) · floor {lo} · we are <b>{now} CHF under</b>',
     band_in: 'IN BAND', band_high: 'TOO DEAR', band_low: 'TOO CHEAP', band_none: 'NOT LISTED',
     set_band: 'PRICING BAND', set_band_reset: 'MEASURED DEFAULTS',
-    set_band_hint: 'Francs our cheapest car sits under the cheapest competitor, per rental length. However many of our cars fit under them, fit. Empty = the measured default.',
+    set_band_hint: 'The LIMIT: the most our cheapest car may sit under the cheapest competitor, per rental length. We stay #1; we never go deeper than this. Empty = the measured default.',
     set_band_guard: 'LOW-PRICE GUARD',
     set_band_guard_hint: 'A backstop for cheap fields only: our cheapest car never goes more than this far under, whatever the francs say. It bites under ~67 CHF and nowhere else.',
     set_band_saved: 'Pricing band saved — the next SCAN and the hourly auto-scan use it.',
     set_band_bad: 'Every gap must be 0–200 CHF and the guard 10–30%.',
-    set_band_meta: 'Measured 2026-09-03 on 98 ZRH cells: these defaults put five of our cars under the field at every length. Percentages below are of a typical field price at that length.',
+    set_band_meta: 'Measured 2026-09-03 on 98 ZRH cells. Percentages below are of a typical field price at that length — a ceiling on depth, never a target.',
     block_line: 'cars under the field {b0} → <b>{b1}</b> · gap {g0} → <b>{g1} CHF</b>',
-    btn_snap_band: 'SNAP TO BAND', snap_band_tip: 'Project exactly what SCAN would write for this cell: our cheapest car at the target gap for this rental length.',
+    btn_snap_band: 'SNAP TO BAND', snap_band_tip: 'Exactly what SCAN would do to this cell: nothing if we are #1 inside the limit; the smallest move to just under the field if we are not #1; a pull back up if we are past the limit.',
+    snap_band_already: 'Already #1 and inside the limit — nothing to change.',
     currency_warn: 'PRICES IN {c} — NOT COMPARABLE',
     refresh_rc: 'REFRESH',
     hour_prev: 'Earlier pickup hour',
@@ -471,17 +472,18 @@ const I18N = {
     pickup_fallback: '19:00 war leer — nächste Stunde mit Angeboten',
     querying_at: 'rentalcars wird für Abholung {time} abgefragt…',
     proj_tag: '(projiziert)',
-    band_line: 'Günstigster Wettbewerber <b>{c} {ccy}</b> · Zielabstand <b>{gap} CHF</b> ({dur}) · Band {lo}–{hi} · wir liegen <b>{now} CHF darunter</b>',
+    band_line: 'Günstigster Wettbewerber <b>{c} {ccy}</b> · Limit <b>{gap} CHF</b> darunter ({dur}) · Untergrenze {lo} · wir liegen <b>{now} CHF darunter</b>',
     band_in: 'IM BAND', band_high: 'ZU TEUER', band_low: 'ZU BILLIG', band_none: 'NICHT GELISTET',
     set_band: 'PREISBAND', set_band_reset: 'GEMESSENE STANDARDWERTE',
-    set_band_hint: 'Franken, die unser günstigstes Fahrzeug unter dem günstigsten Wettbewerber liegt — je Mietdauer. So viele unserer Fahrzeuge, wie darunter passen, passen. Leer = gemessener Standardwert.',
+    set_band_hint: 'Das LIMIT: höchstens so viele Franken darf unser günstigstes Fahrzeug unter dem günstigsten Wettbewerber liegen — je Mietdauer. Wir bleiben #1; tiefer gehen wir nie. Leer = gemessener Standardwert.',
     set_band_guard: 'UNTERGRENZE',
     set_band_guard_hint: 'Nur ein Fangnetz für billige Felder: unser günstigstes Fahrzeug geht nie weiter darunter, was auch immer die Franken sagen. Greift unter ~67 CHF und sonst nirgends.',
     set_band_saved: 'Preisband gespeichert — der nächste SCAN und der stündliche Auto-Scan verwenden es.',
     set_band_bad: 'Jeder Abstand muss 0–200 CHF betragen, die Untergrenze 10–30 %.',
-    set_band_meta: 'Gemessen am 03.09.2026 an 98 ZRH-Zellen: diese Standardwerte setzen fünf unserer Fahrzeuge bei jeder Dauer unter das Feld. Prozente beziehen sich auf einen typischen Feldpreis dieser Dauer.',
+    set_band_meta: 'Gemessen am 03.09.2026 an 98 ZRH-Zellen. Prozente beziehen sich auf einen typischen Feldpreis dieser Dauer — eine Obergrenze für die Tiefe, nie ein Ziel.',
     block_line: 'Fahrzeuge unter dem Feld {b0} → <b>{b1}</b> · Abstand {g0} → <b>{g1} CHF</b>',
-    btn_snap_band: 'INS BAND SETZEN', snap_band_tip: 'Projiziert genau das, was SCAN für diese Zelle schreiben würde: unser günstigstes Fahrzeug im Zielabstand für diese Mietdauer.',
+    btn_snap_band: 'INS BAND SETZEN', snap_band_tip: 'Genau das, was SCAN mit dieser Zelle täte: nichts, wenn wir #1 innerhalb des Limits sind; der kleinste Schritt knapp unter das Feld, wenn nicht #1; zurück nach oben, wenn das Limit verletzt ist.',
+    snap_band_already: 'Bereits #1 und innerhalb des Limits — nichts zu ändern.',
     currency_warn: 'PREISE IN {c} — NICHT VERGLEICHBAR',
     refresh_rc: 'AKTUALISIEREN',
     hour_prev: 'Frühere Abholzeit',
@@ -851,17 +853,18 @@ const I18N = {
     pickup_fallback: '19:00 boştu — teklif olan en yakın saat',
     querying_at: 'rentalcars {time} alış için sorgulanıyor…',
     proj_tag: '(projeksiyon)',
-    band_line: 'En ucuz rakip <b>{c} {ccy}</b> · hedef fark <b>{gap} CHF</b> ({dur}) · bant {lo}–{hi} · şu an <b>{now} CHF altındayız</b>',
+    band_line: 'En ucuz rakip <b>{c} {ccy}</b> · sınır: en fazla <b>{gap} CHF</b> altı ({dur}) · taban {lo} · şu an <b>{now} CHF altındayız</b>',
     band_in: 'BANTTA', band_high: 'PAHALI', band_low: 'ÇOK UCUZ', band_none: 'LİSTEDE YOK',
     set_band: 'FİYAT BANDI', set_band_reset: 'ÖLÇÜLMÜŞ VARSAYILANLAR',
-    set_band_hint: 'En ucuz aracımızın en ucuz rakibin kaç frank altında duracağı — kiralama süresine göre. Altına kaç aracımız sığarsa o kadarı sığar. Boş = ölçülmüş varsayılan.',
+    set_band_hint: 'SINIR: en ucuz aracımız en ucuz rakibin en fazla kaç frank altında olabilir — kiralama süresine göre. #1 kalırız; bundan derine hiç inmeyiz. Boş = ölçülmüş varsayılan.',
     set_band_guard: 'UCUZ ALAN EMNİYETİ',
     set_band_guard_hint: 'Yalnızca ucuz alanlar için bir fren: frank ne derse desin en ucuz aracımız bundan daha derine inmez. ~67 CHF altında devreye girer, başka yerde değil.',
     set_band_saved: 'Fiyat bandı kaydedildi — bir sonraki TARAMA ve saatlik oto-tarama bunu kullanır.',
     set_band_bad: 'Her fark 0–200 CHF, emniyet %10–30 arasında olmalı.',
-    set_band_meta: '3 Eylül 2026’da 98 ZRH hücresinde ölçüldü: bu varsayılanlar her sürede beş aracımızı alanın altına oturtur. Yüzdeler o süredeki tipik alan fiyatına göredir.',
+    set_band_meta: '3 Eylül 2026’da 98 ZRH hücresinde ölçüldü. Yüzdeler o süredeki tipik alan fiyatına göredir — derinliğe tavan, hedef değil.',
     block_line: 'altta kalan araç {b0} → <b>{b1}</b> · fark {g0} → <b>{g1} CHF</b>',
-    btn_snap_band: 'BANDA OTUR', snap_band_tip: 'TARAMA’nın bu hücreye yazacağı şeyi aynen projeler: en ucuz aracımız bu kiralama süresinin hedef farkında.',
+    btn_snap_band: 'BANDA OTUR', snap_band_tip: 'TARAMA’nın bu hücreye yapacağının aynısı: #1 ve sınırın içindeysek hiçbir şey; #1 değilsek rakibin hemen altına en küçük hareket; sınırı aştıysak yukarı çekme.',
+    snap_band_already: 'Zaten #1 ve sınırın içinde — değişecek bir şey yok.',
     currency_warn: 'FİYATLAR {c} — KARŞILAŞTIRILAMAZ',
     refresh_rc: 'YENİLE',
     hour_prev: 'Önceki alış saati',
@@ -6106,12 +6109,13 @@ function renderRcTable() {
   if (cheapComp != null) {
     const band = bandFor(cheapComp, rcCtx.dur);
     const shown = projAll ? projAll[0] : r.gmPrice;
-    const verdict = shown == null ? 'band_none'
-      : shown > band.top ? 'band_high' : shown < band.floor ? 'band_low' : 'band_in';
+    const place = bandPlace(shown, band);
+    const verdict = place.dir === 'none' ? 'band_none'
+      : place.dir === 'down' ? 'band_high' : place.dir === 'up' ? 'band_low' : 'band_in';
     const cls = verdict === 'band_in' ? 'rc-band-in' : verdict === 'band_none' ? 'rc-band-none' : 'rc-band-out';
     bandLine = `<div class="rc-hint rc-band">${t('band_line', {
         c: cheapComp.toFixed(2), ccy: r.currency, gap: band.gap, dur: durLabel + 'D',
-        lo: band.floor.toFixed(2), hi: band.top.toFixed(2),
+        lo: band.floor.toFixed(2),
         now: shown == null ? '—' : (cheapComp - shown).toFixed(2),
       })} <span class="rc-band-chip ${cls}">${t(verdict)}</span></div>`;
     if (projAll) {
@@ -6334,9 +6338,10 @@ async function editGmPrice() {
 }
 window.editGmPrice = editGmPrice;
 
-/** One click, one answer: put our cheapest car at this length's target gap —
- *  the identical arithmetic SCAN runs (bandFor) — and let the panel show the
- *  block it produces. Staged like any projection; the APPLY bar writes it. */
+/** One click, one answer — the identical decision SCAN makes (bandPlace):
+ *  inside the band it does NOTHING (and says so); not #1 it projects the
+ *  smallest move to just under the field; past the limit it projects the pull
+ *  back up. Staged like any projection; the APPLY bar writes it. */
 function snapToBand() {
   ensureFreshBase();
   const r = rcCtx.view || rcCtx.data;
@@ -6344,9 +6349,11 @@ function snapToBand() {
   const others = r.top.filter((x) => !/green motion/i.test(x.supplier));
   if (!others.length) return;
   const band = bandFor(others[0].price, rcCtx.dur);
+  const place = bandPlace(r.gmPrice, band);
+  if (place.dir === 'in') { toast(t('snap_band_already')); return; }
   const { base } = gmServedBase(r);
   if (base == null) return;
-  let newPct = (band.target / base - 1) * 100;
+  let newPct = (place.target / base - 1) * 100;
   newPct = Math.max(-95, Math.min(100, Math.round(newPct * 100) / 100));
   projectPlacement(newPct);
 }
@@ -7155,15 +7162,18 @@ function scanCatCompare(r, factor, targetRank) {
  *  `{ mode:'category'|'overall', days:[dayOfMonth], durs:[2,3] }`. Scoped days
  *  are still intersected with the searchable days — rentalcars cannot quote the
  *  past. Resolves `{ n, cancelled }`. */
-/* ======================= THE PRICING BAND (2026-09-02) =======================
- * Our CHEAPEST car sits a fixed number of FRANCS under the cheapest competitor
- * — francs per RENTAL LENGTH, measured, not modelled — and however many of our
- * cars fit under them, fit. One helper feeds SCAN and the analysis panel so the
- * two can never disagree about a cell. The table is the tenant's own (loaded
- * from the server at boot); these defaults are the 2026-09-03 ZRH measurement
- * and only serve until that load lands. Same numbers as AUTOSCAN.gapChfByDur. */
+/* ======================= THE PRICING BAND (2026-09-02/03) =====================
+ * Be #1, but NEVER more than a fixed number of FRANCS under the cheapest
+ * competitor — francs per RENTAL LENGTH, measured, not modelled. The figure is
+ * a LIMIT, not a target (Berkay: "kac araba girdigi umrumda degil, onemli olan
+ * limiti asan ucuzlukta olmamak"): a cell under the field and inside the limit
+ * is left alone; a cell that is not #1 comes down to JUST under the field, the
+ * smallest move; a cell that breached the limit is pulled back UP to it. One
+ * helper feeds SCAN and the analysis panel so the two can never disagree. The
+ * table is the tenant's own (loaded at boot); these defaults are the
+ * 2026-09-03 ZRH measurement. Same numbers as AUTOSCAN.gapChfByDur. */
 const GAP_DEFAULTS = { 1: 4, 2: 8, 3: 10, 4: 13, 5: 15, 6: 17, 7: 19, 8: 21, 9: 24, 10: 26, 11: 30, 12: 33, 13: 37, 14: 40 };
-const BAND = { gapChfByDur: null, lowPriceGuard: 0.15, gapBandChf: 1 };
+const BAND = { gapChfByDur: null, lowPriceGuard: 0.15, gapBandChf: 1, justUnderPct: 0.005, justUnderMinChf: 0.5 };
 
 function gapChfFor(dur) {
   const d = Math.min(Math.max(Math.round(Number(dur) || 1), 1), 14);
@@ -7171,15 +7181,27 @@ function gapChfFor(dur) {
   return isFinite(Number(own)) ? Number(own) : GAP_DEFAULTS[d];
 }
 
-/** floor/top/target for a cell, given the cheapest competitor price. The
- *  percentage guard is a backstop for cheap fields only (10 off a 40 CHF field
- *  is a quarter of the price); it bites under ~67 CHF and nowhere else. */
+/** The band for a cell, given the cheapest competitor price:
+ *    floor = the limit (never deeper), top = just under the field,
+ *    upTo  = where a breached cell is pulled back to (just inside the limit).
+ *  The percentage guard is a backstop for cheap fields only (10 off a 40 CHF
+ *  field is a quarter of the price); it bites under ~67 CHF and nowhere else. */
 function bandFor(cheapest, dur) {
   const gap = gapChfFor(dur);
   const floor = Math.max(cheapest - gap, cheapest * (1 - BAND.lowPriceGuard));
-  const top = Math.max(cheapest - (gap - BAND.gapBandChf), floor);
-  const target = Math.min(Math.max(cheapest - gap + BAND.gapBandChf / 2, floor), top);
-  return { gap, floor, top, target };
+  const justUnder = Math.max(cheapest * BAND.justUnderPct, BAND.justUnderMinChf);
+  const top = Math.max(cheapest - justUnder, floor);
+  const upTo = Math.min(floor + BAND.gapBandChf, top);
+  return { gap, floor, top, upTo, cheapest };
+}
+
+/** Where a price should go, and why: 'in' (leave it), 'down' (not #1 — to just
+ *  under the field) or 'up' (limit breached — back to just inside it). */
+function bandPlace(price, band) {
+  if (price == null) return { dir: 'none', target: null };
+  if (price >= band.floor && price < band.cheapest) return { dir: 'in', target: price };
+  if (price >= band.cheapest) return { dir: 'down', target: band.top };
+  return { dir: 'up', target: band.upTo };
 }
 
 /** the tenant's table, fetched once past the auth gate; a failure keeps the defaults */
@@ -7346,9 +7368,10 @@ async function runScan(scope) {
             const cheapAll = Math.min(...compAll);
             const gmCheap = Math.min(...gmAll);
             const band = bandFor(cheapAll, dur); // the SAME helper the panel shows
-            if (gmCheap >= band.floor && gmCheap <= band.top) continue; // already there
-            if (gmCheap < band.floor) { cellFloored = true; floored++; } // underselling
-            const factor = band.target / gmCheap;
+            const place = bandPlace(gmCheap, band);
+            if (place.dir === 'in') continue; // #1 and inside the limit: leave it
+            if (place.dir === 'up') { cellFloored = true; floored++; } // limit breached
+            const factor = place.target / gmCheap;
             if (!isFinite(factor) || factor <= 0) continue;
             if (Math.abs(factor - 1) < 0.005) continue; // nothing worth writing
             // p' = p * factor  =>  (1 + new/100) = (1 + cur/100) * factor

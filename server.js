@@ -3685,13 +3685,24 @@ const AUTOSCAN = {
     { untilDay: 120, durations: [3, 7, 14], step: 2 },
     { untilDay: 180, durations: [7, 14], step: 3 },
   ],
-  raiseThreshold: 0.08, // propose a raise only when 8%+ of margin is on the table
+  // propose a raise only past this. It was 0.08 when raises chased margin; a
+  // raise now only ever means the LIMIT was breached, and "ne olursa olsun
+  // limiti asmasin" does not tolerate sitting 8% under it. 2% keeps the
+  // rentalcars quote noise (~2-3% between generations) from causing churn.
+  raiseThreshold: 0.02,
   freshBudget: 40,      // rc queries that actually go out, per run
   minChangePct: 1.5,
   ratingWarn: 8.2,      // rentalcars' "8.0+" filter cliff, with a safety margin
-  // THE PRICING BAND (Berkay, 2026-09-02 — supersedes the 97/95-per-100 band):
-  // our CHEAPEST car sits a fixed number of FRANCS under the cheapest
-  // competitor, and however many of our cars fit under them, fit.
+  // THE PRICING BAND (Berkay, 2026-09-02/03 — supersedes the 97/95-per-100 band):
+  // be #1, but NEVER more than a fixed number of FRANCS under the cheapest
+  // competitor. The franc figure is a LIMIT, not a target: a cell already
+  // under the field and inside the limit is left alone, a cell that is not #1
+  // comes down to JUST under the field (the smallest move), and a cell that has
+  // breached the limit is pulled back UP to it. How many of our cars land under
+  // the field is nobody's goal — "kac araba girdigi umrumda degil, onemli olan
+  // limiti asan ucuzlukta olmamak". (The first cut of this band treated the
+  // figure as a target and pushed a cell sitting 5 CHF under down to 12.5 —
+  // exactly the giveaway the limit exists to stop.)
   //
   // The old band put 3% on our cheapest car and let the base-rate ladder carry
   // the fleet upward, so against a 100 CHF field we sat at 97/99/100/100/101/
@@ -3704,15 +3715,19 @@ const AUTOSCAN = {
   // read-only sweep of 98 ZRH cells (4-17 Sep, 09:00, seven durations) showed
   // the served ladder keeps one shape at every length (our 5th car / our 1st
   // ~ 1.07-1.10), so "five of our cars under the field" costs ~8% of the field
-  // price, and the field price grows with the length. These are the medians
-  // that put FIVE of our cars under the cheapest competitor, measured for
-  // 1/2/3/5/7/10/14 and interpolated between; 3 days is the 10 CHF Berkay
-  // asked for. Simulated back over every measured cell: 5 [3..6] cars under
-  // at every duration, 7-9.5% of the field. The linear 4+2d guess it replaced
-  // fell to 3 cars at 14 days. An operator's own table is stored per tenant
-  // (autoState().gapChfByDur) and overrides these entry by entry.
+  // price, and the field price grows with the length. These are the LIMITS —
+  // the deepest our cheapest car may sit under the field at each length. They
+  // come from the medians that put five of our cars under (measured for
+  // 1/2/3/5/7/10/14, interpolated between; 3 days is the 10 CHF Berkay named):
+  // a sensible ceiling on depth, never a place to aim for. An operator's own
+  // table is stored per tenant (autoState().gapChfByDur) and overrides these
+  // entry by entry.
   gapChfByDur: { 1: 4, 2: 8, 3: 10, 4: 13, 5: 15, 6: 17, 7: 19, 8: 21, 9: 24, 10: 26, 11: 30, 12: 33, 13: 37, 14: 40 },
-  gapBandChf: 1,  // the slack either side that stops a cell being rewritten over a franc
+  gapBandChf: 1,  // a breached limit is corrected to this far INSIDE it, not onto the edge
+  // "just under the field" when a cell is not #1: half a percent, never less
+  // than half a franc — the smallest move that makes us the cheapest
+  justUnderPct: 0.005,
+  justUnderMinChf: 0.5,
   // A flat franc gap on a cheap enough field IS the giveaway the franc rule
   // guards against (10 off a 40 CHF field is a quarter of the price), so a
   // percentage still backstops the bottom. It only bites under ~67 CHF.
@@ -3851,19 +3866,23 @@ const propSame = (a, b) => {
 };
 
 /**
- * THE BAND, ANCHORED IN FRANCS ON OUR CHEAPEST CAR (Berkay, 2026-09-02).
+ * THE BAND: BE #1, NEVER MORE THAN THE LIMIT UNDER (Berkay, 2026-09-02/03).
  *
  *   cheapest  = the cheapest COMPETITOR price in scope (displayed price — any
  *               active campaign discount is already inside it)
  *   gmCheap   = our cheapest offer in scope, same basis
- *   gap       = gapChfByDur[rentalDays]     // measured per length, operator-editable
- *   floor     = max(cheapest - gap, cheapest * (1 - lowPriceGuard))
- *   top       = max(cheapest - (gap - gapBandChf), floor)
- *   factor    = target / gmCheap, target inside [floor, top]
+ *   limit     = gapChfByDur[rentalDays]     // francs, per length, operator-editable
+ *   floor     = max(cheapest - limit, cheapest * (1 - lowPriceGuard))
+ *   band      = [floor, cheapest)           // under the field, inside the limit
  *
- * One FMX % scales every GM car together, so placing the CHEAPEST one fixes
- * the whole block; how many of our cars end up under the field is an OUTCOME
- * of how wide that station's base-rate ladder is, not a setting.
+ *   gmCheap in band      -> factor 1, nothing to write
+ *   gmCheap >= cheapest  -> not #1: come down to JUST under the field
+ *                           (justUnderPct / justUnderMinChf) — the smallest move
+ *   gmCheap <  floor     -> limit breached: come UP to gapBandChf inside it
+ *
+ * The limit is a ceiling on depth, never a target. One FMX % scales every GM
+ * car together, so placing the CHEAPEST one fixes the whole block; how many of
+ * our cars end up under the field is nobody's goal here.
  *
  * Both anchors are market-wide. The previous version took min(target_c) over
  * display categories and clamped up to max(floor_c): each category guarded
@@ -3903,14 +3922,18 @@ function categoryFactor(r, targetRank, opts = {}) {
   if (!isFinite(cheapest) || !isFinite(gmCheap) || gmCheap <= 0) return null;
 
   const floor = Math.max(cheapest - gap, cheapest * (1 - guard));
-  const top = Math.max(cheapest - (gap - slack), floor);
-  const target = Math.min(Math.max(cheapest - gap + slack / 2, floor), top);
+  // "just under": the smallest move that makes us the cheapest
+  const justUnder = Math.max(cheapest * AUTOSCAN.justUnderPct, AUTOSCAN.justUnderMinChf);
+  const top = Math.max(cheapest - justUnder, floor);
+  // a breached limit is corrected to just INSIDE it, not onto the edge
+  const upTo = Math.min(floor + slack, top);
 
-  // already sitting in the band: nothing to write, and above all no raise
-  const inBand = gmCheap >= floor && gmCheap <= top;
-  let factor = inBand ? 1 : target / gmCheap;
+  // inside the band: nothing to write, and above all no move in either direction
+  const inBand = gmCheap >= floor && gmCheap < cheapest;
+  let factor = 1;
+  if (!inBand) factor = (gmCheap >= cheapest ? top : upTo) / gmCheap;
   if (!isFinite(factor) || factor <= 0) return null;
-  const clamped = gmCheap < floor; // was underselling — this is a correction UP
+  const clamped = gmCheap < floor; // limit breached — this is a correction UP
 
   // per-category rank bookkeeping for the report, unchanged in shape
   const cats = [];
@@ -4333,7 +4356,7 @@ function autoScanMailHtml(set) {
     ? `${set.items.length} fiyat önerisi hazır`
     : `${missing.length} gün/sürede GM listelenmiyor`;
   const intro = set.items.length
-    ? `Saatlik otomatik tarama önümüzdeki ${AUTOSCAN_HORIZON_DAYS} günü (bugünden ${horizonEnd()} tarihine kadar; yakın günler her kiralama süresiyle, uzak günler seyrek örneklemle) tarıyor ve en ucuz aracımızı en ucuz rakibin hemen altına oturtmak için (kiralama süresine göre ölçülmüş frank farkı; 3 günde ${autoGapTable()[3]} CHF, 7 günde ${autoGapTable()[7]} CHF) fiyatın hareket etmesi gereken ${set.items.length} gün/süre kombinasyonu buldu. Aşağıdaki tablolar hangi günde ne yapılması gerektiğini gösterir; hepsini birden onaylamak için tablonun altındaki düğmeyi kullanabilir, tek tek bakmak istersen Konsolu açabilirsin.`
+    ? `Saatlik otomatik tarama önümüzdeki ${AUTOSCAN_HORIZON_DAYS} günü (bugünden ${horizonEnd()} tarihine kadar; yakın günler her kiralama süresiyle, uzak günler seyrek örneklemle) tarıyor ve en ucuz aracımızı en ucuz rakibin hemen altına oturtmak için (#1 olup en ucuz rakibin en fazla süreye göre belirlenen kadar altında kalmak; sınır 3 günde ${autoGapTable()[3]} CHF, 7 günde ${autoGapTable()[7]} CHF) fiyatın hareket etmesi gereken ${set.items.length} gün/süre kombinasyonu buldu. Aşağıdaki tablolar hangi günde ne yapılması gerektiğini gösterir; hepsini birden onaylamak için tablonun altındaki düğmeyi kullanabilir, tek tek bakmak istersen Konsolu açabilirsin.`
     : `Saatlik otomatik tarama fiyat değişikliği gerektiren bir gün bulamadı, ancak aşağıdaki gün/sürelerde rakipler satarken GM rentalcars'ta hiç listelenmiyor — bu doğrudan rezervasyon kaybıdır ve fiyat kuralıyla çözülmez.`;
   return alertMailHtml(title, sections, intro, extra);
 }
