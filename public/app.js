@@ -103,6 +103,7 @@ const I18N = {
     block_line: 'cars under the field {b0} → <b>{b1}</b> · gap {g0} → <b>{g1} CHF</b>',
     btn_snap_band: 'SNAP TO BAND', snap_band_tip: 'Exactly what SCAN would do to this cell: nothing if we are #1 inside the limit; the smallest move to just under the field if we are not #1; a pull back up if we are past the limit.',
     snap_band_already: 'Already #1 and inside the limit — nothing to change.',
+    price_past_limit: 'That price is past the {limit} CHF limit for this rental length — staged anyway, your call.',
     currency_warn: 'PRICES IN {c} — NOT COMPARABLE',
     refresh_rc: 'REFRESH',
     hour_prev: 'Earlier pickup hour',
@@ -113,7 +114,7 @@ const I18N = {
     scan_capped: 'The console paced itself to protect the site — {n} date(s) waited for a free slot. Nothing was skipped.',
     presence_viewing: '{u} is viewing',
     grid_too_many: 'This station holds too many rules to display — run RESET to clean it up, then the grid will load.',
-    fleet_floored: 'Held at the price floor — never more than 5% or 10 CHF under the cheapest competitor.',
+    fleet_floored: 'Held at the limit — never deeper under the cheapest competitor than this rental length allows.',
     fleet_raised: 'Raise planned: the surplus cars move just above the top-10 line, the {k} cheapest stay in and keep competing.',
     fleet_exact_hard: 'GM prices sit too close together for exactly {k} — raised as far as the band allows; check the simulated ladder.',
     no_rc_station: 'This station has no rentalcars location yet — set one in Settings to enable market features.',
@@ -239,8 +240,8 @@ const I18N = {
     verify_scheduled: 'Back-check queued for {n} cell(s) — running in ~{min} min, once rentalcars has propagated.',
     verify_running: 'CHECKING {done}/{total}',
     verify_done: '{good}/{total} landed in the band · {above} still above target · {below} under the floor · {silent} not listed',
-    verify_above: 'Missed the band: GM {gm}, target was {want} — served rank {rank}',
-    verify_below: 'Under the floor: GM {gm}, floor {floor}',
+    verify_above: 'Not #1: GM {gm} against a {want} field — served rank {rank}',
+    verify_below: 'Past the limit: GM {gm}, floor {floor}',
     verify_gone: 'Green Motion is not listed at all in this market',
     scan_busy: 'Another pricing operation is already running — wait for it to finish.',
     sel_price_confirm: 'Re-price {n} rule(s) in {range} against the live competitor field? Proposals are staged in orange — nothing is written until APPLY TO DPS.',
@@ -484,6 +485,7 @@ const I18N = {
     block_line: 'Fahrzeuge unter dem Feld {b0} → <b>{b1}</b> · Abstand {g0} → <b>{g1} CHF</b>',
     btn_snap_band: 'INS BAND SETZEN', snap_band_tip: 'Genau das, was SCAN mit dieser Zelle täte: nichts, wenn wir #1 innerhalb des Limits sind; der kleinste Schritt knapp unter das Feld, wenn nicht #1; zurück nach oben, wenn das Limit verletzt ist.',
     snap_band_already: 'Bereits #1 und innerhalb des Limits — nichts zu ändern.',
+    price_past_limit: 'Dieser Preis liegt jenseits des {limit}-CHF-Limits für diese Mietdauer — trotzdem vorgemerkt, Ihre Entscheidung.',
     currency_warn: 'PREISE IN {c} — NICHT VERGLEICHBAR',
     refresh_rc: 'AKTUALISIEREN',
     hour_prev: 'Frühere Abholzeit',
@@ -494,7 +496,7 @@ const I18N = {
     scan_capped: 'Die Konsole hat sich selbst gedrosselt — {n} Datum/Daten warteten auf einen freien Slot. Nichts wurde übersprungen.',
     presence_viewing: '{u} sieht sich das an',
     grid_too_many: 'Diese Station hält zu viele Regeln zum Anzeigen — RESET ausführen, danach lädt das Grid.',
-    fleet_floored: 'An der Preisuntergrenze gehalten — nie mehr als 5% oder 10 CHF unter dem günstigsten Wettbewerber.',
+    fleet_floored: 'Am Limit gehalten — nie tiefer unter dem günstigsten Wettbewerber, als diese Mietdauer erlaubt.',
     fleet_raised: 'Erhöhung geplant: die überzähligen Autos rücken knapp über die Top-10-Linie, die {k} günstigsten bleiben drin.',
     fleet_exact_hard: 'GM-Preise liegen zu dicht beieinander für genau {k} — so weit erhöht, wie das Band erlaubt; simulierte Liste prüfen.',
     no_rc_station: 'Diese Station hat noch keinen rentalcars-Standort — in den Einstellungen setzen, um Marktfunktionen zu aktivieren.',
@@ -620,8 +622,8 @@ const I18N = {
     verify_scheduled: 'Nachkontrolle für {n} Zelle(n) eingeplant — in ca. {min} Min., sobald rentalcars propagiert hat.',
     verify_running: 'PRÜFUNG {done}/{total}',
     verify_done: '{good}/{total} im Band gelandet · {above} noch über dem Ziel · {below} unter dem Boden · {silent} nicht gelistet',
-    verify_above: 'Band verfehlt: GM {gm}, Ziel war {want} — ausgelieferter Rang {rank}',
-    verify_below: 'Unter dem Boden: GM {gm}, Boden {floor}',
+    verify_above: 'Nicht #1: GM {gm} gegen ein Feld von {want} — ausgelieferter Rang {rank}',
+    verify_below: 'Limit überschritten: GM {gm}, Untergrenze {floor}',
     verify_gone: 'Green Motion ist in diesem Markt gar nicht gelistet',
     scan_busy: 'Es läuft bereits ein Bepreisungsvorgang — bitte abwarten.',
     sel_price_confirm: '{n} Regel(n) in {range} gegen das Live-Konkurrenzfeld neu bepreisen? Vorschläge werden orange vorgemerkt — geschrieben wird erst mit APPLY TO DPS.',
@@ -865,6 +867,7 @@ const I18N = {
     block_line: 'altta kalan araç {b0} → <b>{b1}</b> · fark {g0} → <b>{g1} CHF</b>',
     btn_snap_band: 'BANDA OTUR', snap_band_tip: 'TARAMA’nın bu hücreye yapacağının aynısı: #1 ve sınırın içindeysek hiçbir şey; #1 değilsek rakibin hemen altına en küçük hareket; sınırı aştıysak yukarı çekme.',
     snap_band_already: 'Zaten #1 ve sınırın içinde — değişecek bir şey yok.',
+    price_past_limit: 'Bu fiyat bu kiralama süresinin {limit} CHF sınırını aşıyor — yine de hazırlandı, karar senin.',
     currency_warn: 'FİYATLAR {c} — KARŞILAŞTIRILAMAZ',
     refresh_rc: 'YENİLE',
     hour_prev: 'Önceki alış saati',
@@ -875,7 +878,7 @@ const I18N = {
     scan_capped: 'Konsol siteyi korumak için kendini yavaşlattı — {n} tarih boş slot bekledi. Hiçbiri atlanmadı.',
     presence_viewing: '{u} görüntülüyor',
     grid_too_many: 'Bu istasyonda gösterilemeyecek kadar çok kural var — SIFIRLA\'yı çalıştır, sonra grid yüklenir.',
-    fleet_floored: 'Fiyat tabanında tutuldu — en ucuz rakibin en fazla %5 veya 10 CHF altı.',
+    fleet_floored: 'Sınırda tutuldu — en ucuz rakibin altında bu kiralama süresinin izin verdiğinden derine inilmez.',
     fleet_raised: 'Zam planlandı: fazla araçlar top-10 çizgisinin hemen üstüne çıkıyor, en ucuz {k} araç içeride kalıp yarışmaya devam ediyor.',
     fleet_exact_hard: 'GM fiyatları tam {k} için fazla yakın — bandın izin verdiği kadar zam yapıldı; simüle listeye bak.',
     no_rc_station: 'Bu istasyonun henüz rentalcars konumu yok — pazar özellikleri için Ayarlar\'dan bir konum ata.',
@@ -1001,8 +1004,8 @@ const I18N = {
     verify_scheduled: '{n} hücre için arka kontrol sıraya alındı — rentalcars yayılımı için ~{min} dk sonra çalışacak.',
     verify_running: 'KONTROL {done}/{total}',
     verify_done: '{good}/{total} banda oturdu · {above} hâlâ hedefin üstünde · {below} tabanın altında · {silent} listede yok',
-    verify_above: 'Banda oturmadı: GM {gm}, hedef {want} idi — servis edilen sıra {rank}',
-    verify_below: 'Tabanın altında: GM {gm}, taban {floor}',
+    verify_above: '#1 değil: GM {gm}, alan {want} — servis edilen sıra {rank}',
+    verify_below: 'Sınır aşıldı: GM {gm}, taban {floor}',
     verify_gone: 'Green Motion bu pazarda hiç listelenmiyor',
     scan_busy: 'Zaten bir fiyatlama işlemi sürüyor — bitmesini bekle.',
     sel_price_confirm: '{range} aralığındaki {n} kural canlı rakip alanına göre yeniden fiyatlansın mı? Öneriler turuncu olarak hazırlanır — APPLY TO DPS demeden hiçbir şey yazılmaz.',
@@ -3293,19 +3296,22 @@ async function runApplyVerify() {
         const comp = (r.top || []).filter((x) => !rcIsGm(x)).map((x) => x.price);
         if (!comp.length) continue; // no field to judge against
         const cheapest = Math.min(...comp);
-        const target = cheapest * 0.97;
-        const floor = Math.max(cheapest * 0.95, cheapest - 10);
+        // the SAME rule SCAN wrote by (2026-09-03): #1 and inside the limit is
+        // a landing; not #1 or past the limit is a flag. The retired 97/95 band
+        // used to sit here and would have flagged every correct landing.
+        const band = bandFor(cheapest, c.dur);
+        const place = bandPlace(r.gmPrice, band);
         const sameGrid = c.station === state.station && c.year === state.year && c.month === state.month;
         const mark = (reason) => { if (sameGrid) setCellFlag(c.day, c.dur, reason); };
         if (r.gmPrice == null) {
           silent++;
           mark(t('verify_gone'));
-        } else if (r.gmPrice > target * 1.005) {
+        } else if (place.dir === 'down') {
           above++;
-          mark(t('verify_above', { gm: r.gmPrice.toFixed(2), want: target.toFixed(2), rank: r.gmRank || '—' }));
-        } else if (r.gmPrice < floor * 0.995) {
+          mark(t('verify_above', { gm: r.gmPrice.toFixed(2), want: cheapest.toFixed(2), rank: r.gmRank || '—' }));
+        } else if (place.dir === 'up') {
           below++;
-          mark(t('verify_below', { gm: r.gmPrice.toFixed(2), floor: floor.toFixed(2) }));
+          mark(t('verify_below', { gm: r.gmPrice.toFixed(2), floor: band.floor.toFixed(2) }));
         } else {
           good++;
           mark(null); // landed in the band — nothing to look at
@@ -5965,10 +5971,11 @@ function placeFleet(k) {
   const { base: gmBase, rulePct: curPct, servedPct } = gmServedBase(r);
   if (gmBase == null || r.gmPrice == null) return;
   const bases = r.gmOffers.map((g) => g.price * (gmBase / r.gmPrice));
-  // the pricing band's floor, on displayed prices: whatever K asks for, the
-  // cheapest GM car never lands more than 5% or 10 CHF under the cheapest
-  // competitor — crowding the top 10 must not mean giving cars away
-  const floorPrice = comp.length ? Math.max(comp[0] * 0.95, comp[0] - 10) : null;
+  // the pricing band's floor — the LIMIT for this rental length (2026-09-03):
+  // whatever K asks for, the cheapest GM car never lands past it. Crowding the
+  // top 10 must not mean giving cars away. (This path is retired from the UI
+  // and kept for the planned P4 loop; it must not carry a stale band.)
+  const floorPrice = comp.length ? bandFor(comp[0], rcCtx.dur).floor : null;
   let newPct;
   if (comp.length <= 10 - k) {
     // fewer competitors than free top-10 slots: K GM cars fit with no change,
@@ -6326,6 +6333,12 @@ async function editGmPrice() {
   if (!isFinite(target) || target <= 0) { toast(t('rc_price_bad'), 'error'); return; }
   const others = r.top.filter((x) => !/green motion/i.test(x.supplier));
   const rank = others.filter((o) => o.price < target).length + 1;
+  // a hand-typed price may go past the limit — the operator's call, but never
+  // in silence: the band line will show ÇOK UCUZ and this says why
+  if (others.length) {
+    const place = bandPlace(target, bandFor(others[0].price, rcCtx.dur));
+    if (place.dir === 'up') toast(t('price_past_limit', { limit: bandFor(others[0].price, rcCtx.dur).gap }), 'warn');
+  }
   // same guarded base as placeGm/projectPlacement — see the comment there
   const { base, rulePct: curPct, servedPct } = gmServedBase(r);
   if (base == null) return;
@@ -6988,10 +7001,10 @@ $('sweepScanBtn').onclick = async () => {
         const anchor = others[Math.min(targetRank, others.length) - 1];
         if (!anchor) { skipped++; return; }
         let target = anchor.price * 0.99; // land just inside the target rank
-        // the pricing band's floor: chasing the rank must never sell the car
-        // away — no more than 5% or 10 CHF under the cheapest competitor
+        // the pricing band's floor — the LIMIT for this rental length
+        // (2026-09-03): chasing a rank must never sell the car past it
         const cheapest = others[0].price;
-        const floorPrice = Math.max(cheapest * 0.95, cheapest - 10);
+        const floorPrice = bandFor(cheapest, dur).floor;
         if (target < floorPrice) { target = floorPrice; floored++; }
         const cell = state.cellMap.get(key(day, dur));
         const curPct = cell ? cell.pct : 0;
