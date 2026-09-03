@@ -69,6 +69,18 @@ function Run-Job($job) {
         'Accept'     { $req.Accept    = $p.Value }
         default      { $req.Headers.Add($p.Name, $p.Value) }
       } } }
+    # rentalcars fronts the search API with AWS WAF; a rate rule answers 202 +
+    # `x-amzn-waf-action: challenge` (2026-09-03). A browser on THIS machine
+    # passes that challenge and holds an `aws-waf-token` cookie; with it a plain
+    # request is served again. Put that cookie's value in waf-token.txt beside
+    # this script (from the browser: document.cookie -> aws-waf-token) whenever
+    # the log shows 202/challenge. The token is per machine — one from another
+    # computer will not do.
+    $tokFile = Join-Path $dir 'waf-token.txt'
+    if (Test-Path $tokFile) {
+      $tok = (Get-Content $tokFile -Raw).Trim()
+      if ($tok) { $req.Headers.Add('Cookie', "aws-waf-token=$tok") }
+    }
     $resp = $null
     try { $resp = $req.GetResponse() }
     catch [Net.WebException] {
@@ -76,9 +88,11 @@ function Run-Job($job) {
       else { throw }
     }
     $status = [int]$resp.StatusCode
+    $waf = $resp.Headers['x-amzn-waf-action']
     $sr = New-Object IO.StreamReader($resp.GetResponseStream(), [Text.Encoding]::UTF8)
     $body = $sr.ReadToEnd(); $sr.Close(); $resp.Close()
     Post-Result @{ id = $job.id; ok = $true; status = $status; body = $body }
+    if ($status -ne 200 -or $waf) { Log ("[relay] rentalcars answered {0}{1} bytes={2} - refresh waf-token.txt from a browser on this machine" -f $status, $(if ($waf) { " waf=$waf" } else { "" }), $body.Length) }
     Log ("[relay] job {0} ok ({1})" -f $job.id.Substring(0, 8), $status)
   } catch {
     Log ("[relay] job {0} failed: {1}" -f $job.id.Substring(0, 8), $_.Exception.Message)

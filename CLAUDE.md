@@ -237,8 +237,10 @@ d6d9542 = tag `relay-first-2026-09-03` (cloud rc queries go relay-first — the
 fix for the 2026-09-03 rc-top 502 outage; **any rollback must land on or after
 this one**, the earlier revisions carry the direct-first bug that the /tmp
 cache was hiding), `console-00110-dos` = cf76ebd = tag `waf-breaker-2026-09-03`
-(WAF challenge recognised, 5-minute breaker, no client retries on refusals —
-**current**). Fast rollback
+(WAF challenge recognised, 5-minute breaker, no client retries on refusals),
+`console-00111-yey` = 70486f9 = tag `relay-quarantine-2026-09-03` (a refused
+relay WORKER is quarantined and the job retried elsewhere; the global breaker
+only when no healthy worker is online — **current**). Fast rollback
 (~30 s, traffic only): `gcloud run services update-traffic console --region
 europe-west6 --project sentinelpricing --to-revisions console-00102-qok=100`.
 Full rollback: `git checkout rollback-pre-band-2026-09-03 && npx firebase deploy
@@ -307,6 +309,16 @@ token from a browser (`document.cookie` → `aws-waf-token`) when the relay log
 shows 202/challenge; its lifetime is being measured. The durable version — the
 relay refreshing its own token through a headless Chrome — is the next step if
 the lifetime turns out short.
+
+**Two relays poll the console** (2026-09-03): the Mac (`node`, named by its
+user agent) and a Windows PowerShell one on another machine (`x-relay-name`).
+The WAF token is per machine: a Windows worker without its own
+`waf-token.txt` answers 202 on every fetch. One such 202 used to trip the
+GLOBAL breaker and blind everyone; now that worker alone is quarantined for
+five minutes and the job is retried on a healthy worker
+(`relayState.quarantine`, `relayHandOut` skips it, `relayHealthyWorkerOnline`).
+The relay logs on both platforms name the refusal and say to refresh the
+token from a browser on that machine.
 
 ## Why sync was slow
 
