@@ -232,7 +232,11 @@ Cloud Run revisions (service `console`, europe-west6): `console-00102-qok` =
 26e8ca1 (pre-franc), `console-00103-kiy` = 2ee697a (target-cut — never route
 traffic here), `console-00104-bix` = ebee216 (limit, measured table), `console-00105-wih` =
 f77748c (every price-judging path on the limit), **`console-00106-wes` = b5a1c30
-= tag `band-limit-10chf-2026-09-03` (flat 10 CHF limit — current)**. Fast rollback
+= tag `band-limit-10chf-2026-09-03` (flat 10 CHF limit)**, `console-00108-puq` =
+d6d9542 = tag `relay-first-2026-09-03` (cloud rc queries go relay-first — the
+fix for the 2026-09-03 rc-top 502 outage; **any rollback must land on or after
+this one**, the earlier revisions carry the direct-first bug that the /tmp
+cache was hiding). Fast rollback
 (~30 s, traffic only): `gcloud run services update-traffic console --region
 europe-west6 --project sentinelpricing --to-revisions console-00102-qok=100`.
 Full rollback: `git checkout rollback-pre-band-2026-09-03 && npx firebase deploy
@@ -249,6 +253,22 @@ of the rc cache key each hour keeps its own pinned snapshot. The footer names th
 actually ANSWERED, which is how an empty-slot fallback stays visible. Nothing rotates the hour
 automatically — an earlier build did, and a price that moves because our own clock moved reads
 as the console being wrong.
+
+## Cloud rentalcars queries go RELAY-FIRST (2026-09-03)
+
+`rcQuery` in the cloud hands every fresh query to the operator-side relay
+whenever the relay is online (`relayOnline()`, polled within 75 s); a direct
+fetch from Cloud Run is the last resort only. Until 2026-09-03 the cloud tried
+direct first and fell back to the relay ONLY on a 403/405/429 (`blocked`).
+rentalcars had started answering the cloud with a 200 + empty body instead, so
+`rcFetch` threw `Unexpected end of JSON input`, `blocked` was false, the relay
+was skipped, and every fresh `/api/rc-top` died in 20 ms as a 502 — the panel
+printed that JSON message and the market pane, which only re-renders from the
+panel's answer, spun forever. The /tmp snapshot cache hid it for hours (06-07
+UTC: 659x200 with 7x502 under them); four deploys in one hour wiped the cache
+four times and the failure went to 100%. A direct-fetch failure is now logged
+(`[rc] direct fetch failed …`, at most once a minute) so it can never be
+invisible again, and the pane fails together with the panel.
 
 ## Why sync was slow
 

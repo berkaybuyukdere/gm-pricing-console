@@ -5922,10 +5922,18 @@ async function runRcAnalysis(opts) {
     if (snap) {
       rcCtx.data = { ...snap, stale: true };
       rcBuildView();
-      renderRcTable();
+      renderRcTable(); // mirrors into the pane too
       return;
     }
-    $('rcBody').innerHTML = `<div class="drawer-empty">${rcErrorText(e.message)}</div>`;
+    const msg = `<div class="drawer-empty">${rcErrorText(e.message)}</div>`;
+    $('rcBody').innerHTML = msg;
+    // the pane was put into its spinner WITH the panel (above) and is only ever
+    // re-rendered from the panel's answer — on a failure it kept spinning for
+    // good (2026-09-03). It fails together with the panel now.
+    if (rcWeb.day === rcCtx.day && rcWeb.dur === rcCtx.dur && !$('rcWeb').classList.contains('hidden')) {
+      $('rcWebBody').innerHTML = msg;
+      $('rcWebMeta').textContent = '';
+    }
   }
 }
 
