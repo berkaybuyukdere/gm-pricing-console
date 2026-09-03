@@ -218,7 +218,12 @@ rentalcars actually serves: no projected overlay pretends to be the market; the 
 appears when `checkRcSync` proves the landing (plus a second-random-hour confirm), and the
 follow-up steps the shared hour, re-queries fresh, and looks again ~90s later. The panel's
 cell wears a solid accent ring on the grid (`cell-active`), the pane's cell a blue inner ring
-(`cell-live`). Rollback checkpoints: a02f8dc (before round 5), 97abc34 (after).
+(`cell-live`). Rollback checkpoints: a02f8dc (before round 5), 97abc34 (after);
+**26e8ca1 = tag `rollback-pre-band-2026-09-03`** (the 97/95 band, deployed until
+2026-09-03) → **2ee697a = tag `band-2026-09-03`** (the measured franc band).
+Roll back with `git checkout rollback-pre-band-2026-09-03 && npx firebase deploy
+--only functions --project sentinelpricing` — the function serves the client
+bundle too, so one deploy moves both.
 
 ## The pickup hour (2026-08-29)
 
