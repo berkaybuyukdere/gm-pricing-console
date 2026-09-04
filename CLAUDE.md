@@ -243,7 +243,10 @@ relay WORKER is quarantined and the job retried elsewhere; the global breaker
 only when no healthy worker is online), `console-00112-wec` = c425117 = tag
 `relay-no-global-trip-2026-09-04` (a refused relay NEVER trips the global
 breaker; the cloud goes direct only when no relay has been seen for 5 min;
-geometric per-worker quarantine — **current**). Fast rollback
+geometric per-worker quarantine), `console-00113-wil` = 9a02db0 (a freshly
+booted instance parks its first queries for the relay for two minutes instead
+of going direct — no more 15-second 503 burst on every deploy — **current**).
+Fast rollback
 (~30 s, traffic only): `gcloud run services update-traffic console --region
 europe-west6 --project sentinelpricing --to-revisions console-00102-qok=100`.
 Full rollback: `git checkout rollback-pre-band-2026-09-03 && npx firebase deploy
