@@ -2139,7 +2139,12 @@ async function rcQuery({ station, year, month, day, duration, hh, mm, ttlMs, sam
   // the backlog can still be picked up by the first healthy poll, and a 90s
   // relay timeout is an honest answer. A direct fetch from a datacenter IP is
   // never going to be served and only trips the global breaker.
-  let viaRelay = store.IS_CLOUD && relayAnyWorkerSeen();
+  // ...and a freshly booted instance has not been polled yet: for its first
+  // two minutes it assumes the relays that were there a moment ago still are,
+  // and parks the job for their first poll instead of going direct. Every
+  // deploy used to hand a 15-second burst of 503s to whoever was clicking
+  // (2026-09-04 10:20:58–10:21:06, sixteen of them, `relayOnline=false`).
+  let viaRelay = store.IS_CLOUD && (relayAnyWorkerSeen() || process.uptime() < 120);
   const fetchOne = async () => {
     if (viaRelay) return relayDispatch(args);
     try {
