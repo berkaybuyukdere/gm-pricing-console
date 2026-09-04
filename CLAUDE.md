@@ -240,7 +240,10 @@ cache was hiding), `console-00110-dos` = cf76ebd = tag `waf-breaker-2026-09-03`
 (WAF challenge recognised, 5-minute breaker, no client retries on refusals),
 `console-00111-yey` = 70486f9 = tag `relay-quarantine-2026-09-03` (a refused
 relay WORKER is quarantined and the job retried elsewhere; the global breaker
-only when no healthy worker is online — **current**). Fast rollback
+only when no healthy worker is online), `console-00112-wec` = c425117 = tag
+`relay-no-global-trip-2026-09-04` (a refused relay NEVER trips the global
+breaker; the cloud goes direct only when no relay has been seen for 5 min;
+geometric per-worker quarantine — **current**). Fast rollback
 (~30 s, traffic only): `gcloud run services update-traffic console --region
 europe-west6 --project sentinelpricing --to-revisions console-00102-qok=100`.
 Full rollback: `git checkout rollback-pre-band-2026-09-03 && npx firebase deploy
@@ -320,6 +323,33 @@ five minutes and the job is retried on a healthy worker
 (`relayState.quarantine`, `relayHandOut` skips it, `relayHealthyWorkerOnline`).
 The relay logs on both platforms name the refusal and say to refresh the
 token from a browser on that machine.
+
+**2026-09-04, the second morning:** seven global trips between 05:45 and 09:35
+UTC — every one a five-minute "rentalcars is challenging the relay" hold on
+every operator — while the Mac relay polled 1400×/hour and answered every
+job it got. Every quarantine in the logs named the token-less Windows worker;
+the Mac was never quarantined. Four trips came from that worker with "no
+healthy worker online", three from a DIRECT cloud fetch the code fell
+through to for the same reason: the healthy-worker scan's 75 s window dropped
+a busy worker, and the policy let a relay refusal trip the global breaker at
+all. Now: a relay refusal quarantines that worker (5 → 10 → 20 min … ≤2 h on
+repeats, cleared by a served answer) and requeues the job; it never trips the
+global breaker (with no healthy poller the job waits for one or times out at
+90 s — an honest answer, not a hold). A worker counts as present for 5 min
+after its last poll. The cloud goes direct only when NO relay has been seen,
+and only a real 403/405/429 there trips the global breaker; 200 + empty body
+is a bad result, never a refusal. The worker key is name AND platform. When
+the scan finds nobody, the log lists who it saw and how long ago.
+
+**rentalcars' own transient "0 Fahrzeuge verfügbar"** (2026-09-04 ~10:00–
+10:05 UTC): 200, 986-byte body, `aggregates.prices: {}`, zero matches — from
+a plain fetch AND from a fresh browser session on rentalcars.com; the same
+queries returned 186/244 matches at 10:07. Not a refusal, not a ban: their
+backend hiccup. `rcParse` yields `total: 0`, the panel hops to other hours,
+the stale snapshot covers the rest. Do not add retries for it.
+
+The WAF token obtained 2026-09-03 12:06 UTC was still served at 10:07 the next
+day — at least 22 hours.
 
 ## Why sync was slow
 
