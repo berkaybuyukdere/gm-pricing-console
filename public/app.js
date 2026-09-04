@@ -178,6 +178,7 @@ const I18N = {
     rc_err_timeout: 'The local relay did not answer in time — check that it is still running, then retry.',
     rc_err_rejected: 'rentalcars rejected the query ({code}) — retry in a moment or right-click the grid cell to open rentalcars directly.',
     rc_err_generic: 'Query failed: {code} — right-click the grid cell to open rentalcars directly.',
+    rc_err_relay_refused: 'rentalcars is refusing the relay that took this query (WAF challenge) — that relay is paused and the next query goes to another one. If it keeps happening, refresh that machine’s waf-token.txt from its browser.',
     rc_err_challenged: 'rentalcars is challenging the relay’s IP (AWS WAF, HTTP 202) — the console is holding off for 5 minutes so the challenge can lift. The last known answer is shown where one exists. Right-click the grid cell to open rentalcars in your browser meanwhile.',
     rc_hint_click: "Click a competitor row — or drag the Green Motion row onto one — to take that position. You can also click Green Motion's own price to type a target price directly; the DPS rule change is computed automatically.",
     rc_session_note: 'Prices are what a fresh anonymous visitor sees for this exact pickup time. rentalcars targets campaign discounts (e.g. −12%) per session — a browser with old cookies may see the undiscounted price. To compare 1:1, use a private window and the OPEN ON RENTALCARS button (it carries the same pickup time).',
@@ -562,6 +563,7 @@ const I18N = {
     rc_err_timeout: 'Das lokale Relay hat nicht rechtzeitig geantwortet — prüfen, ob es noch läuft, dann erneut versuchen.',
     rc_err_rejected: 'rentalcars hat die Anfrage abgelehnt ({code}) — gleich erneut versuchen oder die Rasterzelle rechtsklicken, um rentalcars direkt zu öffnen.',
     rc_err_generic: 'Abfrage fehlgeschlagen: {code} — die Rasterzelle rechtsklicken, um rentalcars direkt zu öffnen.',
+    rc_err_relay_refused: 'rentalcars weist das Relay ab, das diese Abfrage übernommen hat (WAF-Challenge) — dieses Relay pausiert, die nächste Abfrage geht an ein anderes. Falls es sich wiederholt: waf-token.txt auf jenem Rechner aus dessen Browser erneuern.',
     rc_err_challenged: 'rentalcars stellt der IP des Relays eine Challenge (AWS WAF, HTTP 202) — die Konsole pausiert 5 Minuten, damit sie abklingt. Wo vorhanden, wird die letzte bekannte Antwort gezeigt. Rasterzelle rechtsklicken, um rentalcars solange im Browser zu öffnen.',
     rc_hint_click: 'Auf eine Konkurrenzzeile klicken — oder die Green-Motion-Zeile darauf ziehen — um diese Position zu übernehmen. Alternativ auf den eigenen Green-Motion-Preis klicken und einen Zielpreis direkt eintippen; die DPS-Regeländerung wird automatisch berechnet.',
     rc_session_note: 'Die Preise entsprechen dem, was ein neuer anonymer Besucher für genau diese Abholzeit sieht. rentalcars steuert Kampagnenrabatte (z. B. −12%) pro Sitzung — ein Browser mit alten Cookies sieht evtl. den Preis ohne Rabatt. Für einen 1:1-Vergleich ein privates Fenster und AUF RENTALCARS ÖFFNEN verwenden (gleiche Abholzeit).',
@@ -946,6 +948,7 @@ const I18N = {
     rc_err_timeout: 'Yerel relay zamanında yanıt vermedi — hâlâ çalıştığını kontrol edip tekrar dene.',
     rc_err_rejected: "rentalcars sorguyu reddetti ({code}) — birazdan tekrar dene veya grid hücresine sağ tıklayıp rentalcars'ı doğrudan aç.",
     rc_err_generic: "Sorgu başarısız: {code} — grid hücresine sağ tıklayıp rentalcars'ı doğrudan aç.",
+    rc_err_relay_refused: "rentalcars bu sorguyu alan relay'i reddediyor (WAF doğrulaması) — o relay duraklatıldı, sıradaki sorgu başka relay'e gider. Tekrarlarsa o makinenin waf-token.txt'sini kendi tarayıcısından yenile.",
     rc_err_challenged: "rentalcars relay'in IP'sine doğrulama uyguluyor (AWS WAF, HTTP 202) — konsol 5 dakika bekliyor ki kalksın. Varsa son bilinen cevap gösteriliyor. Bu arada grid hücresine sağ tıklayıp rentalcars'ı tarayıcıda aç.",
     rc_hint_click: 'O konumu almak için bir rakip satırına tıkla — veya Green Motion satırını üstüne sürükle. İstersen Green Motion fiyatına tıklayıp doğrudan hedef fiyat da girebilirsin; gereken DPS kural değişikliği otomatik hesaplanır.',
     rc_session_note: 'Fiyatlar, tam bu alış saati için yeni (çerezsiz) bir ziyaretçinin gördüğü fiyatlardır. rentalcars kampanya indirimlerini (örn. −12%) oturuma göre hedefler — eski çerezli bir tarayıcı indirimsiz fiyatı görebilir. Birebir karşılaştırma için gizli pencere ve RENTALCARS\'TA AÇ düğmesini kullan (aynı alış saatini taşır).',
@@ -5787,7 +5790,8 @@ function logoImg(x) {
 
 // server-side failure codes -> operator-readable explanations
 function rcErrorText(msg) {
-  if (/RC_CHALLENGED|RC_RELAY_CHALLENGE|RC_RELAY_BLOCKED_|RC_RELAY_EMPTY/.test(msg)) return t('rc_err_challenged');
+  if (/RC_CHALLENGED/.test(msg)) return t('rc_err_challenged');
+  if (/RC_RELAY_CHALLENGE|RC_RELAY_BLOCKED_/.test(msg)) return t('rc_err_relay_refused');
   if (/RC_UNAVAILABLE|RC_RELAY_OFFLINE/.test(msg)) return t('rc_err_offline');
   if (/RC_RELAY_TIMEOUT/.test(msg)) return t('rc_err_timeout');
   if (/RC_HTTP_4\d\d|RC_HTTP_5\d\d/.test(msg)) return t('rc_err_rejected', { code: esc(msg) });

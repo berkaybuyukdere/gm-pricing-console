@@ -1679,20 +1679,39 @@ const relayState = {
   // (202 on every fetch) — and one 202 from the second tripped the GLOBAL
   // breaker, so nobody got answers although one worker could deliver them.
   quarantine: new Map(),
+  strikes: new Map(), // worker key -> consecutive refusals (cleared by a served answer)
   seen: new Map(),    // worker key -> lastSeenMs, every worker (named or not)
 };
 /** who a relay request comes from: its name header, else its user agent */
 const relayWorkerKey = (req) => {
+  const ua = String(req.headers['user-agent'] || '');
+  const fam = /PowerShell/i.test(ua) ? 'ps' : /^node/i.test(ua) ? 'node' : 'other';
   const n = req.headers['x-relay-name'];
-  if (n != null) return 'name:' + String(n).replace(/[^A-Za-z0-9 ._-]/g, '').slice(0, 64);
-  return 'ua:' + String(req.headers['user-agent'] || 'unknown').slice(0, 80);
+  if (n != null) return `name:${String(n).replace(/[^A-Za-z0-9 ._-]/g, '').slice(0, 64)}|${fam}`;
+  return 'ua:' + ua.slice(0, 80);
 };
 const relayQuarantined = (key) => (relayState.quarantine.get(key) || 0) > Date.now();
 /** is any worker online that is NOT quarantined? */
+// "seen lately": a worker that polled within 5 minutes counts as present. 75s
+// was too tight — a worker busy with four fetches, or one whose parked poll
+// the single instance answered late, dropped out and the cloud fell through to
+// a DIRECT fetch it could never win (2026-09-04, three global trips that way).
+const RELAY_SEEN_MS = 5 * 60 * 1000;
 function relayHealthyWorkerOnline() {
-  const cut = Date.now() - 75 * 1000;
+  const cut = Date.now() - RELAY_SEEN_MS;
   for (const [k, ts] of relayState.seen) if (ts >= cut && !relayQuarantined(k)) return true;
   return false;
+}
+function relayAnyWorkerSeen(ms = RELAY_SEEN_MS) {
+  const cut = Date.now() - ms;
+  for (const ts of relayState.seen.values()) if (ts >= cut) return true;
+  return false;
+}
+function relayWorkersNote() {
+  const now = Date.now();
+  return [...relayState.seen].map(([k, ts]) =>
+    `${k} seen ${Math.round((now - ts) / 1000)}s ago${relayQuarantined(k) ? ` QUARANTINED ${Math.round((relayState.quarantine.get(k) - now) / 1000)}s` : ''}`
+  ).join('; ') || 'none';
 }
 const relayOnline = () => Date.now() - relayState.lastSeen < 75 * 1000;
 
@@ -1829,19 +1848,32 @@ app.post('/api/relay/result', (req, res) => {
       // worker have the job once. Only when no healthy worker is online does
       // the refusal mean rentalcars is closed to us altogether.
       const who = job.worker || relayWorkerKey(req);
-      relayState.quarantine.set(who, Date.now() + RC_BREAKER_MS);
-      relayNote(`${kind} from ${who} — quarantined ${RC_BREAKER_MS / 1000}s`);
-      if (!job.retried && relayHealthyWorkerOnline()) {
+      // repeated refusals from the same worker back off geometrically (5, 10,
+      // 20 … minutes, capped at two hours): a Windows relay without its own
+      // WAF token was being handed one doomed job every five minutes all night
+      const strikes = (relayState.strikes.get(who) || 0) + 1;
+      relayState.strikes.set(who, strikes);
+      const hold = Math.min(RC_BREAKER_MS * 2 ** (strikes - 1), 2 * 60 * 60 * 1000);
+      relayState.quarantine.set(who, Date.now() + hold);
+      relayNote(`${kind} from ${who} — quarantined ${Math.round(hold / 1000)}s (strike ${strikes}); workers: ${relayWorkersNote()}`);
+      if (!job.retried) {
+        // a job already handed out once goes back to the front of the queue;
+        // the first healthy poll takes it, or its own 90s timer ends it — the
+        // GLOBAL breaker is not for this: a refused WORKER is not a refused
+        // console, and holding everyone for five minutes because one relay
+        // lacks a token is what made 2026-09-04 look like an outage
         job.retried = true;
         relayState.jobs.set(id, job);
         relayState.backlog.unshift(id);
         relayHandOut();
         return res.json({ ok: true, requeued: true });
       }
-      rcTripBreaker(kind, `relay status=${st} worker=${who}, no healthy worker online`);
       settle(); job.reject(new FmxError('RC_RELAY_' + kind, 502));
-    } else if (st !== 200) {
-      relayNote('HTTP ' + st);
+    } else if (st !== 200 || !(body && String(body).trim())) {
+      // a non-200, or a 200 with nothing in it: rentalcars hiccups like this
+      // (500 "{}" and empty 200s were both seen on 2026-09-04) — a bad result
+      // for THIS query, not a verdict on the worker's IP
+      relayNote(st === 200 ? 'empty 200' : 'HTTP ' + st);
       settle(); job.reject(new FmxError('RC_RELAY_BAD_RESULT', 502));
     } else {
       let parsed = null;
@@ -1850,7 +1882,7 @@ app.post('/api/relay/result', (req, res) => {
         parsed = job.parse ? job.parse(raw) : rcParse(raw, job.meta);
       } catch {}
       const good = job.parse ? Array.isArray(parsed) : !!parsed && Array.isArray(parsed.top);
-      if (good) { settle(); job.resolve(parsed); }
+      if (good) { relayState.strikes.delete(job.worker || relayWorkerKey(req)); settle(); job.resolve(parsed); }
       else { relayNote('unparsable 200'); settle(); job.reject(new FmxError('RC_RELAY_BAD_RESULT', 502)); }
     }
   }
@@ -2047,7 +2079,6 @@ function rcRefusalKind(status, body) {
   const st = Number(status);
   if (st === 202 && !(body && String(body).trim())) return 'CHALLENGE'; // AWS WAF challenge
   if (st === 403 || st === 405 || st === 429) return 'BLOCKED_' + st;
-  if (st === 200 && !(body && String(body).trim())) return 'EMPTY';
   return null;
 }
 
@@ -2103,15 +2134,20 @@ async function rcQuery({ station, year, month, day, duration, hh, mm, ttlMs, sam
   // cache hid it until four deploys in an hour wiped that cache. Now: relay
   // first when it is online; direct only as the last resort; whatever the
   // direct failure looks like, an online relay gets the query.
-  let viaRelay = store.IS_CLOUD && relayOnline() && relayHealthyWorkerOnline();
+  // In the cloud the relay layer is the path whenever ANY worker has been seen
+  // lately — even if every worker is quarantined right now, a job parked in
+  // the backlog can still be picked up by the first healthy poll, and a 90s
+  // relay timeout is an honest answer. A direct fetch from a datacenter IP is
+  // never going to be served and only trips the global breaker.
+  let viaRelay = store.IS_CLOUD && relayAnyWorkerSeen();
   const fetchOne = async () => {
     if (viaRelay) return relayDispatch(args);
     try {
       return await rcFetch(args); // direct — always works from residential IPs
     } catch (e) {
-      if (e && (e.blocked || /Unexpected end of JSON/.test(String(e.message)))) {
-        rcTripBreaker(e.blocked ? 'BLOCKED_' + e.status : 'CHALLENGE', 'direct: ' + e.message);
-      }
+      // only a real refusal trips the breaker — and only when there is no relay
+      // at all to hand the query to (the direct path runs in that case alone)
+      if (e && e.blocked) rcTripBreaker('BLOCKED_' + e.status, 'direct: ' + e.message + '; workers: ' + relayWorkersNote());
       if (store.IS_CLOUD && relayOnline()) {
         rcDirectFailureNote(e);
         const d = await relayDispatch(args);

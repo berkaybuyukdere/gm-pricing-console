@@ -30,10 +30,10 @@ ck('202 WITH a body is not a refusal', rcRefusalKind(202, '{"x":1}') === null, r
 ck('403 is BLOCKED_403', rcRefusalKind(403, '<html>') === 'BLOCKED_403', rcRefusalKind(403, '<html>'));
 ck('405 is BLOCKED_405', rcRefusalKind(405, '') === 'BLOCKED_405', rcRefusalKind(405, ''));
 ck('429 is BLOCKED_429', rcRefusalKind(429, '') === 'BLOCKED_429', rcRefusalKind(429, ''));
-ck('200 + empty body is EMPTY (the cloud-side "Unexpected end of JSON input")', rcRefusalKind(200, '') === 'EMPTY', rcRefusalKind(200, ''));
+ck('200 + empty body is NOT a refusal (a rentalcars hiccup, handled as a bad result)', rcRefusalKind(200, '') === null, rcRefusalKind(200, ''));
 ck('200 + JSON is a normal answer', rcRefusalKind(200, '{"searchResults":[]}') === null, rcRefusalKind(200, '{"searchResults":[]}'));
 ck('500 is not a refusal (a bad result, handled elsewhere)', rcRefusalKind(500, '') === null, rcRefusalKind(500, ''));
-ck('undefined body on 200 is EMPTY', rcRefusalKind(200, undefined) === 'EMPTY', rcRefusalKind(200, undefined));
+ck('undefined body on 200 is not a refusal either', rcRefusalKind(200, undefined) === null, rcRefusalKind(200, undefined));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
